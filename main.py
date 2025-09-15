@@ -10,13 +10,26 @@ from sklearn.metrics import roc_auc_score
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
+from mapie.classification import MapieClassifier
+
 from data_synth import generate_synthetic_dataset, FeatureConfig
 
+# -----------------------------
+# Data and model
+# -----------------------------
 X, y = generate_synthetic_dataset(n=2500, random_state=42)
 feature_cols = X.columns.tolist()
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+# Split training into RF fit and MAPIE calibration to avoid leakage
+X_fit, X_calib, y_fit, y_calib = train_test_split(
+    X_train, y_train, test_size=0.25, random_state=42, stratify=y_train
+)
 
+# Fit RF on fit-split
 rf = RandomForestClassifier(
     n_estimators=350,
     max_depth=None,
@@ -24,9 +37,18 @@ rf = RandomForestClassifier(
     random_state=42,
     n_jobs=-1,
 )
-rf.fit(X_train, y_train)
+rf.fit(X_fit, y_fit)
+
+# AUC on holdout test
 auc = roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])
 
+# MAPIE for conformal prediction
+mapie = MapieClassifier(estimator=rf, method="score", cv="prefit")
+mapie.fit(X_calib, y_calib)
+
+# -----------------------------
+# App
+# -----------------------------
 app = Dash(__name__)
 app.title = "Treatment Resistance Classifier (Demo)"
 
@@ -117,8 +139,9 @@ def feature_input_component(cfg: FeatureConfig) -> html.Div:
             style=base_style,
         )
 
-# Layout
-# Optional style helpers
+# -----------------------------
+# Layout styles
+# -----------------------------
 CARD = {
     "backgroundColor": "white",
     "borderRadius": "12px",
@@ -127,19 +150,23 @@ CARD = {
 }
 PILL = {
     "display": "inline-block",
-    "padding": "4px 10px",
+    "padding": "6px 12px",
     "borderRadius": "999px",
+    "fontSize": "14px",
+    "fontWeight": "700",
+    "border": "1px solid #e5e7eb",
     "backgroundColor": "#eef2ff",
-    "color": "#3730a3",
-    "fontSize": "12px",
-    "fontWeight": "600",
+    "color": "#111827",
 }
 SECTION_TITLE = {"margin": "0 0 8px 0", "fontSize": "18px"}
+SUBHEADING = {"fontSize": "12px", "color": "#6b7280", "fontWeight": "600", "marginTop": "2px"}
 
-# Updated layout
+# -----------------------------
+# Layout
+# -----------------------------
 app.layout = html.Div(
     [
-        html.Div(  # page container
+        html.Div(
             [
                 # Header
                 html.Div(
@@ -160,7 +187,15 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.Span("Model AUC", style={"marginRight": "8px", "color": "#6b7280", "fontSize": "12px"}),
-                                html.Span(f"{auc:.3f}", style=PILL),
+                                html.Span(f"{auc:.3f}", style={
+                                    "display": "inline-block",
+                                    "padding": "4px 10px",
+                                    "borderRadius": "999px",
+                                    "backgroundColor": "#eef2ff",
+                                    "color": "#3730a3",
+                                    "fontSize": "12px",
+                                    "fontWeight": "600",
+                                }),
                             ],
                             style={"display": "flex", "alignItems": "center", "gap": "4px"}
                         ),
@@ -191,6 +226,7 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.H4("Prediction", style=SECTION_TITLE),
+                                html.Div("Random Forest Base Prediction", style=SUBHEADING),
                                 dcc.Graph(
                                     id="pred-indicator",
                                     config={"displayModeBar": False},
@@ -198,6 +234,7 @@ app.layout = html.Div(
                                 ),
                                 html.Div(
                                     [
+                                        html.Div("Conformal Prediction Guarantees", style={**SUBHEADING, "marginBottom": "6px"}),
                                         html.Div(
                                             "Confidence interval (%)",
                                             style={"fontSize": "12px", "color": "#444", "marginBottom": "4px"}
@@ -207,9 +244,19 @@ app.layout = html.Div(
                                             min=80, max=99, step=1, value=95,
                                             marks={x: str(x) for x in [80, 85, 90, 95, 99]},
                                         ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    id="prediction-badge",
+                                                    style={**PILL},
+                                                    children=""
+                                                ),
+                                            ],
+                                            style={"display": "flex", "justifyContent": "center", "marginTop": "10px"}
+                                        ),
                                     ],
                                     style={
-                                        "marginTop": "6px",
+                                        "marginTop": "10px",
                                         "padding": "10px",
                                         "backgroundColor": "#f9fafb",
                                         "borderRadius": "8px",
@@ -241,33 +288,21 @@ app.layout = html.Div(
 )
 
 # -----------------------------
-# Callback helpers
+# Helpers
 # -----------------------------
 def pack_instance_from_inputs(values_dict: Dict[str, Any]) -> pd.DataFrame:
     row = {col: values_dict[col] for col in feature_cols}
     return pd.DataFrame([row], columns=feature_cols)
 
-def rf_tree_proba_distribution(model: RandomForestClassifier, X_row: pd.DataFrame) -> np.ndarray:
-    # Use numpy array to avoid "feature names" warnings on individual trees
-    X_np = X_row.to_numpy()
-    probs = [est.predict_proba(X_np)[0, 1] for est in model.estimators_]
-    return np.array(probs)
-
-def ci_from_distribution(dist: np.ndarray, ci_level: int) -> Tuple[float, float]:
-    alpha = 1 - (ci_level / 100.0)
-    lower = np.percentile(dist, 100 * (alpha / 2.0))
-    upper = np.percentile(dist, 100 * (1 - alpha / 2.0))
-    return float(lower), float(upper)
-
-def indicator_figure(prob: float, ci: Tuple[float, float]) -> go.Figure:
-    cls = "Resistant" if prob >= 0.5 else "Responsive"
+def indicator_figure(prob: float) -> go.Figure:
+    # Gauge shows probability only; no class label in the title
     color = "#d62728" if prob >= 0.5 else "#2ca02c"
     fig = go.Figure(
         go.Indicator(
             mode="gauge+number",
             value=prob * 100,
             number={"suffix": "%", "font": {"size": 28}},
-            title={"text": f"Predicted: {cls}<br><span style='font-size:13px;color:#666'>Probability of resistance</span>"},
+            title={"text": "Probability of resistance"},
             gauge={
                 "axis": {"range": [0, 100]},
                 "bar": {"color": color},
@@ -280,17 +315,46 @@ def indicator_figure(prob: float, ci: Tuple[float, float]) -> go.Figure:
             domain={"x": [0, 1], "y": [0, 1]},
         )
     )
-    ci_txt = f"CI: {int(round(ci[0]*100))}% – {int(round(ci[1]*100))}%"
-    fig.add_annotation(
-        text=ci_txt,
-        x=0.5, y=-0.15, xref="paper", yref="paper",
-        showarrow=False, font={"size": 12, "color": "#444"},
-    )
-    fig.update_layout(margin=dict(l=20, r=20, t=40, b=40))
+    fig.update_layout(margin=dict(l=20, r=20, t=50, b=30))
     return fig
 
+def conformal_badge_from_mapie(X_row: pd.DataFrame, ci_level: int) -> Tuple[str, Dict[str, Any]]:
+    # Compute prediction set with MAPIE at selected CI and return a label + style
+    alpha = 1.0 - (ci_level / 100.0)
+    _, y_ps = mapie.predict(X_row, alpha=alpha)  # y_ps: (n, n_classes) or (n, n_classes, n_alpha)
+    if y_ps.ndim == 3:
+        y_ps = y_ps[:, :, 0]
+    included = y_ps[0].astype(bool)  # shape (n_classes,)
+    classes = list(rf.classes_)  # typically [0, 1]
+    num_included = int(included.sum())
+
+    if num_included == 0 or num_included == 2:
+        label = "Uncertain"
+        bg, border, color = "#fef3c7", "1px solid #fcd34d", "#92400e"
+    else:
+        idx = int(np.where(included)[0][0])
+        cls_val = classes[idx]
+        if cls_val == 1:
+            label = "Resistant"
+            bg, border, color = "#fee2e2", "1px solid #fca5a5", "#991b1b"
+        else:
+            label = "Responsive"
+            bg, border, color = "#dcfce7", "1px solid #86efac", "#14532d"
+
+    style = {
+        "display": "inline-block",
+        "padding": "6px 12px",
+        "borderRadius": "999px",
+        "fontSize": "14px",
+        "fontWeight": "700",
+        "backgroundColor": bg,
+        "border": border,
+        "color": color,
+    }
+    return label, style
+
 # -----------------------------
-# Dynamic callback wiring
+# Callback wiring
 # -----------------------------
 input_ids = [f"input-{cfg.id}" for cfg in features_ui]
 value_ids = [f"value-{cfg.id}" for cfg in features_ui if cfg.kind == "numeric"]
@@ -300,6 +364,8 @@ dash_inputs.append(Input("ci-slider", "value"))
 
 dash_outputs = [
     Output("pred-indicator", "figure"),
+    Output("prediction-badge", "children"),
+    Output("prediction-badge", "style"),
 ]
 for vid in value_ids:
     dash_outputs.append(Output(vid, "children"))
@@ -315,24 +381,23 @@ def update_predictions(*args):
 
     X_row = pack_instance_from_inputs(values_dict)
 
+    # Probability and gauge
     prob = float(rf.predict_proba(X_row)[0, 1])
+    pred_fig = indicator_figure(prob)
 
-    dist = rf_tree_proba_distribution(rf, X_row)
-    ci = ci_from_distribution(dist, ci_level)
+    # MAPIE conformal label based on current CI
+    badge_text, badge_style = conformal_badge_from_mapie(X_row, ci_level)
 
-    pred_fig = indicator_figure(prob, ci)
-
+    # Numeric value displays
     numeric_displays = []
     for cfg in features_ui:
         if cfg.kind == "numeric":
-            v = values_dict[cfg.id]
-            numeric_displays.append(f"Selected: {v}")
+            numeric_displays.append(f"Selected: {values_dict[cfg.id]}")
 
-    outputs = [pred_fig]
+    outputs = [pred_fig, badge_text, badge_style]
     outputs.extend(numeric_displays)
     return outputs
 
 
 if __name__ == "__main__":
-    # To run: python app.py
     app.run(debug=True, port=8050)
