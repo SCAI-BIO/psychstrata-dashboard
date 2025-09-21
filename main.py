@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
 from mapie.classification import MapieClassifier
+import shap
 
 from data_synth import generate_synthetic_dataset, FeatureConfig
 
@@ -24,12 +25,12 @@ feature_cols = X.columns.tolist()
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
-# Split training into RF fit and MAPIE calibration to avoid leakage
+# Split training in Fit/Calibration (for MAPIE)
 X_fit, X_calib, y_fit, y_calib = train_test_split(
     X_train, y_train, test_size=0.25, random_state=42, stratify=y_train
 )
 
-# Fit RF on fit-split
+# Fit RF
 rf = RandomForestClassifier(
     n_estimators=350,
     max_depth=None,
@@ -39,12 +40,21 @@ rf = RandomForestClassifier(
 )
 rf.fit(X_fit, y_fit)
 
-# AUC on holdout test
+# AUC on test
 auc = roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])
 
-# MAPIE for conformal prediction
+# MAPIE (Conformal)
 mapie = MapieClassifier(estimator=rf, method="score", cv="prefit")
 mapie.fit(X_calib, y_calib)
+
+# SHAP explainer: probability output with interventional + background data
+background = X_fit.sample(n=min(200, len(X_fit)), random_state=42)
+shap_explainer = shap.TreeExplainer(
+    rf,
+    data=background,
+    model_output="probability",
+    feature_perturbation="interventional",
+)
 
 # -----------------------------
 # App
@@ -52,7 +62,7 @@ mapie.fit(X_calib, y_calib)
 app = Dash(__name__)
 app.title = "Treatment Resistance Classifier (Demo)"
 
-# Feature definitions for UI
+# Feature definitions (UI)
 features_ui: List[FeatureConfig] = [
     FeatureConfig("age", "Age (years)", "numeric", 40, {"min": 18, "max": 80, "step": 1}),
     FeatureConfig("sex_female", "Sex", "categorical", 0, {"options": [
@@ -173,14 +183,8 @@ app.layout = html.Div(
                     [
                         html.Div(
                             [
-                                html.H2(
-                                    "Treatment Resistance Classifier",
-                                    style={"margin": 0}
-                                ),
-                                html.Div(
-                                    "Demo • Not medical advice",
-                                    style={"color": "#6b7280", "fontSize": "12px", "marginTop": "2px"}
-                                ),
+                                html.H2("Treatment Resistance Classifier", style={"margin": 0}),
+                                html.Div("Demo • Not medical advice", style={"color": "#6b7280", "fontSize": "12px", "marginTop": "2px"}),
                             ],
                             style={"display": "flex", "flexDirection": "column"}
                         ),
@@ -222,49 +226,59 @@ app.layout = html.Div(
                             style={**CARD, "flex": "1.7", "minWidth": "320px"}
                         ),
 
-                        # Right: prediction card
+                        # Right column: stack Prediction card and SHAP card
                         html.Div(
                             [
-                                html.H4("Prediction", style=SECTION_TITLE),
-                                html.Div("Random Forest Base Prediction", style=SUBHEADING),
-                                dcc.Graph(
-                                    id="pred-indicator",
-                                    config={"displayModeBar": False},
-                                    style={"height": "200px", "marginTop": "4px"}
-                                ),
+                                # Prediction card
                                 html.Div(
                                     [
-                                        html.Div("Conformal Prediction Guarantees", style={**SUBHEADING, "marginBottom": "6px"}),
-                                        html.Div(
-                                            "Confidence interval (%)",
-                                            style={"fontSize": "12px", "color": "#444", "marginBottom": "4px"}
-                                        ),
-                                        dcc.Slider(
-                                            id="ci-slider",
-                                            min=80, max=99, step=1, value=95,
-                                            marks={x: str(x) for x in [80, 85, 90, 95, 99]},
+                                        html.H4("Prediction", style=SECTION_TITLE),
+                                        html.Div("Random Forest Base Prediction", style=SUBHEADING),
+                                        dcc.Graph(
+                                            id="pred-indicator",
+                                            config={"displayModeBar": False},
+                                            style={"height": "200px", "marginTop": "4px"}
                                         ),
                                         html.Div(
                                             [
+                                                html.Div("Conformal Prediction Guarantees", style={**SUBHEADING, "marginBottom": "6px"}),
+                                                html.Div("Confidence interval (%)", style={"fontSize": "12px", "color": "#444", "marginBottom": "4px"}),
+                                                dcc.Slider(
+                                                    id="ci-slider",
+                                                    min=80, max=99, step=1, value=95,
+                                                    marks={x: str(x) for x in [80, 85, 90, 95, 99]},
+                                                ),
                                                 html.Div(
-                                                    id="prediction-badge",
-                                                    style={**PILL},
-                                                    children=""
+                                                    [html.Div(id="prediction-badge", style={**PILL}, children="")],
+                                                    style={"display": "flex", "justifyContent": "center", "marginTop": "10px"}
                                                 ),
                                             ],
-                                            style={"display": "flex", "justifyContent": "center", "marginTop": "10px"}
+                                            style={
+                                                "marginTop": "10px",
+                                                "padding": "10px",
+                                                "backgroundColor": "#f9fafb",
+                                                "borderRadius": "8px",
+                                                "border": "1px solid #eee",
+                                            }
                                         ),
                                     ],
-                                    style={
-                                        "marginTop": "10px",
-                                        "padding": "10px",
-                                        "backgroundColor": "#f9fafb",
-                                        "borderRadius": "8px",
-                                        "border": "1px solid #eee",
-                                    }
+                                    style={**CARD}
+                                ),
+
+                                # SHAP card (separate component with small gap above via parent gap)
+                                html.Div(
+                                    [
+                                        html.H4("Feature contributions (SHAP)", style={**SECTION_TITLE, "textAlign": "center"}),
+                                        dcc.Graph(
+                                            id="shap-bar",
+                                            config={"displayModeBar": False},
+                                            style={"height": "360px", "margin": "6px auto", "width": "95%"}
+                                        ),
+                                    ],
+                                    style={**CARD}
                                 ),
                             ],
-                            style={**CARD, "flex": "1", "minWidth": "360px"}
+                            style={"flex": "1", "minWidth": "360px", "display": "flex", "flexDirection": "column", "gap": "12px"}
                         ),
                     ],
                     style={"display": "flex", "gap": "20px", "marginTop": "20px", "flexWrap": "wrap"}
@@ -273,12 +287,7 @@ app.layout = html.Div(
                 # Footer
                 html.Div(
                     "This demo is for educational purposes only and not a medical device.",
-                    style={
-                        "fontSize": "12px",
-                        "color": "#6b7280",
-                        "textAlign": "center",
-                        "marginTop": "16px"
-                    }
+                    style={"fontSize": "12px", "color": "#6b7280", "textAlign": "center", "marginTop": "16px"}
                 ),
             ],
             style={"maxWidth": "1200px", "margin": "0 auto"}
@@ -295,7 +304,6 @@ def pack_instance_from_inputs(values_dict: Dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame([row], columns=feature_cols)
 
 def indicator_figure(prob: float) -> go.Figure:
-    # Gauge shows probability only; no class label in the title
     color = "#d62728" if prob >= 0.5 else "#2ca02c"
     fig = go.Figure(
         go.Indicator(
@@ -319,13 +327,12 @@ def indicator_figure(prob: float) -> go.Figure:
     return fig
 
 def conformal_badge_from_mapie(X_row: pd.DataFrame, ci_level: int) -> Tuple[str, Dict[str, Any]]:
-    # Compute prediction set with MAPIE at selected CI and return a label + style
     alpha = 1.0 - (ci_level / 100.0)
-    _, y_ps = mapie.predict(X_row, alpha=alpha)  # y_ps: (n, n_classes) or (n, n_classes, n_alpha)
+    _, y_ps = mapie.predict(X_row, alpha=alpha)
     if y_ps.ndim == 3:
         y_ps = y_ps[:, :, 0]
-    included = y_ps[0].astype(bool)  # shape (n_classes,)
-    classes = list(rf.classes_)  # typically [0, 1]
+    included = y_ps[0].astype(bool)
+    classes = list(rf.classes_)
     num_included = int(included.sum())
 
     if num_included == 0 or num_included == 2:
@@ -353,6 +360,57 @@ def conformal_badge_from_mapie(X_row: pd.DataFrame, ci_level: int) -> Tuple[str,
     }
     return label, style
 
+def shap_bar_figure(shap_vals: np.ndarray, feature_names: List[str]) -> go.Figure:
+    s = pd.Series(shap_vals, index=feature_names)
+    s = s.sort_values(key=lambda x: x.abs(), ascending=True)
+    colors = ["#d62728" if v > 0 else "#1f77b4" for v in s.values]  # red=increases risk, blue=decreases risk
+
+    fig = go.Figure(
+        data=go.Bar(
+            x=s.values,
+            y=s.index.tolist(),
+            orientation="h",
+            marker_color=colors,
+            hovertemplate="Feature: %{y}<br>SHAP: %{x:.4f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title={"text": "SHAP contributions to P(Resistance)", "x": 0.5},
+        xaxis_title="SHAP value (Δ probability)",
+        yaxis_title="Feature",
+        margin=dict(l=90, r=20, t=50, b=20),
+        plot_bgcolor="white",
+    )
+    # Vertical zero line
+    fig.add_shape(type="line", x0=0, x1=0, y0=-0.5, y1=len(s)-0.5, line=dict(color="#9ca3af", width=1))
+    return fig
+
+def shap_values_for_positive_class(X_row: pd.DataFrame) -> np.ndarray:
+    sv = shap_explainer.shap_values(X_row)
+
+    # Convert to array (list -> choose last class; else direct)
+    if isinstance(sv, list):
+        arr = sv[-1]
+    else:
+        arr = sv
+    arr = np.array(arr)
+
+    # Handle shapes robustly
+    if arr.ndim == 3:
+        # (n_samples, n_features, n_outputs) -> take class 1 (last) for first sample
+        vals = arr[0, :, -1]
+    elif arr.ndim == 2 and arr.shape[0] == 1 and arr.shape[1] == len(feature_cols):
+        vals = arr[0]
+    elif arr.ndim == 2 and arr.shape[0] == len(feature_cols) and arr.shape[1] >= 2:
+        vals = arr[:, 1]
+    elif arr.ndim == 2 and arr.shape[1] == len(feature_cols):
+        vals = arr[0]
+    else:
+        vals = np.squeeze(arr)
+        if vals.ndim > 1:
+            vals = vals.reshape(-1)[:len(feature_cols)]
+    return np.asarray(vals, dtype=float)
+
 # -----------------------------
 # Callback wiring
 # -----------------------------
@@ -366,6 +424,7 @@ dash_outputs = [
     Output("pred-indicator", "figure"),
     Output("prediction-badge", "children"),
     Output("prediction-badge", "style"),
+    Output("shap-bar", "figure"),
 ]
 for vid in value_ids:
     dash_outputs.append(Output(vid, "children"))
@@ -381,20 +440,24 @@ def update_predictions(*args):
 
     X_row = pack_instance_from_inputs(values_dict)
 
-    # Probability and gauge
+    # Base RF probability and gauge
     prob = float(rf.predict_proba(X_row)[0, 1])
     pred_fig = indicator_figure(prob)
 
-    # MAPIE conformal label based on current CI
+    # MAPIE badge
     badge_text, badge_style = conformal_badge_from_mapie(X_row, ci_level)
 
-    # Numeric value displays
+    # SHAP: feature contributions for positive class (resistance)
+    shap_vals = shap_values_for_positive_class(X_row)
+    shap_fig = shap_bar_figure(shap_vals, feature_cols)
+
+    # Numeric displays
     numeric_displays = []
     for cfg in features_ui:
         if cfg.kind == "numeric":
             numeric_displays.append(f"Selected: {values_dict[cfg.id]}")
 
-    outputs = [pred_fig, badge_text, badge_style]
+    outputs = [pred_fig, badge_text, badge_style, shap_fig]
     outputs.extend(numeric_displays)
     return outputs
 
