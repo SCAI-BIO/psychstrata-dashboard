@@ -6,6 +6,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
+from sklearn.manifold import TSNE
+from sklearn.neighbors import NearestNeighbors
 
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
@@ -55,6 +57,26 @@ shap_explainer = shap.TreeExplainer(
     model_output="probability",
     feature_perturbation="interventional",
 )
+
+# -----------------------------
+# t-SNE embedding (precompute for dataset) + KNN for fast placement of current selection
+# -----------------------------
+tsne_model = TSNE(
+    n_components=2,
+    perplexity=min(30, max(5, len(X) // 4)),
+    learning_rate="auto",
+    init="pca",
+    max_iter=750,
+    random_state=42,
+)
+tsne_embedding = tsne_model.fit_transform(X.values)
+tsne_df = pd.DataFrame(
+    {"tsne_1": tsne_embedding[:, 0], "tsne_2": tsne_embedding[:, 1], "y": np.asarray(y)}
+)
+
+# KNN in original feature space to approximate the t-SNE position of the live selection
+nn_model = NearestNeighbors(n_neighbors=min(15, len(X)), metric="euclidean")
+nn_model.fit(X.values)
 
 # -----------------------------
 # App
@@ -171,6 +193,8 @@ PILL = {
 SECTION_TITLE = {"margin": "0 0 8px 0", "fontSize": "18px"}
 SUBHEADING = {"fontSize": "12px", "color": "#6b7280", "fontWeight": "600", "marginTop": "2px"}
 
+INFO_TEXT_STYLE = {"fontSize": "12px", "color": "#6b7280", "marginTop": "6px"}
+
 # -----------------------------
 # Layout
 # -----------------------------
@@ -185,6 +209,13 @@ app.layout = html.Div(
                             [
                                 html.H2("Treatment Resistance Classifier", style={"margin": 0}),
                                 html.Div("Demo • Not medical advice", style={"color": "#6b7280", "fontSize": "12px", "marginTop": "2px"}),
+                                html.Div(
+                                    "Important: This demo uses fully synthetic (non-real) data created for illustration. "
+                                    "It does not reflect actual patient information, clinical outcomes, or treatment insights. "
+                                    "It is not a medical device and should not be used for diagnosis or treatment decisions. "
+                                    "For medical guidance, please consult a qualified clinician.",
+                                    style={"color": "#6b7280", "fontSize": "12px", "marginTop": "6px", "maxWidth": "820px", "lineHeight": "1.4"}
+                                ),
                             ],
                             style={"display": "flex", "flexDirection": "column"}
                         ),
@@ -204,29 +235,78 @@ app.layout = html.Div(
                             style={"display": "flex", "alignItems": "center", "gap": "4px"}
                         ),
                     ],
-                    style={**CARD, "display": "flex", "justifyContent": "space-between", "alignItems": "center"}
+                    style={**CARD, "display": "flex", "justifyContent": "space-between", "alignItems": "flex-start"}
                 ),
 
                 # Main content
                 html.Div(
                     [
-                        # Left: feature inputs
+                        # Left column: stack feature inputs and LLM explanation placeholder
                         html.Div(
                             [
-                                html.H4("Enter patient features", style=SECTION_TITLE),
+                                # Features card
                                 html.Div(
-                                    [feature_input_component(cfg) for cfg in features_ui],
-                                    style={
-                                        "display": "grid",
-                                        "gridTemplateColumns": "repeat(auto-fit, minmax(280px, 1fr))",
-                                        "gap": "12px",
-                                    },
+                                    [
+                                        html.H4("Enter patient features", style=SECTION_TITLE),
+                                        html.Div(
+                                            [feature_input_component(cfg) for cfg in features_ui],
+                                            style={
+                                                "display": "grid",
+                                                "gridTemplateColumns": "repeat(auto-fit, minmax(280px, 1fr))",
+                                                "gap": "12px",
+                                            },
+                                        ),
+                                        html.Details(
+                                            [
+                                                html.Summary("What's this?"),
+                                                html.Div(
+                                                    "Enter details about the patient. The model uses these to estimate the chance of treatment resistance.",
+                                                    style=INFO_TEXT_STYLE
+                                                ),
+                                            ],
+                                            open=False,
+                                            style={"marginTop": "8px"}
+                                        ),
+                                    ],
+                                    style={**CARD}
+                                ),
+                                # LLM explanation placeholder card (fills remaining height to align with t-SNE bottom)
+                                html.Div(
+                                    [
+                                        html.H4("Prediction explanation (LLM - preview)", style=SECTION_TITLE),
+                                        html.Div(
+                                            "This section will soon provide an AI-generated explanation of your predicted risk "
+                                            "and the most influential features (via SHAP).",
+                                            style={
+                                                "backgroundColor": "#f9fafb",
+                                                "border": "1px solid #eee",
+                                                "borderRadius": "8px",
+                                                "padding": "12px",
+                                                "color": "#374151",
+                                                "fontSize": "14px",
+                                                "lineHeight": "1.5",
+                                            },
+                                        ),
+                                        html.Details(
+                                            [
+                                                html.Summary("What's this?"),
+                                                html.Div(
+                                                    "A simple explanation (written in plain language) of why the model predicts a certain risk, "
+                                                    "based on the most important features. Coming soon.",
+                                                    style=INFO_TEXT_STYLE
+                                                ),
+                                            ],
+                                            open=False,
+                                            style={"marginTop": "8px"}
+                                        ),
+                                    ],
+                                    style={**CARD, "flex": 1}  # flex-grow to align bottom with right column
                                 ),
                             ],
-                            style={**CARD, "flex": "1.7", "minWidth": "320px"}
+                            style={"flex": "1.7", "minWidth": "320px", "display": "flex", "flexDirection": "column", "gap": "12px"}
                         ),
 
-                        # Right column: stack Prediction card and SHAP card
+                        # Right column: stack Prediction card, SHAP card, and t-SNE card
                         html.Div(
                             [
                                 # Prediction card
@@ -261,11 +341,24 @@ app.layout = html.Div(
                                                 "border": "1px solid #eee",
                                             }
                                         ),
+                                        html.Details(
+                                            [
+                                                html.Summary("What's this?"),
+                                                html.Div(
+                                                    "This gauge shows the estimated chance of treatment resistance. "
+                                                    "Green is lower risk, red is higher risk. The badge uses a statistical method "
+                                                    "to indicate how confident the model is.",
+                                                    style=INFO_TEXT_STYLE
+                                                ),
+                                            ],
+                                            open=False,
+                                            style={"marginTop": "8px"}
+                                        ),
                                     ],
                                     style={**CARD}
                                 ),
 
-                                # SHAP card (separate component with small gap above via parent gap)
+                                # SHAP card
                                 html.Div(
                                     [
                                         html.H4("Feature contributions (SHAP)", style={**SECTION_TITLE, "textAlign": "center"}),
@@ -274,6 +367,45 @@ app.layout = html.Div(
                                             config={"displayModeBar": False},
                                             style={"height": "360px", "margin": "6px auto", "width": "95%"}
                                         ),
+                                        html.Details(
+                                            [
+                                                html.Summary("What's this?"),
+                                                html.Div(
+                                                    "Each bar shows how a feature pushed the prediction. "
+                                                    "Green bars lower resistance risk (helpful for response). "
+                                                    "Red bars raise resistance risk.",
+                                                    style=INFO_TEXT_STYLE
+                                                ),
+                                            ],
+                                            open=False,
+                                            style={"marginTop": "8px", "width": "95%", "marginLeft": "auto", "marginRight": "auto"}
+                                        ),
+                                    ],
+                                    style={**CARD}
+                                ),
+
+                                # t-SNE scatter card
+                                html.Div(
+                                    [
+                                        html.H4("Population map (t-SNE)", style={**SECTION_TITLE, "textAlign": "center"}),
+                                        dcc.Graph(
+                                            id="tsne-scatter",
+                                            config={"displayModeBar": False},
+                                            style={"height": "380px", "margin": "6px auto", "width": "95%"},
+                                        ),
+                                        html.Details(
+                                            [
+                                                html.Summary("What's this?"),
+                                                html.Div(
+                                                    "This map places similar patients close together. "
+                                                    "Green dots are patients who responded; red dots are patients who were resistant. "
+                                                    "The blue dot shows the current selection.",
+                                                    style=INFO_TEXT_STYLE
+                                                ),
+                                            ],
+                                            open=False,
+                                            style={"marginTop": "8px", "width": "95%", "marginLeft": "auto", "marginRight": "auto"}
+                                        ),
                                     ],
                                     style={**CARD}
                                 ),
@@ -281,7 +413,7 @@ app.layout = html.Div(
                             style={"flex": "1", "minWidth": "360px", "display": "flex", "flexDirection": "column", "gap": "12px"}
                         ),
                     ],
-                    style={"display": "flex", "gap": "20px", "marginTop": "20px", "flexWrap": "wrap"}
+                    style={"display": "flex", "gap": "20px", "marginTop": "20px", "flexWrap": "wrap", "alignItems": "stretch"}
                 ),
 
                 # Footer
@@ -363,7 +495,8 @@ def conformal_badge_from_mapie(X_row: pd.DataFrame, ci_level: int) -> Tuple[str,
 def shap_bar_figure(shap_vals: np.ndarray, feature_names: List[str]) -> go.Figure:
     s = pd.Series(shap_vals, index=feature_names)
     s = s.sort_values(key=lambda x: x.abs(), ascending=True)
-    colors = ["#d62728" if v > 0 else "#1f77b4" for v in s.values]  # red=increases risk, blue=decreases risk
+    # Color map: red = increases resistance risk (positive), green = decreases resistance risk (negative)
+    colors = ["#d62728" if v > 0 else "#2ca02c" for v in s.values]
 
     fig = go.Figure(
         data=go.Bar(
@@ -381,23 +514,18 @@ def shap_bar_figure(shap_vals: np.ndarray, feature_names: List[str]) -> go.Figur
         margin=dict(l=90, r=20, t=50, b=20),
         plot_bgcolor="white",
     )
-    # Vertical zero line
     fig.add_shape(type="line", x0=0, x1=0, y0=-0.5, y1=len(s)-0.5, line=dict(color="#9ca3af", width=1))
     return fig
 
 def shap_values_for_positive_class(X_row: pd.DataFrame) -> np.ndarray:
     sv = shap_explainer.shap_values(X_row)
-
-    # Convert to array (list -> choose last class; else direct)
     if isinstance(sv, list):
         arr = sv[-1]
     else:
         arr = sv
     arr = np.array(arr)
 
-    # Handle shapes robustly
     if arr.ndim == 3:
-        # (n_samples, n_features, n_outputs) -> take class 1 (last) for first sample
         vals = arr[0, :, -1]
     elif arr.ndim == 2 and arr.shape[0] == 1 and arr.shape[1] == len(feature_cols):
         vals = arr[0]
@@ -410,6 +538,59 @@ def shap_values_for_positive_class(X_row: pd.DataFrame) -> np.ndarray:
         if vals.ndim > 1:
             vals = vals.reshape(-1)[:len(feature_cols)]
     return np.asarray(vals, dtype=float)
+
+def approximate_tsne_position(X_row: pd.DataFrame, k: int = 15) -> Tuple[float, float]:
+    k = min(k, len(X))
+    distances, indices = nn_model.kneighbors(X_row.values, n_neighbors=k)
+    d = distances[0]
+    idx = indices[0]
+    if np.all(d == 0):
+        pos = tsne_embedding[idx[0]]
+    else:
+        w = 1.0 / (d + 1e-8)
+        w = w / w.sum()
+        pos = (tsne_embedding[idx] * w[:, None]).sum(axis=0)
+    return float(pos[0]), float(pos[1])
+
+def tsne_scatter_figure(X_row: pd.DataFrame) -> go.Figure:
+    sel_x, sel_y = approximate_tsne_position(X_row)
+    mask_resistant = tsne_df["y"].values == 1
+    mask_responsive = tsne_df["y"].values == 0
+
+    trace_resp = go.Scattergl(
+        x=tsne_df.loc[mask_responsive, "tsne_1"],
+        y=tsne_df.loc[mask_responsive, "tsne_2"],
+        mode="markers",
+        name="Responsive",
+        marker=dict(color="#2ca02c", size=6, opacity=0.75),
+        hovertemplate="Class: Responsive<extra></extra>",
+    )
+    trace_resi = go.Scattergl(
+        x=tsne_df.loc[mask_resistant, "tsne_1"],
+        y=tsne_df.loc[mask_resistant, "tsne_2"],
+        mode="markers",
+        name="Resistant",
+        marker=dict(color="#d62728", size=6, opacity=0.75),
+        hovertemplate="Class: Resistant<extra></extra>",
+    )
+    trace_sel = go.Scattergl(
+        x=[sel_x],
+        y=[sel_y],
+        mode="markers",
+        name="Current selection",
+        marker=dict(color="#1f77b4", size=12, line=dict(color="white", width=1.5)),
+        hovertemplate="Current selection<extra></extra>",
+    )
+
+    fig = go.Figure(data=[trace_resp, trace_resi, trace_sel])
+    fig.update_layout(
+        xaxis_title="t-SNE 1",
+        yaxis_title="t-SNE 2",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin=dict(l=40, r=20, t=40, b=40),
+        plot_bgcolor="white",
+    )
+    return fig
 
 # -----------------------------
 # Callback wiring
@@ -425,6 +606,7 @@ dash_outputs = [
     Output("prediction-badge", "children"),
     Output("prediction-badge", "style"),
     Output("shap-bar", "figure"),
+    Output("tsne-scatter", "figure"),
 ]
 for vid in value_ids:
     dash_outputs.append(Output(vid, "children"))
@@ -451,13 +633,16 @@ def update_predictions(*args):
     shap_vals = shap_values_for_positive_class(X_row)
     shap_fig = shap_bar_figure(shap_vals, feature_cols)
 
+    # t-SNE scatter figure with current selection
+    tsne_fig = tsne_scatter_figure(X_row)
+
     # Numeric displays
     numeric_displays = []
     for cfg in features_ui:
         if cfg.kind == "numeric":
             numeric_displays.append(f"Selected: {values_dict[cfg.id]}")
 
-    outputs = [pred_fig, badge_text, badge_style, shap_fig]
+    outputs = [pred_fig, badge_text, badge_style, shap_fig, tsne_fig]
     outputs.extend(numeric_displays)
     return outputs
 
