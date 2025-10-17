@@ -84,6 +84,8 @@ nn_model.fit(X.values)
 app = Dash(__name__)
 app.title = "Treatment Resistance Classifier (Demo)"
 
+server = app.server
+
 # Feature definitions (UI)
 features_ui: List[FeatureConfig] = [
     FeatureConfig("age", "Age (years)", "numeric", 40, {"min": 18, "max": 80, "step": 1}),
