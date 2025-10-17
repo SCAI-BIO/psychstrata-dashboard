@@ -66,7 +66,7 @@ tsne_model = TSNE(
     perplexity=min(30, max(5, len(X) // 4)),
     learning_rate="auto",
     init="pca",
-    max_iter=750,
+    n_iter=750,
     random_state=42,
 )
 tsne_embedding = tsne_model.fit_transform(X.values)
