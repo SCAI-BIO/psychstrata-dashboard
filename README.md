@@ -56,6 +56,8 @@ Access at `http://localhost:8050`
 
 ## Literature Evidence on Predictors of Treatment Resistance
 
+Generation of synthetic data ([data_synth.py](data_synth.py)) is based on general literature evidence of treatment resistance factors:
+
 | Predictor | Association | References |
 |-----------|-------------|------------|
 | Baseline severity (PHQ-9) | Higher severity → higher TR risk | [Papakostas 2015](https://pubmed.ncbi.nlm.nih.gov/26016766/), [Souery 2006](https://pubmed.ncbi.nlm.nih.gov/16727297/) |
