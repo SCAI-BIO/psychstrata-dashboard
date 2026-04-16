@@ -1,15 +1,22 @@
 from typing import Dict, Any
+
 import pandas as pd
-from dash import Input, Output
+from dash import Input, Output, State
+from dash.exceptions import PreventUpdate
 
 from model import model
 from config import FEATURES_UI, PILL
+from llm_summary import generate_prediction_summary
 from visualization import create_indicator_figure, create_shap_bar_figure, create_tsne_scatter_figure
 
 
 def pack_instance(values_dict: Dict[str, Any]) -> pd.DataFrame:
     row = {col: values_dict[col] for col in model.feature_cols}
     return pd.DataFrame([row], columns=model.feature_cols)
+
+
+def build_values_dict(values) -> Dict[str, Any]:
+    return {cfg.id: v for cfg, v in zip(FEATURES_UI, values)}
 
 
 def create_badge_style(bg: str, border: str, color: str) -> dict:
@@ -43,7 +50,7 @@ def register_callbacks(app):
         values = args[:-1]
         ci_level = args[-1]
         
-        values_dict = {cfg.id: v for cfg, v in zip(FEATURES_UI, values)}
+        values_dict = build_values_dict(values)
         X_row = pack_instance(values_dict)
         
         prob = model.predict_proba(X_row)
@@ -61,3 +68,24 @@ def register_callbacks(app):
         numeric_displays = [f"Selected: {values_dict[cfg.id]}" for cfg in FEATURES_UI if cfg.kind == "numeric"]
         
         return [pred_fig, label, badge_style, shap_fig, tsne_fig] + numeric_displays
+
+    @app.callback(
+        [
+            Output("llm-summary", "children"),
+            Output("llm-summary-status", "children"),
+        ],
+        Input("llm-explain-button", "n_clicks"),
+        [State(comp_id, "value") for comp_id in input_ids],
+        prevent_initial_call=True,
+        running=[(Output("llm-explain-button", "disabled"), True, False)],
+    )
+    def update_llm_summary(n_clicks, *values):
+        if not n_clicks:
+            raise PreventUpdate
+
+        values_dict = build_values_dict(values)
+        X_row = pack_instance(values_dict)
+        prob = model.predict_proba(X_row)
+        shap_vals = model.get_shap_values(X_row)
+        summary = generate_prediction_summary(values_dict, prob, shap_vals)
+        return summary, "Explanation generated for the current selection."

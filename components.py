@@ -158,20 +158,59 @@ def create_tsne_card() -> html.Div:
     )
 
 
-def create_llm_placeholder_card() -> html.Div:
+def create_llm_summary_card() -> html.Div:
     return html.Div(
         [
-            html.H4("Prediction explanation (LLM - preview)", style=SECTION_TITLE),
+            html.H4("Prediction explanation", style=SECTION_TITLE),
             html.Div(
-                "This section will soon provide an AI-generated explanation of your predicted risk and the most influential features (via SHAP).",
-                style={
-                    "backgroundColor": "#f9fafb", "border": "1px solid #eee", "borderRadius": "8px",
-                    "padding": "12px", "color": "#374151", "fontSize": "14px", "lineHeight": "1.5",
-                },
+                [
+                    html.Button(
+                        "Explain this to me",
+                        id="llm-explain-button",
+                        n_clicks=0,
+                        style={
+                            "padding": "8px 14px",
+                            "borderRadius": "8px",
+                            "border": "1px solid #2563eb",
+                            "backgroundColor": "#2563eb",
+                            "color": "white",
+                            "fontWeight": "600",
+                            "cursor": "pointer",
+                        },
+                    ),
+                    html.Div(
+                        "Change the features, then click to generate or refresh the explanation.",
+                        id="llm-summary-status",
+                        style={"fontSize": "12px", "color": "#6b7280"},
+                    ),
+                ],
+                style={"display": "flex", "alignItems": "center", "gap": "12px", "marginBottom": "10px"},
+            ),
+            dcc.Loading(
+                html.Div(
+                    dcc.Markdown(
+                        id="llm-summary",
+                        children=(
+                            "Click **Explain this to me** to generate a plain-language summary for the current selection."
+                        ),
+                        style={
+                            "backgroundColor": "#f9fafb",
+                            "border": "1px solid #eee",
+                            "borderRadius": "8px",
+                            "padding": "12px",
+                            "color": "#374151",
+                            "fontSize": "14px",
+                            "lineHeight": "1.5",
+                            "minHeight": "180px",
+                        },
+                    )
+                ),
+                type="dot",
             ),
             create_info_details(
                 "What's this?",
-                "A simple explanation (written in plain language) of why the model predicts a certain risk, based on the most important features. Coming soon."
+                "A plain-language explanation of why the current selection pushed the prediction up or down, "
+                "including supporting literature citations where relevant."
             ),
         ],
         style={**CARD, "flex": 1}
