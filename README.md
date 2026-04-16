@@ -9,7 +9,7 @@ Interactive dashboard for predicting treatment resistance in depression using ma
 - Random Forest classifier with ROC-AUC evaluation
 - Conformal prediction for calibrated uncertainty estimates
 - SHAP-based feature contribution analysis
-- Plain-language prediction explanation with literature citations
+- LLM-generated plain-language explanation grounded in SHAP and README evidence snippets
 - t-SNE population visualization
 
 ## Project Structure
@@ -50,12 +50,12 @@ Docker:
 
 ```bash
 docker build -t treatment-classifier .
-docker run -p 8050:8050 treatment-classifier
+docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 8050:8050 treatment-classifier
 ```
 
 Access at `http://localhost:8050`
 
-The explanation panel generates a summary only when the user clicks **Explain this to me** for the current selection, so the rest of the dashboard stays responsive during normal interaction.
+The LLM explanation reads the OpenAI API key from the `OPENAI_API_KEY` environment variable. The app constrains the prompt to live SHAP results plus the literature snippets and PMIDs listed below so the generated summary stays as grounded as possible.
 
 ## Literature Evidence on Predictors of Treatment Resistance
 
