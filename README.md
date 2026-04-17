@@ -9,6 +9,7 @@ Interactive dashboard for predicting treatment resistance in depression using ma
 - Random Forest classifier with ROC-AUC evaluation
 - Conformal prediction for calibrated uncertainty estimates
 - SHAP-based feature contribution analysis
+- Plain-language prediction explanation with literature citations
 - t-SNE population visualization
 
 ## Project Structure
@@ -53,6 +54,8 @@ docker run -p 8050:8050 treatment-classifier
 ```
 
 Access at `http://localhost:8050`
+
+The explanation panel generates a summary only when the user clicks **Explain this to me** for the current selection, so the rest of the dashboard stays responsive during normal interaction.
 
 ## Literature Evidence on Predictors of Treatment Resistance
 

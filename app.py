@@ -8,7 +8,7 @@ from components import (
     create_prediction_card,
     create_shap_card,
     create_tsne_card,
-    create_llm_placeholder_card,
+    create_llm_summary_card,
 )
 from callbacks import register_callbacks
 
@@ -33,7 +33,7 @@ def create_layout():
                 ],
                 style=CARD
             ),
-            create_llm_placeholder_card(),
+            create_llm_summary_card(),
         ],
         style={"flex": "1.7", "minWidth": "320px", "display": "flex", "flexDirection": "column", "gap": "12px"}
     )
