@@ -2,6 +2,7 @@ from dash import Dash, html
 
 from config import CARD, FEATURES_UI
 from model import model
+from api import register_api
 from components import (
     create_feature_input,
     create_header_card,
@@ -65,6 +66,7 @@ def create_layout():
 
 
 app.layout = create_layout()
+register_api(server)
 register_callbacks(app)
 
 
