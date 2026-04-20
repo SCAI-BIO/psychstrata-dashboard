@@ -9,20 +9,24 @@ Interactive dashboard for predicting treatment resistance in depression using ma
 - Random Forest classifier with ROC-AUC evaluation
 - Conformal prediction for calibrated uncertainty estimates
 - SHAP-based feature contribution analysis
-- LLM-generated plain-language explanation grounded in SHAP and README evidence snippets
+- Plain-language explanation with literature citations
 - Password-protected dashboard access
+- REST API for predictions and SHAP values
 - t-SNE population visualization
 
 ## Project Structure
 
 ```
 ├── app.py              # Dash application entry point
+├── auth.py             # Session-based login protection for the dashboard
+├── api.py              # REST API endpoints for prediction and SHAP access
+├── callbacks.py        # Dash callback registration
+├── components.py       # Dash UI components
 ├── config.py           # UI configuration and feature definitions
+├── data_synth.py       # Synthetic data generation
+├── llm_summary.py      # Prompt construction and LLM summary generation
 ├── model.py            # ML model training and inference
 ├── visualization.py    # Plotly figure generation
-├── components.py       # Dash UI components
-├── callbacks.py        # Dash callback registration
-├── data_synth.py       # Synthetic data generation
 ├── requirements.txt
 └── Dockerfile
 ```
@@ -35,10 +39,21 @@ pip install -r requirements.txt
 
 ## Running Locally
 
+Quickstart:
+
+```bash
+export APP_PASSWORD=change-me
+export OPENAI_API_KEY=your-api-key
+python app.py
+```
+
+Open `http://localhost:8050`, sign in with `APP_PASSWORD`, and use the dashboard.
+
 Development server:
 
 ```bash
 export APP_PASSWORD=change-me
+export OPENAI_API_KEY=your-api-key
 python app.py
 ```
 
@@ -46,6 +61,7 @@ Production-like (Gunicorn):
 
 ```bash
 export APP_PASSWORD=change-me
+export OPENAI_API_KEY=your-api-key
 gunicorn app:server -b 0.0.0.0:8050
 ```
 
@@ -53,12 +69,52 @@ Docker:
 
 ```bash
 docker build -t treatment-classifier .
-docker run -e APP_PASSWORD=change-me -p 8050:8050 treatment-classifier
+docker run \
+  -e APP_PASSWORD=change-me \
+  -e APP_SESSION_SECRET=change-me-too \
+  -e OPENAI_API_KEY=your-api-key \
+  -p 8050:8050 \
+  treatment-classifier
 ```
 
 Access at `http://localhost:8050`
 
-Set `APP_PASSWORD` in the container environment to protect the dashboard with a simple login page. For stable login sessions across restarts, you can also set `APP_SESSION_SECRET`. In Kubernetes, both values should be provided through secrets. The browser dashboard is gated by the login page, while `/api/*` remains available for service-to-service calls.
+Set `APP_PASSWORD` in the container environment to protect the dashboard with a simple login page. For stable login sessions across restarts, you can also set `APP_SESSION_SECRET`. Set `OPENAI_API_KEY` to enable the explanation component. In Kubernetes, these values should be provided through secrets. The browser dashboard is gated by the login page, while `/api/*` remains available for service-to-service calls.
+
+## REST API
+
+The app exposes a small JSON API on the same server:
+
+- `GET /api/health` - basic health check
+- `GET /api/features` - feature schema, defaults, ranges, and categorical options
+- `POST /api/predict` - prediction and SHAP values for a feature selection
+
+Example request:
+
+```bash
+curl -X POST http://localhost:8050/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "features": {
+      "age": 40,
+      "sex_female": 0,
+      "phq9": 18,
+      "duration_months": 6,
+      "previous_failures": 1,
+      "adherence_pct": 80,
+      "sertraline_mg": 100,
+      "quetiapine_mg": 0,
+      "lithium_mg": 0,
+      "early_improvement": 0,
+      "sleep_severity": 1,
+      "substance_use": 0,
+      "comorbid_anxiety": 0,
+      "side_effects": 1
+    }
+  }'
+```
+
+`POST /api/predict` requires all model features and returns `400` for missing, unknown, or out-of-range values.
 
 ## Literature Evidence on Predictors of Treatment Resistance
 
@@ -66,16 +122,16 @@ Generation of synthetic data ([data_synth.py](data_synth.py)) is based on genera
 
 | Predictor                     | Association                                                                                  | References                                                               |
 | ----------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Baseline severity (PHQ-9)     | Higher severity → higher TR risk                                                             | Souery 2007 (PMID: 17685743) *(Papakostas 2015 removed – not relevant)*  |
-| Episode duration / chronicity | Longer duration → higher TR risk                                                             | Souery 2007 (PMID: 17685743), Fekadu 2009 (PMID: 19193338)               |
-| Prior treatment failures      | More failures → higher TR risk                                                               | Berlim & Turecki 2007 (PMID: 17388795), Fava 2003 (PMID: 12716236)       |
-| Poor adherence                | Nonadherence → higher TR risk *(conceptual; confounder of pseudo-resistance)*                | Souery 2006 (PMID: 16727297)                                             |
-| SSRI dose (sertraline)        | 50–200 mg effective; limited benefit above 100 mg *(not a predictor of TR)*                  | Hieronymus 2016 (PMID: 27052632), Cipriani 2018 (PMID: 29477251)         |
-| Quetiapine augmentation       | 150–300 mg/day; modest effect, tolerability concerns *(treatment, not predictor)*            | Komossa 2010 (PMID: 20091549), Nelson & Papakostas 2009 (PMID: 19289445) |
-| Lithium augmentation          | 600–900 mg/day; strong evidence for TRD *(treatment, not predictor)*                         | Nelson 2014 (PMID: 25016772), Bschor 2014 (PMID: 24792557)               |
-| Early improvement (week 2)    | No early improvement → higher TR risk *(predicts non-response rather than TRD specifically)* | Stassen 2007 (PMID: 17388796), Szegedi 2009 (PMID: 19607757)             |
-| Sleep disturbance / insomnia  | Insomnia → higher TR risk *(weak / indirect evidence)*                                       | Wichniak 2017 (PMID: 28427964), Dew 1997 (PMID: 9255847)                 |
-| Substance use                 | Regular use → higher TR risk *(evidence exists but not directly supported by cited paper)*   | Nunes & Levin 2004 (PMID: 15033227), Fava 2003 (PMID: 12716236)          |
-| Comorbid anxiety              | Anxiety → higher TR risk *(supported in TRD cohorts; Papakostas 2015 removed)*               | Souery 2007 (PMID: 17685743)                                             |
-| Side effect burden            | Side effects → dose reduction → higher TR risk *(not well established as predictor)*         | Souery 2006 (PMID: 16727297)                                             |
-| Sex (female vs male)          | Mixed/inconsistent evidence                                                                  | Khan 2005 (PMID: 15794786)                                               |
+| Baseline severity (PHQ-9)     | Higher severity → higher TR risk                                                             | Souery 2007 (PMID: 17685743)                                             |
+| Episode duration / chronicity | Longer current episode duration is part of higher TR staging / burden                        | Fekadu 2009 (PMID: 19192471)                                             |
+| Prior treatment failures      | Multiple adequate prior antidepressant failures define or increase TR staging                | Berlim & Turecki 2007 (PMID: 17444078), Fekadu 2009 (PMID: 19192471)     |
+| Poor adherence                | Nonadherence can create apparent resistance *(pseudo-resistance rather than a direct predictor)* | Sackeim 2001 (PMID: 11480879), Steegen 2021 (PMID: 33779973)         |
+| SSRI dose (sertraline)        | Lower licensed SSRI dose ranges tend to balance efficacy and tolerability best *(treatment, not predictor)* | Furukawa 2019 (PMID: 31178367), Cipriani 2018 (PMID: 29477251) |
+| Quetiapine augmentation       | Quetiapine augmentation improves response/remission in difficult-to-treat depression *(treatment, not predictor)* | Nuñez 2022 (PMID: 34986373), Yan 2022 (PMID: 35993319)        |
+| Lithium augmentation          | Lithium augmentation is evidence-supported in inadequate antidepressant response *(treatment, not predictor)* | Bschor 2014 (PMID: 24825489), Nuñez 2022 (PMID: 34986373)      |
+| Early improvement (week 2)    | No early improvement predicts poorer later response/remission *(not TRD-specific)*           | Szegedi 2009 (PMID: 19254516)                                            |
+| Sleep disturbance / insomnia  | Sleep disturbance is common in depression and may complicate treatment response *(weak / indirect evidence for TR)* | Wichniak 2012 (PMID: 22681161), Wichniak 2017 (PMID: 28791566) |
+| Substance use                 | Comorbid substance use complicates depression treatment; direct evidence for TR prediction is limited | Nunes et al. 2004 (PMID: 15100209)                                 |
+| Comorbid anxiety              | Anxiety → higher TR risk *(supported in TRD cohorts)*                                        | Souery 2007 (PMID: 17685743)                                             |
+| Side effect burden            | Side effects can impair tolerability/adherence, but are not well established as a direct TR predictor | Furukawa 2019 (PMID: 31178367), Steegen 2021 (PMID: 33779973)  |
+| Sex (female vs male)          | Sex differences in antidepressant response exist, but are not large enough to guide care alone | Khan 2005 (PMID: 16012273)                                            |
