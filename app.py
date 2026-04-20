@@ -1,5 +1,6 @@
 from dash import Dash, html
 
+from auth import configure_auth
 from config import CARD, FEATURES_UI
 from model import model
 from api import register_api
@@ -17,6 +18,7 @@ from callbacks import register_callbacks
 app = Dash(__name__)
 app.title = "Treatment Resistance Classifier (Demo)"
 server = app.server
+configure_auth(server)
 
 
 def create_layout():

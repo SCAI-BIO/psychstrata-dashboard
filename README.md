@@ -10,6 +10,7 @@ Interactive dashboard for predicting treatment resistance in depression using ma
 - Conformal prediction for calibrated uncertainty estimates
 - SHAP-based feature contribution analysis
 - LLM-generated plain-language explanation grounded in SHAP and README evidence snippets
+- Password-protected dashboard access
 - t-SNE population visualization
 
 ## Project Structure
@@ -37,12 +38,14 @@ pip install -r requirements.txt
 Development server:
 
 ```bash
+export APP_PASSWORD=change-me
 python app.py
 ```
 
 Production-like (Gunicorn):
 
 ```bash
+export APP_PASSWORD=change-me
 gunicorn app:server -b 0.0.0.0:8050
 ```
 
@@ -50,12 +53,12 @@ Docker:
 
 ```bash
 docker build -t treatment-classifier .
-docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 8050:8050 treatment-classifier
+docker run -e APP_PASSWORD=change-me -p 8050:8050 treatment-classifier
 ```
 
 Access at `http://localhost:8050`
 
-The LLM explanation reads the OpenAI API key from the `OPENAI_API_KEY` environment variable. The app constrains the prompt to live SHAP results plus the literature snippets and PMIDs listed below so the generated summary stays as grounded as possible.
+Set `APP_PASSWORD` in the container environment to protect the dashboard with a simple login page. For stable login sessions across restarts, you can also set `APP_SESSION_SECRET`. In Kubernetes, both values should be provided through secrets. The browser dashboard is gated by the login page, while `/api/*` remains available for service-to-service calls.
 
 ## Literature Evidence on Predictors of Treatment Resistance
 
