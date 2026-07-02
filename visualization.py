@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+from config import CALM_BLUE, CALM_BLUE_LIGHT, CALM_LAVENDER, CALM_SLATE, CALM_TEAL, CALM_TEAL_LIGHT
+
 
 def create_indicator_figure(prob: float) -> go.Figure:
-    color = "#d62728" if prob >= 0.5 else "#2ca02c"
+    color = CALM_BLUE if prob >= 0.5 else CALM_TEAL
     
     fig = go.Figure(
         go.Indicator(
@@ -17,10 +19,10 @@ def create_indicator_figure(prob: float) -> go.Figure:
                 "axis": {"range": [0, 100]},
                 "bar": {"color": color},
                 "steps": [
-                    {"range": [0, 50], "color": "#e6f4ea"},
-                    {"range": [50, 100], "color": "#fdecea"},
+                    {"range": [0, 50], "color": CALM_TEAL_LIGHT},
+                    {"range": [50, 100], "color": CALM_BLUE_LIGHT},
                 ],
-                "threshold": {"line": {"color": "#444", "width": 2}, "thickness": 0.75, "value": 50},
+                "threshold": {"line": {"color": CALM_SLATE, "width": 2}, "thickness": 0.75, "value": 50},
             },
             domain={"x": [0, 1], "y": [0, 1]},
         )
@@ -32,7 +34,7 @@ def create_indicator_figure(prob: float) -> go.Figure:
 def create_shap_bar_figure(shap_vals: np.ndarray, feature_names: List[str]) -> go.Figure:
     s = pd.Series(shap_vals, index=feature_names)
     s = s.sort_values(key=lambda x: x.abs(), ascending=True)
-    colors = ["#d62728" if v > 0 else "#2ca02c" for v in s.values]
+    colors = [CALM_BLUE if v > 0 else CALM_TEAL for v in s.values]
     
     fig = go.Figure(
         data=go.Bar(
@@ -52,7 +54,7 @@ def create_shap_bar_figure(shap_vals: np.ndarray, feature_names: List[str]) -> g
     )
     fig.add_shape(
         type="line", x0=0, x1=0, y0=-0.5, y1=len(s)-0.5,
-        line=dict(color="#9ca3af", width=1)
+        line=dict(color=CALM_SLATE, width=1)
     )
     return fig
 
@@ -66,7 +68,7 @@ def create_tsne_scatter_figure(tsne_df: pd.DataFrame, sel_x: float, sel_y: float
         y=tsne_df.loc[mask_responsive, "tsne_2"],
         mode="markers",
         name="Responsive",
-        marker=dict(color="#2ca02c", size=6, opacity=0.75),
+        marker=dict(color=CALM_TEAL, size=6, opacity=0.75),
         hovertemplate="Class: Responsive<extra></extra>",
     )
     trace_resi = go.Scattergl(
@@ -74,7 +76,7 @@ def create_tsne_scatter_figure(tsne_df: pd.DataFrame, sel_x: float, sel_y: float
         y=tsne_df.loc[mask_resistant, "tsne_2"],
         mode="markers",
         name="Resistant",
-        marker=dict(color="#d62728", size=6, opacity=0.75),
+        marker=dict(color=CALM_BLUE, size=6, opacity=0.75),
         hovertemplate="Class: Resistant<extra></extra>",
     )
     trace_sel = go.Scattergl(
@@ -82,7 +84,7 @@ def create_tsne_scatter_figure(tsne_df: pd.DataFrame, sel_x: float, sel_y: float
         y=[sel_y],
         mode="markers",
         name="Current selection",
-        marker=dict(color="#1f77b4", size=12, line=dict(color="white", width=1.5)),
+        marker=dict(color=CALM_LAVENDER, size=12, line=dict(color="white", width=1.5)),
         hovertemplate="Current selection<extra></extra>",
     )
     

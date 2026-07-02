@@ -8,6 +8,7 @@ from sklearn.neighbors import NearestNeighbors
 from mapie.classification import MapieClassifier
 import shap
 
+from config import CALM_AMBER, CALM_AMBER_LIGHT, CALM_BLUE, CALM_BLUE_LIGHT, CALM_TEAL, CALM_TEAL_LIGHT
 from data_synth import generate_synthetic_dataset
 
 
@@ -106,14 +107,14 @@ class TreatmentResistanceModel:
         num_included = int(included.sum())
         
         if num_included == 0 or num_included == 2:
-            return "Uncertain", "#fef3c7", "1px solid #fcd34d", "#92400e"
+            return "Uncertain", CALM_AMBER_LIGHT, f"1px solid {CALM_AMBER}", "#7A5C00"
         
         idx = int(np.where(included)[0][0])
         cls_val = list(self.rf.classes_)[idx]
         
         if cls_val == 1:
-            return "Resistant", "#fee2e2", "1px solid #fca5a5", "#991b1b"
-        return "Responsive", "#dcfce7", "1px solid #86efac", "#14532d"
+            return "Resistant", CALM_BLUE_LIGHT, f"1px solid {CALM_BLUE}", "#1F3B63"
+        return "Responsive", CALM_TEAL_LIGHT, f"1px solid {CALM_TEAL}", "#1F5F5B"
     
     def approximate_tsne_position(self, X_row: pd.DataFrame, k: int = 15) -> tuple:
         k = min(k, len(self.X))
