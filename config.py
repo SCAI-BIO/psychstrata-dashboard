@@ -28,6 +28,18 @@ BRAND_BLUE_DARK = "#00558d"
 BRAND_BLUE_LIGHT = "#e6f4fb"
 BRAND_CYAN = "#37aee2"
 
+# Calm, low-arousal palette for psychiatry-oriented visualizations.
+CALM_BLUE = "#4C78A8"
+CALM_TEAL = "#72B7B2"
+CALM_LAVENDER = "#A78BFA"
+CALM_AMBER = "#D4A72C"
+CALM_SLATE = "#64748B"
+CALM_BLUE_LIGHT = "#EAF2FB"
+CALM_TEAL_LIGHT = "#E3F4F2"
+CALM_LAVENDER_LIGHT = "#F1EAFE"
+CALM_AMBER_LIGHT = "#FBF3D1"
+CALM_SLATE_LIGHT = "#E2E8F0"
+
 FEATURES_UI: List[FeatureConfig] = [
     FeatureConfig("age", "Age (years)", "numeric", 40, {"min": 18, "max": 80, "step": 1}),
     FeatureConfig("sex_female", "Sex", "categorical", 0, {"options": [

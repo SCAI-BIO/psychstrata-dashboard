@@ -1,7 +1,19 @@
 from dash import Dash, Input, Output, dcc, html
 
 from auth import configure_auth
-from config import BRAND_BLUE, BRAND_BLUE_DARK, BRAND_BLUE_LIGHT, CARD, FEATURES_UI
+from config import (
+    BRAND_BLUE,
+    BRAND_BLUE_DARK,
+    BRAND_BLUE_LIGHT,
+    CALM_AMBER,
+    CALM_AMBER_LIGHT,
+    CALM_BLUE,
+    CALM_BLUE_LIGHT,
+    CALM_TEAL,
+    CALM_TEAL_LIGHT,
+    CARD,
+    FEATURES_UI,
+)
 from model import model
 from api import register_api
 from components import (
@@ -121,9 +133,9 @@ def create_info_card(title: str, items: list[str]) -> html.Div:
 
 def prediction_label_style(label: str) -> dict:
     styles = {
-        "Responsive": {"backgroundColor": "#dcfce7", "border": "1px solid #86efac", "color": "#14532d"},
-        "Resistant": {"backgroundColor": "#fee2e2", "border": "1px solid #fca5a5", "color": "#991b1b"},
-        "Uncertain": {"backgroundColor": "#fef3c7", "border": "1px solid #fcd34d", "color": "#92400e"},
+        "Responsive": {"backgroundColor": CALM_TEAL_LIGHT, "border": f"1px solid {CALM_TEAL}", "color": "#1F5F5B"},
+        "Resistant": {"backgroundColor": CALM_BLUE_LIGHT, "border": f"1px solid {CALM_BLUE}", "color": "#1F3B63"},
+        "Uncertain": {"backgroundColor": CALM_AMBER_LIGHT, "border": f"1px solid {CALM_AMBER}", "color": "#7A5C00"},
     }
     return {
         "display": "inline-block",
