@@ -23,6 +23,11 @@ SECTION_TITLE = {"margin": "0 0 8px 0", "fontSize": "18px"}
 SUBHEADING = {"fontSize": "12px", "color": "#6b7280", "fontWeight": "600", "marginTop": "2px"}
 INFO_TEXT_STYLE = {"fontSize": "12px", "color": "#6b7280", "marginTop": "6px"}
 
+BRAND_BLUE = "#006fb9"
+BRAND_BLUE_DARK = "#00558d"
+BRAND_BLUE_LIGHT = "#e6f4fb"
+BRAND_CYAN = "#37aee2"
+
 FEATURES_UI: List[FeatureConfig] = [
     FeatureConfig("age", "Age (years)", "numeric", 40, {"min": 18, "max": 80, "step": 1}),
     FeatureConfig("sex_female", "Sex", "categorical", 0, {"options": [

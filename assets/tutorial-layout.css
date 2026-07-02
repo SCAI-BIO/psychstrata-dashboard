@@ -1,0 +1,29 @@
+.component-tutorial-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(240px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .component-tutorial-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .component-tutorial-grid > div {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .component-tutorial-grid > div {
+    flex-direction: column !important;
+  }
+
+  .component-tutorial-grid > div img {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+}

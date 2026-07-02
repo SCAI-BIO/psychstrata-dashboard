@@ -10,6 +10,7 @@ Interactive dashboard for predicting treatment resistance in depression using ma
 - Conformal prediction for calibrated uncertainty estimates
 - SHAP-based feature contribution analysis
 - Plain-language explanation with literature citations
+- Role-based navigation from a main page (Patient vs Clinician views)
 - Password-protected dashboard access
 - REST API for predictions and SHAP values
 - t-SNE population visualization
@@ -47,7 +48,10 @@ export OPENAI_API_KEY=your-api-key
 python app.py
 ```
 
-Open `http://localhost:8050`, sign in with `APP_PASSWORD`, and use the dashboard.
+Open `http://localhost:8050`, sign in with `APP_PASSWORD`, and choose a role from the main page:
+
+- **Patient view**: treatment-resistance prediction + plain-language explanation
+- **Clinician view**: full dashboard including SHAP and t-SNE visualizations
 
 Development server:
 

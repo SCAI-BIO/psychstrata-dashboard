@@ -67,7 +67,7 @@ LOGIN_TEMPLATE = """
         border: 0;
         border-radius: 8px;
         padding: 10px 14px;
-        background: #2563eb;
+        background: #006fb9;
         color: white;
         font-size: 14px;
         font-weight: 600;

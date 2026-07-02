@@ -1,6 +1,6 @@
 from dash import dcc, html
 from data_synth import FeatureConfig
-from config import CARD, SECTION_TITLE, SUBHEADING, INFO_TEXT_STYLE
+from config import BRAND_BLUE, BRAND_BLUE_DARK, CARD, SECTION_TITLE, SUBHEADING, INFO_TEXT_STYLE
 
 
 def create_feature_input(cfg: FeatureConfig) -> html.Div:
@@ -23,6 +23,8 @@ def create_feature_input(cfg: FeatureConfig) -> html.Div:
             value=cfg.default,
             tooltip={"always_visible": False, "placement": "bottom"},
             marks=None,
+            persistence=True,
+            persistence_type="session",
         )
         value_display = html.Div(
             id=f"value-{cfg.id}",
@@ -39,6 +41,8 @@ def create_feature_input(cfg: FeatureConfig) -> html.Div:
         options=cfg.params["options"],
         value=cfg.default,
         clearable=False,
+        persistence=True,
+        persistence_type="session",
     )
     return html.Div(
         [html.Div(cfg.label, style=label_style), control],
@@ -76,7 +80,7 @@ def create_header_card(auc: float) -> html.Div:
                         "Important: This demo uses fully synthetic (non-real) data created for illustration. "
                         "It does not reflect actual patient information, clinical outcomes, or treatment insights. "
                         "It is not a medical device and should not be used for diagnosis or treatment decisions. "
-                        "For medical guidance, please consult a qualified clinician.",
+                        "Use it only as a demonstration aid for discussion between patients, clinicians, and researchers.",
                         style={
                             "color": "#6b7280", "fontSize": "12px", "marginTop": "6px",
                             "maxWidth": "820px", "lineHeight": "1.4"
@@ -120,8 +124,8 @@ def create_prediction_card() -> html.Div:
             ),
             create_info_details(
                 "What's this?",
-                "This gauge shows the estimated chance of treatment resistance. Green is lower risk, red is higher risk. "
-                "The badge uses a statistical method to indicate how confident the model is."
+                "This gauge estimates the chance of treatment resistance for the current profile. "
+                "The badge adds an uncertainty-aware summary so the result can be discussed more cautiously."
             ),
         ],
         style=CARD
@@ -135,7 +139,8 @@ def create_shap_card() -> html.Div:
             dcc.Graph(id="shap-bar", config={"displayModeBar": False}, style={"height": "360px", "margin": "6px auto", "width": "95%"}),
             create_info_details(
                 "What's this?",
-                "Each bar shows how a feature pushed the prediction. Green bars lower resistance risk. Red bars raise resistance risk.",
+                "Each bar shows how one piece of information affected this prediction. "
+                "Some factors push the estimate higher, while others pull it lower. This explains the model, not the cause of illness.",
                 {"width": "95%", "marginLeft": "auto", "marginRight": "auto"}
             ),
         ],
@@ -150,7 +155,8 @@ def create_tsne_card() -> html.Div:
             dcc.Graph(id="tsne-scatter", config={"displayModeBar": False}, style={"height": "380px", "margin": "6px auto", "width": "95%"}),
             create_info_details(
                 "What's this?",
-                "This map places similar patients close together. Green dots are patients who responded; red dots are patients who were resistant. The blue dot shows the current selection.",
+                "This map places similar synthetic profiles close together. "
+                "The highlighted dot shows the current profile, helping patient and clinician discuss context without treating the map as a diagnosis.",
                 {"width": "95%", "marginLeft": "auto", "marginRight": "auto"}
             ),
         ],
@@ -171,15 +177,15 @@ def create_llm_summary_card() -> html.Div:
                         style={
                             "padding": "8px 14px",
                             "borderRadius": "8px",
-                            "border": "1px solid #2563eb",
-                            "backgroundColor": "#2563eb",
+                            "border": f"1px solid {BRAND_BLUE_DARK}",
+                            "backgroundColor": BRAND_BLUE,
                             "color": "white",
                             "fontWeight": "600",
                             "cursor": "pointer",
                         },
                     ),
                     html.Div(
-                        "Change the features, then click to generate or refresh the explanation.",
+                        "After profile changes, click to generate or refresh the shared explanation.",
                         id="llm-summary-status",
                         style={"fontSize": "12px", "color": "#6b7280"},
                     ),
@@ -209,7 +215,7 @@ def create_llm_summary_card() -> html.Div:
             ),
             create_info_details(
                 "What's this?",
-                "A plain-language explanation of why the current selection pushed the prediction up or down, "
+                "A plain-language summary intended to support conversation about the current result, "
                 "including supporting literature citations where relevant."
             ),
         ],
