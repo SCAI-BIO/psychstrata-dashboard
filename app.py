@@ -349,23 +349,22 @@ def create_tutorial_section() -> html.Div:
                         "This panel shows the model's estimated probability of treatment resistance for the current profile. It also shows how certain or uncertain the model is when asked to make a prediction at a selected confidence level.",
                         [
                             "The gauge is the risk estimate: closer to 0% means lower estimated resistance risk; closer to 100% means higher estimated risk.",
-                            "The slider sets the confidence interval for the label. For example, 90% means the method is calibrated to include the correct class about 90 out of 100 times in similar future cases.",
-                            "Higher confidence levels are more conservative and may produce 'Uncertain' more often.",
-                            "The probability and label are related but not identical: the gauge shows a risk score, while the label shows whether the uncertainty method can select one class at the chosen confidence level.",
+                            "The slider sets the confidence interval for the label. For example, 90% means the method is calibrated to include the correct class (Resistant / Responsive) about 90 out of 100 times in similar future cases.",
+                            "Higher confidence levels are more conservative and may produce 'Uncertain' labels.",
                         ],
                         "The probability and the uncertainty label describe model output only. They do not establish diagnosis, prognosis, or treatment response on their own.",
                         spotlight_title="How the uncertainty slider changes the label",
                         spotlight_paragraphs=[
-                            "The slider does not change the underlying patient profile. It changes how strict the model is when deciding whether it can give a single label.",
-                            "At 80-90%, a single label may appear more often. At 95-99%, the method is more cautious and may show 'Uncertain' when evidence is not strong enough for one class.",
+                            "The slider does not change the underlying patient profile. It changes how strict the model is when deciding whether the patient will respond to treatment or not.",
+                            "At 80-90%, Responsive / Resistant labels may appear more often. At 95-99%, the model is more cautious and may show 'Uncertain' when evidence is not strong enough to determine resistance.",
                         ],
                         label_items=[
-                            ("Responsive", "Only the lower-resistance class remains plausible at the selected confidence level."),
-                            ("Resistant", "Only the treatment-resistant class remains plausible at the selected confidence level."),
+                            ("Responsive", "Patient is estimated to respond to treatment."),
+                            ("Resistant", "Patient is estimated to be resistant to treatment."),
                             ("Uncertain", "Both classes remain plausible at the selected confidence level."),
                         ],
                         style_override={"gridColumn": "1", "gridRow": "1 / span 2", "padding": "12px", "alignSelf": "start"},
-                        image_style_override={"maxHeight": "140px", "objectFit": "cover", "objectPosition": "top"},
+                        image_style_override={"maxHeight": "399px", "objectFit": "cover", "objectPosition": "top"},
                     ),
                     create_component_guide_card(
                         "Text explanation component",
@@ -382,11 +381,11 @@ def create_tutorial_section() -> html.Div:
                     create_component_guide_card(
                         "SHAP view",
                         "/assets/tutorial-shap.png",
-                        "SHAP is a model-explanation method. In simple terms, it breaks down the prediction and shows how much each input contributed to moving the estimate up or down for this specific profile.",
+                        "SHAP is a model-explanation method. In simple terms, it breaks down the prediction and shows how much each feature contributed to moving the estimate up or down for this specific profile.",
                         [
                             "Each bar represents one feature, such as symptom severity, adherence, or treatment history. Longer bars indicate a larger influence within the model for this specific profile.",
-                            "Bars in one direction increase the estimated treatment-resistance risk; bars in the opposite direction decrease it.",
-                            "SHAP values are local explanations: they describe this prediction, not every possible patient profile.",
+                            "Bars in right direction increase the estimated treatment-resistance risk; bars in the left direction decrease it.",
+                            "SHAP values are local explanations: they describe the prediction for the current profile, not every possible patient profile.",
                         ],
                         "SHAP does not prove cause and effect. It explains how the model used the information, not why a person will or will not respond to treatment.",
                         style_override={"gridColumn": "3"},
@@ -396,7 +395,7 @@ def create_tutorial_section() -> html.Div:
                         "/assets/tutorial-tsne.png",
                         "This map gives a visual overview of similarity between synthetic profiles in the demo dataset. The current profile is shown in relation to other examples.",
                         [
-                            "Each dot is one synthetic example. Dots that appear close together have more similar input patterns according to the projection.",
+                            "Each dot is one synthetic example. Dots that appear close together correspond to similar patient profiles according to the projection.",
                             "The highlighted dot marks the current profile. Its position can show whether the profile lies near many similar examples or in a sparser region of the map.",
                             "The projection method used here is t-SNE, a method for drawing high-dimensional data as a two-dimensional map.",
                         ],
@@ -616,8 +615,7 @@ def create_patient_page():
                         "Need changes?",
                         [
                             "Profile changes are made in the Clinician view.",
-                            "After changes, return here to review the simpler result and explanation.",
-                            "The output is a starting point for questions and shared planning, not a final answer.",
+                            "After changes, return here to review the simpler result and explanation."
                         ],
                     ),
                 ],
