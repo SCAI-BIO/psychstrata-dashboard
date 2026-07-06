@@ -336,9 +336,9 @@ def create_input_guide_card() -> html.Div:
 def create_tutorial_section() -> html.Div:
     return html.Div(
         [
-            html.H3("What each panel means", style={"margin": "0 0 12px 0"}),
+            html.H3("Tutorial", style={"margin": "0 0 12px 0"}),
             html.Div(
-                "This guide explains the dashboard components in neutral, non-technical language. It describes what each panel represents and how the information can be read.",
+                "This guide explains how to interpret each dashboard component.",
                 style={"color": "#4b5563", "lineHeight": "1.5", "marginBottom": "14px"},
             ),
             html.Div(
@@ -420,7 +420,6 @@ def create_landing_page():
         "flex": "1",
         "minWidth": "420px",
         "padding": "22px",
-        "minHeight": "220px",
         "border": f"2px solid {BRAND_BLUE_LIGHT}",
         "cursor": "pointer",
         "boxShadow": "0 6px 16px rgba(0, 111, 185, 0.10)",
@@ -500,17 +499,9 @@ def create_landing_page():
                                 html.Div(
                                     (
                                         "A simplified view for shared conversations. It keeps the focus on the prediction, "
-                                        "uncertainty, and plain-language explanation, while leaving out advanced charts that "
-                                        "can distract from the main result."
+                                        "uncertainty, and plain-language explanation."
                                     ),
                                     style={"color": "#4b5563", "lineHeight": "1.6", "marginBottom": "8px"},
-                                ),
-                                html.Div(
-                                    (
-                                        "This view is useful when the goal is to understand the result without showing all "
-                                        "technical details at once."
-                                    ),
-                                    style={"color": "#4b5563", "lineHeight": "1.6"},
                                 ),
                                 html.Div(
                                     "Open Patient view ->",
@@ -542,13 +533,6 @@ def create_landing_page():
                                         "one place."
                                     ),
                                     style={"color": "#4b5563", "lineHeight": "1.6", "marginBottom": "8px"},
-                                ),
-                                html.Div(
-                                    (
-                                        "This view provides more detail for exploring why an estimate changes and how each "
-                                        "component relates to the selected profile."
-                                    ),
-                                    style={"color": "#4b5563", "lineHeight": "1.6"},
                                 ),
                                 html.Div(
                                     "Open Clinician view ->",
