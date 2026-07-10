@@ -13,6 +13,7 @@ import {
 import "./App.css";
 
 type Route = "intake" | "patient" | "clinician" | "scientist";
+const PSYCH_STRATA_LOGO_URL = "https://psych-strata.eu/wp-content/uploads/2023/05/logo_footer_blue.png";
 
 type LoadState =
   | { status: "loading" }
@@ -242,7 +243,9 @@ function ResultsShell(props: {
   return (
     <div className="results-layout">
       <aside className="sidebar">
-        <div className="brand">TheraPath</div>
+        <div className="brand" aria-label="Psych-STRATA">
+          <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="brand-logo" />
+        </div>
         <button type="button" className={`nav-link ${role === "clinician" ? "active" : ""}`} onClick={() => onNavigate("clinician")}>
           Medical View
         </button>
@@ -441,7 +444,10 @@ function App() {
     return (
       <main className="intake-layout">
         <section className="intake-card">
-          <p className="eyebrow">TheraPath Assessment</p>
+          <div className="intake-brand">
+            <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="intake-brand-logo" />
+            <p className="eyebrow">Psych-STRATA Assessment</p>
+          </div>
           <h1>Patient feature intake</h1>
           <p className="lede">
             Enter the current patient profile. Values are prefilled from backend defaults and will be reused across patient, clinician, and scientist views.

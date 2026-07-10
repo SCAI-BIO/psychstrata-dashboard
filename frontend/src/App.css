@@ -62,6 +62,20 @@ p {
   color: #4b5563;
 }
 
+.intake-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.intake-brand-logo {
+  width: 140px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 .lede {
   margin-top: 10px;
   color: #4b5563;
@@ -149,9 +163,15 @@ button:disabled {
 }
 
 .brand {
-  font-size: 30px;
-  font-weight: 800;
   margin-bottom: 10px;
+  padding: 6px 2px;
+}
+
+.brand-logo {
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
 }
 
 .nav-link,
