@@ -1,8 +1,12 @@
-name: Docker Publish
+name: Backend Deploy
 
 on:
   release:
     types: [published]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build_docker_image:
@@ -10,25 +14,25 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Get Version Tag
       id: version
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_OUTPUT"
 
     - name: Docker Login
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build & push client
-      uses: docker/build-push-action@v2
+    - name: Build & push backend
+      uses: docker/build-push-action@v6
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./backend
+        file: ./backend/Dockerfile
         push: true
         tags: |
-          ghcr.io/scai-bio/psychstrata-dashboard/app:latest
-          ghcr.io/scai-bio/psychstrata-dashboard/app:${{ steps.version.outputs.VERSION }}
+          ghcr.io/scai-bio/psychstrata-dashboard/backend:latest
+          ghcr.io/scai-bio/psychstrata-dashboard/backend:${{ steps.version.outputs.VERSION }}
