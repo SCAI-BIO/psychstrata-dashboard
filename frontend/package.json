@@ -11,8 +11,17 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/react-plotly.js": "^2.6.4",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.24.0",
+    "plotly.js-dist-min": "^3.7.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-plotly.js": "^4.0.0",
+    "recharts": "^3.9.2",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

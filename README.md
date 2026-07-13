@@ -94,15 +94,21 @@ pnpm test
 
 ## REST API
 
-The backend exposes a small JSON API:
+Base URL: `http://localhost:8000`
 
-- `GET /api/health` - basic health check
-- `GET /api/summary` - demo content for the frontend
+- `GET /api/health` — service health check
+- `GET /api/features` — feature schema, defaults, and confidence-level bounds
+- `POST /api/predict` — prediction, SHAP values, top contributors, and selected t-SNE point
+- `POST /api/explain` — prediction context plus generated explanation text
+- `GET /api/tsne` — population t-SNE coordinates and class labels
 
-Example request:
+Examples:
 
 ```bash
-curl http://localhost:8000/api/summary
+curl http://localhost:8000/api/features
+curl http://localhost:8000/api/tsne
 ```
+
+For `POST /api/predict` and `POST /api/explain`, send a full `features` object (all required feature IDs) plus `confidence_level`.
 
 The previous Dash implementation has been moved to `legacy-dash/` so the repository root can act as the monorepo entry point without deleting prior work.

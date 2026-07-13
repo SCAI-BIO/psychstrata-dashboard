@@ -15,7 +15,7 @@ from .llm_summary import (
 )
 
 
-DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://localhost:5173")
+DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://localhost:5173", "http://localhost:5174")
 CONFIDENCE_LEVEL_DEFAULT = 95
 CONFIDENCE_LEVEL_MIN = 80
 CONFIDENCE_LEVEL_MAX = 99
