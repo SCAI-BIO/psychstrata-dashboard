@@ -1,18 +1,8 @@
 # Treatment Resistance Classifier Demo
 
-Interactive dashboard scaffold for predicting treatment resistance in depression using a React frontend and FastAPI backend.
+Interactive dashboard enabling shared decision making for treatment resistance in depression.
 
 **Disclaimer:** This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.
-
-## Features
-
-- React + Vite frontend with TypeScript
-- FastAPI backend with health and JSON API endpoints
-- Environment-based frontend API configuration
-- Dockerfiles for frontend and backend services
-- Docker Compose for production-like local testing
-- Docker Compose dev override for live reload
-- App-specific tests and GitHub Actions workflows
 
 ## Project Structure
 
@@ -94,15 +84,17 @@ pnpm test
 
 ## REST API
 
-The backend exposes a small JSON API:
+Base URL: `http://localhost:8000`
 
-- `GET /api/health` - basic health check
-- `GET /api/summary` - demo content for the frontend
+- `GET /api/health` — service health check
+- `GET /api/features` — feature schema, defaults, and confidence-level bounds
+- `POST /api/predict` — prediction, SHAP values, top contributors, and selected t-SNE point
+- `POST /api/explain` — prediction context plus generated explanation text
+- `GET /api/tsne` — population t-SNE coordinates and class labels
 
-Example request:
+Examples:
 
 ```bash
-curl http://localhost:8000/api/summary
+curl http://localhost:8000/api/features
+curl http://localhost:8000/api/tsne
 ```
-
-The previous Dash implementation has been moved to `legacy-dash/` so the repository root can act as the monorepo entry point without deleting prior work.
