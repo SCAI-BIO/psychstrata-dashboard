@@ -45,10 +45,12 @@ Frontend:
 
 ```bash
 cd frontend
-VITE_API_BASE_URL=http://localhost:8000 pnpm dev
+VITE_API_BASE_URL=http://localhost:8000 VITE_APP_PASSWORD=your-shared-password pnpm dev
 ```
 
-Open `http://localhost:5173`.
+`VITE_APP_PASSWORD` enables the dashboard login screen. If it is not set, the app starts without authentication.
+
+Open `http://localhost:5173` and sign in with the configured shared password.
 
 Full stack, production-like:
 

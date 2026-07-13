@@ -5,7 +5,8 @@ import {
   User,
   PlusCircle,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from "lucide-react";
 import {
   ComposedChart,
@@ -36,6 +37,7 @@ const Plot = lazy(() => import("react-plotly.js"));
 
 type Route = "intake" | "patient" | "clinician" | "scientist";
 const PSYCH_STRATA_LOGO_URL = "https://psych-strata.eu/wp-content/uploads/2023/05/logo_footer_blue.png";
+const AUTH_SESSION_KEY = "psychstrata-authenticated";
 
 type LoadState =
   | { status: "loading" }
@@ -60,6 +62,18 @@ const ROUTE_TO_PATH: Record<Route, string> = {
   clinician: "/results/clinician",
   scientist: "/results/scientist"
 };
+
+function getConfiguredPassword(): string {
+  return (import.meta.env.VITE_APP_PASSWORD ?? "").trim();
+}
+
+function getIsAuthEnabled(): boolean {
+  return getConfiguredPassword().length > 0;
+}
+
+function hasAuthenticatedSession(): boolean {
+  return sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+}
 
 function getInitialRoute(): Route {
   const pathname = window.location.pathname;
@@ -539,9 +553,10 @@ function ShapChart({ shapValues }: { shapValues: PredictionResponse["shap_values
 function ResultsShell(props: {
   role: Exclude<Route, "intake">;
   onNavigate: (route: Route) => void;
+  onLogout?: () => void;
   children: ReactNode;
 }) {
-  const { role, onNavigate, children } = props;
+  const { role, onNavigate, onLogout, children } = props;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -593,6 +608,16 @@ function ResultsShell(props: {
             <PlusCircle size={15} />
             New assessment
           </button>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors mt-1"
+            >
+              <LogOut size={15} />
+              Sign out
+            </button>
+          )}
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto p-6">{children}</main>
@@ -601,8 +626,13 @@ function ResultsShell(props: {
 }
 
 function App() {
+  const authEnabled = getIsAuthEnabled();
+  const configuredPassword = getConfiguredPassword();
   const [route, setRoute] = useState<Route>(getInitialRoute());
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !authEnabled || hasAuthenticatedSession());
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [clinicianSimValues, setClinicianSimValues] = useState({
     sertraline_mg: 0,
     lithium_mg: 0,
@@ -637,6 +667,10 @@ function App() {
   }, [state.status, state.status === "ready" ? state.prediction : null]);
 
   useEffect(() => {
+    if (authEnabled && !isAuthenticated) {
+      return;
+    }
+
     let isMounted = true;
     Promise.all([fetchFeatures(), fetchTsne()])
       .then(([featuresPayload, tsnePayload]) => {
@@ -674,7 +708,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authEnabled, isAuthenticated]);
 
   const navigate = (nextRoute: Route) => {
     const nextPath = ROUTE_TO_PATH[nextRoute];
@@ -683,6 +717,66 @@ function App() {
     }
     setRoute(nextRoute);
   };
+
+  const signOut = () => {
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    setIsAuthenticated(false);
+    setLoginPassword("");
+    setLoginError(null);
+    setState({ status: "loading" });
+    if (window.location.pathname !== ROUTE_TO_PATH.intake) {
+      window.history.pushState({}, "", ROUTE_TO_PATH.intake);
+    }
+    setRoute("intake");
+  };
+
+  if (authEnabled && !isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 w-full max-w-md">
+          <div className="flex items-center gap-3 mb-6">
+            <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="h-8 w-auto" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard login</h1>
+          <p className="text-sm text-slate-500 mb-6">Enter the shared password to access the dashboard.</p>
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (loginPassword === configuredPassword) {
+                sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+                setIsAuthenticated(true);
+                setLoginError(null);
+                setLoginPassword("");
+                return;
+              }
+              setLoginError("Incorrect password.");
+            }}
+          >
+            <label className="flex flex-col gap-1" htmlFor="dashboard-password">
+              <span className="text-xs font-medium text-slate-600">Password</span>
+              <input
+                id="dashboard-password"
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </label>
+            {loginError && <p className="text-sm text-red-600">{loginError}</p>}
+            <button
+              type="submit"
+              className="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              Sign in
+            </button>
+          </form>
+        </section>
+      </main>
+    );
+  }
 
   const runPrediction = async (targetRoute: Exclude<Route, "intake">) => {
     if (state.status !== "ready") {
@@ -870,8 +964,17 @@ function App() {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
         <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 w-full max-w-2xl">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-6">
             <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="h-8 w-auto" />
+            {authEnabled && (
+              <button
+                type="button"
+                onClick={signOut}
+                className="bg-white text-slate-700 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Sign out
+              </button>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-1">Patient feature intake</h1>
           <p className="text-sm text-slate-500 mb-6">
@@ -1204,7 +1307,7 @@ function App() {
 
   if (route === "patient") {
     return (
-      <ResultsShell role="patient" onNavigate={navigate}>
+      <ResultsShell role="patient" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-slate-900 mb-3">Welcome, John.</h1>
           <p className="text-slate-500 text-sm max-w-2xl leading-relaxed">
@@ -1297,7 +1400,7 @@ function App() {
 
   if (route === "clinician") {
     return (
-      <ResultsShell role="clinician" onNavigate={navigate}>
+      <ResultsShell role="clinician" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
         {clinicianHeader}
         {explanationCard}
         <section className="grid grid-cols-2 gap-4 mt-4">
@@ -1333,7 +1436,7 @@ function App() {
   }
 
   return (
-    <ResultsShell role="scientist" onNavigate={navigate}>
+    <ResultsShell role="scientist" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
       {scientistHeader}
       {scientistControls}
       {explanationCard}

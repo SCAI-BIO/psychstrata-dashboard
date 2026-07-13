@@ -35,6 +35,10 @@ describe("App", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    (import.meta.env as Record<string, string | undefined>).VITE_APP_PASSWORD = "test-password";
+    window.sessionStorage.clear();
+    window.history.pushState({}, "", "/");
+
     fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith("/api/features")) {
         return new Response(JSON.stringify(featuresPayload), {
@@ -116,17 +120,29 @@ describe("App", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    (import.meta.env as Record<string, string | undefined>).VITE_APP_PASSWORD = undefined;
+    window.sessionStorage.clear();
   });
 
-  it("loads intake defaults and navigates to patient result view", async () => {
+  it("requires login first, then loads intake defaults and navigates to patient result view", async () => {
     render(<App />);
+
+    expect(screen.getByRole("heading", { name: "Dashboard login" })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByText("Incorrect password.")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "test-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByText("Patient feature intake")).toBeInTheDocument();
     expect(screen.getByText("PHQ-9")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Generate results" }));
-    expect(await screen.findByText("Welcome.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Generate summary" })).toBeInTheDocument();
+    expect(await screen.findByText("Welcome, John.")).toBeInTheDocument();
+    expect(screen.getByText("ESTIMATED TREATMENT RESPONSE")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/predict", expect.any(Object));
   });
 });
