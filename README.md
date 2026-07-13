@@ -2,6 +2,8 @@
 
 Interactive dashboard enabling shared decision making for treatment resistance in depression.
 
+- Project website: https://psych-strata.eu/
+
 **Disclaimer:** This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.
 
 ## Project Structure
