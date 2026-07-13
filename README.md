@@ -1,4 +1,4 @@
-# Treatment Resistance Classifier Demo
+# Psych-STRATA Dashboard
 
 Interactive dashboard enabling shared decision making for treatment resistance in depression.
 
