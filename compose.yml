@@ -4,8 +4,8 @@ services:
   backend:
     build:
       context: ./backend
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     healthcheck:
       test:
         [
@@ -21,9 +21,12 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: production
       args:
-        VITE_API_BASE_URL: http://localhost:8000
+        VITE_API_BASE_URL: ""
         VITE_APP_PASSWORD: ${VITE_APP_PASSWORD:-}
+    environment:
+      BACKEND_HOST: backend
     ports:
       - "3000:80"
     depends_on:
