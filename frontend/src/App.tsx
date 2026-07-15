@@ -784,7 +784,7 @@ function App() {
     sessionStorage.removeItem(AUTH_SESSION_KEY);
     setBasicAuthHeader(null);
     setIsAuthenticated(false);
-    setLoginUsername("");
+    setLoginUsername("dashboard-user");
     setLoginPassword("");
     setLoginError(null);
     setState({ status: "loading" });
@@ -822,7 +822,7 @@ function App() {
                 setBasicAuthHeader(authHeader);
                 sessionStorage.setItem(AUTH_SESSION_KEY, authHeader);
                 setIsAuthenticated(true);
-                setLoginUsername("");
+                setLoginUsername("dashboard-user");
                 setLoginPassword("");
               } catch (error: unknown) {
                 setLoginError(error instanceof Error ? error.message : "Unable to sign in.");

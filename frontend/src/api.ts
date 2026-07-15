@@ -115,20 +115,33 @@ function getAuthHeaders(init?: RequestInit): Headers {
   return headers;
 }
 
+async function buildError(response: Response): Promise<Error> {
+  let detail: string | undefined;
+  try {
+    const body = (await response.json()) as { detail?: string };
+    detail = body.detail;
+  } catch {
+    detail = undefined;
+  }
+
+  if (response.status === 503 && detail) {
+    return new Error(detail);
+  }
+
+  return new Error(
+    detail
+      ? `Backend API error (${response.status}): ${detail}`
+      : `Backend API request failed with status ${response.status}`
+  );
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: getAuthHeaders(init)
   });
   if (!response.ok) {
-    let detail: string | undefined;
-    try {
-      const body = (await response.json()) as { detail?: string };
-      detail = body.detail;
-    } catch {
-      detail = undefined;
-    }
-    throw new Error(detail ? `Backend API error (${response.status}): ${detail}` : `Backend API request failed with status ${response.status}`);
+    throw await buildError(response);
   }
   return response.json() as Promise<T>;
 }
@@ -139,14 +152,7 @@ async function requestNoContent(path: string, init?: RequestInit): Promise<void>
     headers: getAuthHeaders(init)
   });
   if (!response.ok) {
-    let detail: string | undefined;
-    try {
-      const body = (await response.json()) as { detail?: string };
-      detail = body.detail;
-    } catch {
-      detail = undefined;
-    }
-    throw new Error(detail ? `Backend API error (${response.status}): ${detail}` : `Backend API request failed with status ${response.status}`);
+    throw await buildError(response);
   }
 }
 

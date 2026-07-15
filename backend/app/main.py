@@ -1,13 +1,19 @@
+import logging
 import os
 import secrets
+import time
+from datetime import datetime, timezone  # NEU
 from typing import Any
 from typing import Annotated
 
 import pandas as pd
-from fastapi import Body, Depends, FastAPI, HTTPException
+from fastapi import Body, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from .config import FEATURE_DEFAULTS, FEATURES_BY_ID, FEATURES_UI
 from .llm_summary import (
@@ -26,6 +32,16 @@ MODEL_FEATURE_ORDER = [cfg.id for cfg in FEATURES_UI]
 BASIC_AUTH_USERNAME_ENV = "BACKEND_BASIC_AUTH_USERNAME"
 BASIC_AUTH_PASSWORD_ENV = "BACKEND_BASIC_AUTH_PASSWORD"
 
+# global cap for LLM calls to defend against abuse (/api/explain)
+EXPLAIN_GLOBAL_DAILY_CAP = int(os.getenv("EXPLAIN_GLOBAL_DAILY_CAP", "5000"))
+_explain_usage = {"day": "", "count": 0}
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("psychstrata.api")
+
 
 class HealthResponse(BaseModel):
     status: str
@@ -43,7 +59,34 @@ def get_cors_origins() -> list[str]:
     return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
 
+def _client_ip(request: Request) -> str:
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    return get_remote_address(request)
+
+
+def _check_global_cap() -> None:
+    if EXPLAIN_GLOBAL_DAILY_CAP <= 0:  # 0 = deactivated
+        return
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if _explain_usage["day"] != today:
+        _explain_usage.update(day=today, count=0)
+    _explain_usage["count"] += 1
+    if _explain_usage["count"] > EXPLAIN_GLOBAL_DAILY_CAP:
+        logger.warning("Global explain cap reached (%s)", EXPLAIN_GLOBAL_DAILY_CAP)
+        raise HTTPException(
+            status_code=503,
+            detail="Daily demo budget reached. Please try again tomorrow.",
+            headers={"Retry-After": "3600"},
+        )
+
+
+limiter = Limiter(key_func=_client_ip, storage_uri=os.getenv("RATE_LIMIT_STORAGE_URI", "memory://"))
+
 app = FastAPI(title="PsychStrata Dashboard API", version="0.1.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
@@ -52,6 +95,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 basic_auth = HTTPBasic(auto_error=False)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = (time.perf_counter() - start) * 1000
+        logger.exception(
+            "%s %s %s failed after %.1fms",
+            _client_ip(request),
+            request.method,
+            request.url.path,
+            duration_ms,
+        )
+        raise
+    duration_ms = (time.perf_counter() - start) * 1000
+    logger.info(
+        "%s %s %s %s %.1fms",
+        _client_ip(request),
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
 
 
 def _get_basic_auth_credentials() -> tuple[str, str] | None:
@@ -81,18 +151,21 @@ def _unauthorized_exception() -> HTTPException:
 
 
 def _require_basic_auth(
+    request: Request,
     credentials: Annotated[HTTPBasicCredentials | None, Depends(basic_auth)],
 ) -> None:
     configured_credentials = _get_basic_auth_credentials()
     if configured_credentials is None:
         return
     if credentials is None:
+        logger.warning("Auth failure (no credentials) from %s", _client_ip(request))
         raise _unauthorized_exception()
 
     configured_username, configured_password = configured_credentials
     is_username_valid = secrets.compare_digest(credentials.username, configured_username)
     is_password_valid = secrets.compare_digest(credentials.password, configured_password)
     if not (is_username_valid and is_password_valid):
+        logger.warning("Auth failure (invalid credentials) from %s", _client_ip(request))
         raise _unauthorized_exception()
 
 
@@ -251,22 +324,26 @@ def _parse_prediction_payload(payload: Any) -> tuple[dict[str, Any], int]:
 
 
 @app.get("/api/health", response_model=HealthResponse)
-def health() -> HealthResponse:
+@limiter.limit("60/minute")
+def health(request: Request) -> HealthResponse:
     return HealthResponse(status="ok")
 
 
 @app.get("/api/auth/status", response_model=AuthStatusResponse)
-def auth_status() -> AuthStatusResponse:
+@limiter.limit("60/minute")
+def auth_status(request: Request) -> AuthStatusResponse:
     return AuthStatusResponse(auth_enabled=_get_basic_auth_credentials() is not None)
 
 
 @app.post("/api/auth/login", dependencies=[Depends(_require_basic_auth)])
-def auth_login() -> dict[str, str]:
+@limiter.limit("10/minute")
+def auth_login(request: Request) -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.get("/api/features", dependencies=[Depends(_require_basic_auth)])
-def features() -> dict[str, Any]:
+@limiter.limit("60/minute")
+def features(request: Request) -> dict[str, Any]:
     return {
         "features": [_feature_schema(cfg) for cfg in FEATURES_UI],
         "defaults": FEATURE_DEFAULTS,
@@ -286,7 +363,8 @@ def features() -> dict[str, Any]:
 
 
 @app.post("/api/predict", dependencies=[Depends(_require_basic_auth)])
-def predict(payload: Any = Body(...)) -> dict[str, Any]:
+@limiter.limit("30/minute")
+def predict(request: Request, payload: Any = Body(...)) -> dict[str, Any]:
     try:
         values_dict, confidence_level = _parse_prediction_payload(payload)
     except ValueError as exc:
@@ -296,11 +374,15 @@ def predict(payload: Any = Body(...)) -> dict[str, Any]:
 
 
 @app.post("/api/explain", dependencies=[Depends(_require_basic_auth)])
-def explain(payload: Any = Body(...)) -> dict[str, Any]:
+@limiter.limit("10/minute; 100/day")
+def explain(request: Request, payload: Any = Body(...)) -> dict[str, Any]:
     try:
         values_dict, confidence_level = _parse_prediction_payload(payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # check if daily budget is exceeded
+    _check_global_cap()
 
     treatment_model = _get_model()
     X_row = _pack_instance(values_dict, treatment_model.feature_cols)
@@ -324,7 +406,8 @@ def explain(payload: Any = Body(...)) -> dict[str, Any]:
 
 
 @app.get("/api/tsne", dependencies=[Depends(_require_basic_auth)])
-def tsne() -> dict[str, Any]:
+@limiter.limit("30/minute")
+def tsne(request: Request) -> dict[str, Any]:
     points = _get_model().tsne_points()
     return {
         "points": points,
