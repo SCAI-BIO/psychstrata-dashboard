@@ -11,7 +11,7 @@ dependencies = [
     "pydantic>=2.8.0,<3.0.0",
     "scikit-learn>=1.4.2,<1.10.0",
     "scipy>=1.12.0,<2.0.0",
-    "shap>=0.43.0,<0.53.0",
+    "shap>=0.45.0,<0.53.0",
     "uvicorn[standard]>=0.30.0,<1.0.0",
 ]
 
