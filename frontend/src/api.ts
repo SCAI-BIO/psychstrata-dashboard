@@ -3,6 +3,7 @@ const DEFAULT_API_BASE_URL = "http://localhost:8000";
 export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL
 ).replace(/\/$/, "");
+let basicAuthHeader: string | null = null;
 
 export type FeatureOption = {
   label: string;
@@ -102,8 +103,23 @@ export type TsneResponse = {
   }>;
 };
 
+export type AuthStatusResponse = {
+  auth_enabled: boolean;
+};
+
+function getAuthHeaders(init?: RequestInit): Headers {
+  const headers = new Headers(init?.headers);
+  if (basicAuthHeader && !headers.has("Authorization")) {
+    headers.set("Authorization", basicAuthHeader);
+  }
+  return headers;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, init);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: getAuthHeaders(init)
+  });
   if (!response.ok) {
     let detail: string | undefined;
     try {
@@ -115,6 +131,42 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(detail ? `Backend API error (${response.status}): ${detail}` : `Backend API request failed with status ${response.status}`);
   }
   return response.json() as Promise<T>;
+}
+
+async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: getAuthHeaders(init)
+  });
+  if (!response.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await response.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      detail = undefined;
+    }
+    throw new Error(detail ? `Backend API error (${response.status}): ${detail}` : `Backend API request failed with status ${response.status}`);
+  }
+}
+
+export function buildBasicAuthHeader(username: string, password: string): string {
+  return `Basic ${btoa(`${username}:${password}`)}`;
+}
+
+export function setBasicAuthHeader(header: string | null): void {
+  basicAuthHeader = header;
+}
+
+export function fetchAuthStatus(): Promise<AuthStatusResponse> {
+  return requestJson<AuthStatusResponse>("/api/auth/status");
+}
+
+export function verifyBasicAuth(header: string): Promise<void> {
+  return requestNoContent("/api/auth/login", {
+    method: "POST",
+    headers: { Authorization: header }
+  });
 }
 
 export function fetchFeatures(): Promise<FeaturesResponse> {

@@ -33,20 +33,57 @@ const featuresPayload = {
 
 describe("App", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
+  const expectedAuthHeader = "Basic dGVzdC11c2VyOnRlc3QtcGFzc3dvcmQ=";
+
+  const getHeaderValue = (headers: HeadersInit | undefined, key: string): string | null => {
+    if (!headers) {
+      return null;
+    }
+    if (headers instanceof Headers) {
+      return headers.get(key);
+    }
+    if (Array.isArray(headers)) {
+      const match = headers.find(([headerName]) => headerName.toLowerCase() === key.toLowerCase());
+      return match ? match[1] : null;
+    }
+    const headerValue = headers[key as keyof typeof headers];
+    return typeof headerValue === "string" ? headerValue : null;
+  };
 
   beforeEach(() => {
-    (import.meta.env as Record<string, string | undefined>).VITE_APP_PASSWORD = "test-password";
     window.sessionStorage.clear();
     window.history.pushState({}, "", "/");
 
     fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/api/auth/status")) {
+        return new Response(JSON.stringify({ auth_enabled: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (url.endsWith("/api/auth/login")) {
+        expect(init?.method).toBe("POST");
+        const authorizationHeader = getHeaderValue(init?.headers, "Authorization");
+        if (authorizationHeader !== expectedAuthHeader) {
+          return new Response(JSON.stringify({ detail: "Invalid credentials." }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+        return new Response(JSON.stringify({ status: "ok" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
       if (url.endsWith("/api/features")) {
+        expect(getHeaderValue(init?.headers, "Authorization")).toBe(expectedAuthHeader);
         return new Response(JSON.stringify(featuresPayload), {
           status: 200,
           headers: { "Content-Type": "application/json" }
         });
       }
       if (url.endsWith("/api/tsne")) {
+        expect(getHeaderValue(init?.headers, "Authorization")).toBe(expectedAuthHeader);
         return new Response(
           JSON.stringify({
             points: [
@@ -59,6 +96,7 @@ describe("App", () => {
       }
       if (url.endsWith("/api/predict")) {
         expect(init?.method).toBe("POST");
+        expect(getHeaderValue(init?.headers, "Authorization")).toBe(expectedAuthHeader);
         return new Response(
           JSON.stringify({
             features: featuresPayload.defaults,
@@ -94,6 +132,7 @@ describe("App", () => {
         );
       }
       if (url.endsWith("/api/explain")) {
+        expect(getHeaderValue(init?.headers, "Authorization")).toBe(expectedAuthHeader);
         return new Response(
           JSON.stringify({
             features: featuresPayload.defaults,
@@ -120,19 +159,20 @@ describe("App", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    (import.meta.env as Record<string, string | undefined>).VITE_APP_PASSWORD = undefined;
     window.sessionStorage.clear();
   });
 
   it("requires login first, then loads intake defaults and navigates to patient result view", async () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "Dashboard login" })).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(await screen.findByRole("heading", { name: "Dashboard login" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/auth/status", expect.any(Object));
 
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "test-user" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(await screen.findByText("Incorrect password.")).toBeInTheDocument();
+    expect(await screen.findByText("Backend API error (401): Invalid credentials.")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "test-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));

@@ -23,13 +23,17 @@ import {
   ReferenceLine
 } from "recharts";
 import {
+  buildBasicAuthHeader,
   type FeatureSchema,
   type PredictionResponse,
   type TsneResponse,
+  fetchAuthStatus,
+  setBasicAuthHeader,
   fetchExplain,
   fetchFeatures,
   fetchPredict,
-  fetchTsne
+  fetchTsne,
+  verifyBasicAuth
 } from "./api";
 import "./App.css";
 
@@ -37,7 +41,7 @@ const Plot = lazy(() => import("react-plotly.js"));
 
 type Route = "intake" | "patient" | "clinician" | "scientist";
 const PSYCH_STRATA_LOGO_URL = "https://psych-strata.eu/wp-content/uploads/2023/05/logo_footer_blue.png";
-const AUTH_SESSION_KEY = "psychstrata-authenticated";
+const AUTH_SESSION_KEY = "psychstrata-basic-auth-header";
 
 type LoadState =
   | { status: "loading" }
@@ -63,16 +67,9 @@ const ROUTE_TO_PATH: Record<Route, string> = {
   scientist: "/results/scientist"
 };
 
-function getConfiguredPassword(): string {
-  return (import.meta.env.VITE_APP_PASSWORD ?? "").trim();
-}
-
-function getIsAuthEnabled(): boolean {
-  return getConfiguredPassword().length > 0;
-}
-
-function hasAuthenticatedSession(): boolean {
-  return sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+function getStoredAuthHeader(): string | null {
+  const storedHeader = sessionStorage.getItem(AUTH_SESSION_KEY);
+  return storedHeader && storedHeader.trim().length > 0 ? storedHeader : null;
 }
 
 function getInitialRoute(): Route {
@@ -626,12 +623,13 @@ function ResultsShell(props: {
 }
 
 function App() {
-  const authEnabled = getIsAuthEnabled();
-  const configuredPassword = getConfiguredPassword();
+  const [authRequired, setAuthRequired] = useState<boolean | null>(null);
   const [route, setRoute] = useState<Route>(getInitialRoute());
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !authEnabled || hasAuthenticatedSession());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [clinicianSimValues, setClinicianSimValues] = useState({
     sertraline_mg: 0,
@@ -652,6 +650,67 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const storedAuthHeader = getStoredAuthHeader();
+    if (storedAuthHeader) {
+      setBasicAuthHeader(storedAuthHeader);
+    }
+
+    fetchAuthStatus()
+      .then(async (statusPayload) => {
+        if (!isMounted) {
+          return;
+        }
+        setAuthRequired(statusPayload.auth_enabled);
+
+        if (!statusPayload.auth_enabled) {
+          sessionStorage.removeItem(AUTH_SESSION_KEY);
+          setBasicAuthHeader(null);
+          setIsAuthenticated(true);
+          setLoginError(null);
+          return;
+        }
+
+        if (!storedAuthHeader) {
+          setIsAuthenticated(false);
+          return;
+        }
+
+        try {
+          await verifyBasicAuth(storedAuthHeader);
+          if (isMounted) {
+            setIsAuthenticated(true);
+          }
+        } catch {
+          if (!isMounted) {
+            return;
+          }
+          sessionStorage.removeItem(AUTH_SESSION_KEY);
+          setBasicAuthHeader(null);
+          setIsAuthenticated(false);
+          setLoginError("Session expired. Please sign in again.");
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isMounted) {
+          return;
+        }
+        setState({
+          status: "error",
+          message: error instanceof Error ? error.message : "Unable to reach the backend API."
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authRequired === null) {
+      return;
+    }
+
     if (state.status !== "ready" || state.prediction === null) {
       return;
     }
@@ -664,10 +723,13 @@ function App() {
     setClinicianImpactPct(0);
     setClinicianImpactError(null);
     setClinicianApplyError(null);
-  }, [state.status, state.status === "ready" ? state.prediction : null]);
+  }, [authRequired, state.status, state.status === "ready" ? state.prediction : null]);
 
   useEffect(() => {
-    if (authEnabled && !isAuthenticated) {
+    if (authRequired === null) {
+      return;
+    }
+    if (authRequired && !isAuthenticated) {
       return;
     }
 
@@ -708,7 +770,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [authEnabled, isAuthenticated]);
+  }, [authRequired, isAuthenticated]);
 
   const navigate = (nextRoute: Route) => {
     const nextPath = ROUTE_TO_PATH[nextRoute];
@@ -720,7 +782,9 @@ function App() {
 
   const signOut = () => {
     sessionStorage.removeItem(AUTH_SESSION_KEY);
+    setBasicAuthHeader(null);
     setIsAuthenticated(false);
+    setLoginUsername("");
     setLoginPassword("");
     setLoginError(null);
     setState({ status: "loading" });
@@ -730,7 +794,7 @@ function App() {
     setRoute("intake");
   };
 
-  if (authEnabled && !isAuthenticated) {
+  if (authRequired && !isAuthenticated) {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
         <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 w-full max-w-md">
@@ -738,21 +802,47 @@ function App() {
             <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="h-8 w-auto" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard login</h1>
-          <p className="text-sm text-slate-500 mb-6">Enter the shared password to access the dashboard.</p>
+          <p className="text-sm text-slate-500 mb-6">Enter the shared username and password to access the dashboard.</p>
           <form
             className="flex flex-col gap-3"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              if (loginPassword === configuredPassword) {
-                sessionStorage.setItem(AUTH_SESSION_KEY, "true");
-                setIsAuthenticated(true);
-                setLoginError(null);
-                setLoginPassword("");
+              const username = loginUsername.trim();
+              if (username.length === 0) {
+                setLoginError("Username is required.");
                 return;
               }
-              setLoginError("Incorrect password.");
+
+              setIsLoginSubmitting(true);
+              setLoginError(null);
+
+              const authHeader = buildBasicAuthHeader(username, loginPassword);
+              try {
+                await verifyBasicAuth(authHeader);
+                setBasicAuthHeader(authHeader);
+                sessionStorage.setItem(AUTH_SESSION_KEY, authHeader);
+                setIsAuthenticated(true);
+                setLoginUsername("");
+                setLoginPassword("");
+              } catch (error: unknown) {
+                setLoginError(error instanceof Error ? error.message : "Unable to sign in.");
+              } finally {
+                setIsLoginSubmitting(false);
+              }
             }}
           >
+            <label className="flex flex-col gap-1" htmlFor="dashboard-username">
+              <span className="text-xs font-medium text-slate-600">Username</span>
+              <input
+                id="dashboard-username"
+                type="text"
+                autoComplete="username"
+                value={loginUsername}
+                onChange={(event) => setLoginUsername(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </label>
             <label className="flex flex-col gap-1" htmlFor="dashboard-password">
               <span className="text-xs font-medium text-slate-600">Password</span>
               <input
@@ -768,9 +858,10 @@ function App() {
             {loginError && <p className="text-sm text-red-600">{loginError}</p>}
             <button
               type="submit"
+              disabled={isLoginSubmitting}
               className="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              Sign in
+              {isLoginSubmitting ? "Signing in..." : "Sign in"}
             </button>
           </form>
         </section>
@@ -966,7 +1057,7 @@ function App() {
         <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 w-full max-w-2xl">
           <div className="flex items-center justify-between gap-3 mb-6">
             <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="h-8 w-auto" />
-            {authEnabled && (
+            {authRequired && (
               <button
                 type="button"
                 onClick={signOut}
@@ -1307,7 +1398,7 @@ function App() {
 
   if (route === "patient") {
     return (
-      <ResultsShell role="patient" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
+      <ResultsShell role="patient" onNavigate={navigate} onLogout={authRequired ? signOut : undefined}>
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-slate-900 mb-3">Welcome, John.</h1>
           <p className="text-slate-500 text-sm max-w-2xl leading-relaxed">
@@ -1400,7 +1491,7 @@ function App() {
 
   if (route === "clinician") {
     return (
-      <ResultsShell role="clinician" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
+      <ResultsShell role="clinician" onNavigate={navigate} onLogout={authRequired ? signOut : undefined}>
         {clinicianHeader}
         {explanationCard}
         <section className="grid grid-cols-2 gap-4 mt-4">
@@ -1436,7 +1527,7 @@ function App() {
   }
 
   return (
-    <ResultsShell role="scientist" onNavigate={navigate} onLogout={authEnabled ? signOut : undefined}>
+    <ResultsShell role="scientist" onNavigate={navigate} onLogout={authRequired ? signOut : undefined}>
       {scientistHeader}
       {scientistControls}
       {explanationCard}

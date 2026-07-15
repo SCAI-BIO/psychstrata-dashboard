@@ -1,9 +1,12 @@
 import os
+import secrets
 from typing import Any
+from typing import Annotated
 
 import pandas as pd
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
 from .config import FEATURE_DEFAULTS, FEATURES_BY_ID, FEATURES_UI
@@ -20,16 +23,16 @@ CONFIDENCE_LEVEL_DEFAULT = 95
 CONFIDENCE_LEVEL_MIN = 80
 CONFIDENCE_LEVEL_MAX = 99
 MODEL_FEATURE_ORDER = [cfg.id for cfg in FEATURES_UI]
+BASIC_AUTH_USERNAME_ENV = "BACKEND_BASIC_AUTH_USERNAME"
+BASIC_AUTH_PASSWORD_ENV = "BACKEND_BASIC_AUTH_PASSWORD"
 
 
 class HealthResponse(BaseModel):
     status: str
 
 
-class SummaryResponse(BaseModel):
-    title: str
-    message: str
-    disclaimer: str
+class AuthStatusResponse(BaseModel):
+    auth_enabled: bool
 
 
 def get_cors_origins() -> list[str]:
@@ -48,6 +51,49 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+basic_auth = HTTPBasic(auto_error=False)
+
+
+def _get_basic_auth_credentials() -> tuple[str, str] | None:
+    configured_username = os.getenv(BASIC_AUTH_USERNAME_ENV)
+    configured_password = os.getenv(BASIC_AUTH_PASSWORD_ENV)
+    username = configured_username.strip() if configured_username else None
+    password = configured_password.strip() if configured_password else None
+    if username is None and password is None:
+        return None
+    if username is None or password is None:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Backend Basic Auth is misconfigured. "
+                f"Set both {BASIC_AUTH_USERNAME_ENV} and {BASIC_AUTH_PASSWORD_ENV}."
+            ),
+        )
+    return username, password
+
+
+def _unauthorized_exception() -> HTTPException:
+    return HTTPException(
+        status_code=401,
+        detail="Invalid credentials.",
+        headers={"WWW-Authenticate": "Basic"},
+    )
+
+
+def _require_basic_auth(
+    credentials: Annotated[HTTPBasicCredentials | None, Depends(basic_auth)],
+) -> None:
+    configured_credentials = _get_basic_auth_credentials()
+    if configured_credentials is None:
+        return
+    if credentials is None:
+        raise _unauthorized_exception()
+
+    configured_username, configured_password = configured_credentials
+    is_username_valid = secrets.compare_digest(credentials.username, configured_username)
+    is_password_valid = secrets.compare_digest(credentials.password, configured_password)
+    if not (is_username_valid and is_password_valid):
+        raise _unauthorized_exception()
 
 
 def _get_model():
@@ -209,19 +255,17 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-@app.get("/api/summary", response_model=SummaryResponse)
-def summary() -> SummaryResponse:
-    return SummaryResponse(
-        title="Treatment Resistance Classifier Demo",
-        message="The React frontend is connected to the FastAPI backend.",
-        disclaimer=(
-            "This demo uses synthetic data for illustration purposes only. "
-            "It is not a medical device and must not be used for clinical decisions."
-        ),
-    )
+@app.get("/api/auth/status", response_model=AuthStatusResponse)
+def auth_status() -> AuthStatusResponse:
+    return AuthStatusResponse(auth_enabled=_get_basic_auth_credentials() is not None)
 
 
-@app.get("/api/features")
+@app.post("/api/auth/login", dependencies=[Depends(_require_basic_auth)])
+def auth_login() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/api/features", dependencies=[Depends(_require_basic_auth)])
 def features() -> dict[str, Any]:
     return {
         "features": [_feature_schema(cfg) for cfg in FEATURES_UI],
@@ -241,7 +285,7 @@ def features() -> dict[str, Any]:
     }
 
 
-@app.post("/api/predict")
+@app.post("/api/predict", dependencies=[Depends(_require_basic_auth)])
 def predict(payload: Any = Body(...)) -> dict[str, Any]:
     try:
         values_dict, confidence_level = _parse_prediction_payload(payload)
@@ -251,7 +295,7 @@ def predict(payload: Any = Body(...)) -> dict[str, Any]:
     return _build_prediction_response(values_dict, confidence_level)
 
 
-@app.post("/api/explain")
+@app.post("/api/explain", dependencies=[Depends(_require_basic_auth)])
 def explain(payload: Any = Body(...)) -> dict[str, Any]:
     try:
         values_dict, confidence_level = _parse_prediction_payload(payload)
@@ -279,7 +323,7 @@ def explain(payload: Any = Body(...)) -> dict[str, Any]:
     }
 
 
-@app.get("/api/tsne")
+@app.get("/api/tsne", dependencies=[Depends(_require_basic_auth)])
 def tsne() -> dict[str, Any]:
     points = _get_model().tsne_points()
     return {
