@@ -33,7 +33,9 @@ const featuresPayload = {
 
 describe("App", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
-  const expectedAuthHeader = "Basic dGVzdC11c2VyOnRlc3QtcGFzc3dvcmQ=";
+  const testUsername = "test-user";
+  const testPassword = "test-password";
+  const expectedAuthHeader = `Basic ${btoa(`${testUsername}:${testPassword}`)}`;
 
   const getHeaderValue = (headers: HeadersInit | undefined, key: string): string | null => {
     if (!headers) {
