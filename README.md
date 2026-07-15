@@ -2,15 +2,15 @@
 
 Interactive dashboard enabling shared decision making for treatment resistance in depression.
 
-- Project website: https://psych-strata.eu/
+https://psych-strata.eu/
 
 **Disclaimer:** This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.
 
 ## Project Structure
 
 ```text
-├── backend/          # FastAPI backend, uv dependencies, pytest tests, Dockerfile
-├── frontend/         # React frontend, pnpm dependencies, Vitest tests, Dockerfile
+├── backend/          
+├── frontend/         
 ├── legacy-dash/      # Previous Dash/Flask dashboard preserved for reference
 ├── compose.yml       # Production-like local stack
 ├── compose.dev.yml   # Development override with live reload
