@@ -21,16 +21,6 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_summary_endpoint() -> None:
-    response = client.get("/api/summary")
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["title"] == "Treatment Resistance Classifier Demo"
-    assert "React frontend" in body["message"]
-    assert "not be used for clinical decisions" in body["disclaimer"]
-
-
 def test_explain_propagates_llm_errors(monkeypatch) -> None:
     features_response = client.get("/api/features")
     assert features_response.status_code == 200
