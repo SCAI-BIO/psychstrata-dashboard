@@ -2,15 +2,15 @@
 
 Interactive dashboard enabling shared decision making for treatment resistance in depression.
 
-- Project website: https://psych-strata.eu/
+https://psych-strata.eu/
 
 **Disclaimer:** This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.
 
 ## Project Structure
 
 ```text
-├── backend/          # FastAPI backend, uv dependencies, pytest tests, Dockerfile
-├── frontend/         # React frontend, pnpm dependencies, Vitest tests, Dockerfile
+├── backend/          
+├── frontend/         
 ├── legacy-dash/      # Previous Dash/Flask dashboard preserved for reference
 ├── compose.yml       # Production-like local stack
 ├── compose.dev.yml   # Development override with live reload
@@ -47,12 +47,17 @@ Frontend:
 
 ```bash
 cd frontend
-VITE_API_BASE_URL=http://localhost:8000 VITE_APP_PASSWORD=your-shared-password pnpm dev
+VITE_API_BASE_URL=http://localhost:8000 pnpm dev
 ```
 
-`VITE_APP_PASSWORD` enables the dashboard login screen. If it is not set, the app starts without authentication.
+Authentication is configured in the backend. Set the backend env vars below to enable HTTP Basic Auth:
 
-Open `http://localhost:5173` and sign in with the configured shared password.
+```bash
+export BACKEND_BASIC_AUTH_USERNAME=dashboard-user
+export BACKEND_BASIC_AUTH_PASSWORD=change-me
+```
+
+Open `http://localhost:5173` and sign in with the configured backend credentials (when enabled).
 
 Full stack, production-like:
 
@@ -91,6 +96,8 @@ pnpm test
 Base URL: `http://localhost:8000`
 
 - `GET /api/health` — service health check
+- `GET /api/auth/status` — reports whether backend Basic Auth is enabled
+- `POST /api/auth/login` — validates provided Basic Auth credentials
 - `GET /api/features` — feature schema, defaults, and confidence-level bounds
 - `POST /api/predict` — prediction, SHAP values, top contributors, and selected t-SNE point
 - `POST /api/explain` — prediction context plus generated explanation text
@@ -102,3 +109,5 @@ Examples:
 curl http://localhost:8000/api/features
 curl http://localhost:8000/api/tsne
 ```
+
+When auth is enabled, call protected endpoints with `-u <username>:<password>`.

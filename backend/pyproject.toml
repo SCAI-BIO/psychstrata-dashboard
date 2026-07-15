@@ -12,6 +12,7 @@ dependencies = [
     "scikit-learn>=1.4.2,<1.10.0",
     "scipy>=1.12.0,<2.0.0",
     "shap>=0.46.0,<0.53.0",
+    "slowapi>=0.1.10",
     "uvicorn[standard]>=0.30.0,<1.0.0",
 ]
 

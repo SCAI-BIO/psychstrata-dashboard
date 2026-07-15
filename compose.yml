@@ -4,6 +4,11 @@ services:
   backend:
     build:
       context: ./backend
+    environment:
+      BACKEND_BASIC_AUTH_USERNAME: ${BACKEND_BASIC_AUTH_USERNAME:-}
+      BACKEND_BASIC_AUTH_PASSWORD: ${BACKEND_BASIC_AUTH_PASSWORD:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     expose:
       - "8000"
     healthcheck:
@@ -24,7 +29,6 @@ services:
       target: production
       args:
         VITE_API_BASE_URL: ""
-        VITE_APP_PASSWORD: ${VITE_APP_PASSWORD:-}
     environment:
       BACKEND_HOST: backend
     ports:
