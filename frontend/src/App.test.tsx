@@ -169,7 +169,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Dashboard login" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/auth/status", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/status", expect.any(Object));
 
     fireEvent.change(screen.getByLabelText("Username"), { target: { value: "test-user" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong-password" } });
@@ -185,6 +185,6 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate results" }));
     expect(await screen.findByText("Welcome, John.")).toBeInTheDocument();
     expect(screen.getByText("ESTIMATED TREATMENT RESPONSE")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/predict", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/predict", expect.any(Object));
   });
 });
