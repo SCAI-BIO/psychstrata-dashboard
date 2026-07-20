@@ -215,3 +215,6 @@ __marimo__/
 
 frontend/.vite/*
 .github/copilot-instructions.md
+
+# Mac specific files 
+.DS_Store
