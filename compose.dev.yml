@@ -18,7 +18,7 @@ services:
       target: dev
     command: pnpm dev --host 0.0.0.0 --port 80
     environment:
-      VITE_API_BASE_URL: http://localhost:8000
+      VITE_DEV_PROXY_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules

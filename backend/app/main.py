@@ -143,10 +143,12 @@ def _get_basic_auth_credentials() -> tuple[str, str] | None:
 
 
 def _unauthorized_exception() -> HTTPException:
+    # Deliberately omit the "WWW-Authenticate: Basic" header. The SPA renders its
+    # own LoginView and manages the Authorization header itself; sending that
+    # header would make the browser pop its native Basic Auth dialog on top of it.
     return HTTPException(
         status_code=401,
         detail="Invalid credentials.",
-        headers={"WWW-Authenticate": "Basic"},
     )
 
 
