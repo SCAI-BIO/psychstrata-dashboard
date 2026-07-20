@@ -90,7 +90,7 @@ export function PatientView({ dashboard, ready, prediction }: PatientViewProps) 
 
           <div className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-6 flex flex-col items-center text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Estimated Treatment Response</p>
-            <ResponseBadge label={responseBadge.label} classes={responseBadge.classes} inverse={true} />
+            <ResponseBadge label={responseBadge.label} classes={responseBadge.classes} />
             <p className="text-5xl font-bold text-slate-900 tracking-tight mt-3">{pct(displayedResponse)}</p>
             <div className="w-full max-w-[220px]">
               <RiskGaugeBar probability={displayedResponse} inverse={true} />

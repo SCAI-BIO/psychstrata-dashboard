@@ -87,7 +87,7 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 <select
                   value={String(adherenceCategoryValue(simValues.adherence_pct))}
                   onChange={(e) => patchDraft({ adherence_pct: parseNumberValue(e.target.value) })}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="50">Low</option>
                   <option value="75">Moderate</option>

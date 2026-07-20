@@ -209,7 +209,7 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
           </Field>
           <Field label="Sleep Disturbance">
             <SelectInput
-              value={patient.sleepDisturbance}
+              value={patient.sleepDisturbance ?? ""}
               placeholder="Select Severity"
               options={["None", "Mild", "Moderate", "Severe"]}
               onChange={(v) => api.updateProfile({ sleepDisturbance: v })}
@@ -220,7 +220,7 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
           </Field>
           <Field label="Substance Use">
             <SelectInput
-              value={patient.substanceUse}
+              value={patient.substanceUse ?? ""}
               placeholder="Select Substance Use"
               options={["None", "Alcohol", "Cannabis", "Other"]}
               onChange={(v) => api.updateProfile({ substanceUse: v })}
@@ -235,7 +235,7 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         action={
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700">The patient is currently on medication</span>
-            <Toggle value={patient.onMedication} onChange={(v) => api.updateProfile({ onMedication: v })} />
+            <Toggle value={patient.onMedication ?? false} onChange={(v) => api.updateProfile({ onMedication: v })} />
           </div>
         }
       >
@@ -408,12 +408,14 @@ function NumberInput({
   value,
   onChange,
   min,
-  max
+  max,
+  placeholder
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
   max?: number;
+  placeholder?: string;
 }) {
   return (
     <input
@@ -421,6 +423,7 @@ function NumberInput({
       value={value ?? 0}
       min={min}
       max={max}
+      placeholder={placeholder}
       onChange={(e) => onChange(parseNumberValue(e.target.value))}
       className={inputClass}
     />

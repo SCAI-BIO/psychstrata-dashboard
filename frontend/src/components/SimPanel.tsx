@@ -73,7 +73,7 @@ export function SimControls({ values, onChange, showAdherence = true }: SimContr
             value={String(adherenceCategoryValue(values.adherence_pct))}
             onChange={(event) => onChange({ adherence_pct: parseNumberValue(event.target.value) })}
             className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+>
             <option value="50">Low</option>
             <option value="75">Moderate</option>
             <option value="90">High</option>

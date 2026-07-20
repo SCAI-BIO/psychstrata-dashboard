@@ -1,7 +1,17 @@
 import { Suspense, lazy } from "react";
 import type { TsneResponse } from "../../api";
 
-const Plot = lazy(() => import("react-plotly.js"));
+// Bind react-plotly.js to the pre-bundled minified Plotly build. The default
+// "react-plotly.js" entry pulls in the full "plotly.js" source package (which
+// isn't a dependency); the factory lets us supply "plotly.js-dist-min" instead.
+// Kept lazy so the heavy Plotly bundle stays in its own code-split chunk.
+const Plot = lazy(async () => {
+  const [{ default: createPlotlyComponent }, { default: Plotly }] = await Promise.all([
+    import("react-plotly.js/factory"),
+    import("plotly.js-dist-min")
+  ]);
+  return { default: createPlotlyComponent(Plotly) };
+});
 
 const RESPONSIVE_COLOR = "#6b9e6b";
 const RESISTANT_COLOR = "#c0705f";

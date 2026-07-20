@@ -65,7 +65,9 @@ Full stack, production-like:
 docker compose up --build
 ```
 
-Access the frontend at `http://localhost:3000` and the backend at `http://localhost:8000`.
+Access the frontend at `http://localhost:3000`. The backend is not published to
+the host; the frontend reaches it over the internal Docker network, and nginx
+proxies `/api` requests to the backend service.
 
 Full stack, development with live reload:
 
@@ -73,7 +75,9 @@ Full stack, development with live reload:
 docker compose -f compose.yml -f compose.dev.yml up --build
 ```
 
-Access the frontend at `http://localhost:3000`.
+Access the frontend at `http://localhost:3000`. As above, the backend is not
+exposed on the host — Vite proxies `/api` requests to the backend service
+inside the Docker network.
 
 ## Tests
 

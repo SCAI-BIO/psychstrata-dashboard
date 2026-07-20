@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -15,12 +15,11 @@ import {
   type Patient
 } from "../domain/patient";
 import {
-  clearAuthenticatedSession,
-  getConfiguredPassword,
+  clearAuthHeader,
   getInitialRoute,
   getIsAuthEnabled,
-  hasAuthenticatedSession,
-  persistAuthenticatedSession
+  getStoredAuthHeader,
+  persistAuthHeader,
 } from "../lib/auth";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
 
@@ -31,15 +30,16 @@ import type { LoadState, ResultRoute, Route, SimValues } from "../types";
  */
 export function useDashboard() {
   const authEnabled = getIsAuthEnabled();
-  const configuredPassword = getConfiguredPassword();
 
   const [route, setRoute] = useState<Route>(getInitialRoute());
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [patient, setPatient] = useState<Patient>(() => createDefaultPatient());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !authEnabled || hasAuthenticatedSession()
-  );
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [basicAuthHeader, setBasicAuthHeader] = useState<string | null>(() => getStoredAuthHeader());
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+  const isAuthenticated = !authRequired || basicAuthHeader !== null;
+
 
   const [clinicianSimValues, setClinicianSimValues] = useState<SimValues>({
     sertraline_mg: 0,
@@ -143,29 +143,34 @@ export function useDashboard() {
   }, [authEnabled, isAuthenticated]);
 
   // ── Auth actions ───────────────────────────────────────────────────────────
-  const attemptLogin = useCallback(
-    (password: string): boolean => {
-      if (password === configuredPassword) {
-        persistAuthenticatedSession();
-        setIsAuthenticated(true);
-        setLoginError(null);
-        return true;
-      }
-      setLoginError("Incorrect password.");
-      return false;
-    },
-    [configuredPassword]
-  );
+    
+  // learn whether auth is on, once, on mount:
+  useEffect(() => { fetchAuthStatus().then((status) => setAuthRequired(status.auth_enabled)).catch(() => setAuthRequired(false)); }, []);
+  // keep the api layer's header in sync:
+  useEffect(() => { setBasicAuthHeader(basicAuthHeader); }, [basicAuthHeader]);
+
+  const attemptLogin = useCallback(async (username: string, password: string) => {
+    const header = buildBasicAuthHeader(username.trim(), password);
+    setIsLoginSubmitting(true);
+    setLoginError(null);
+    try {
+      await verifyBasicAuth(header);
+      persistAuthHeader(header);
+      setBasicAuthHeader(header);
+    } catch (e) {
+      setLoginError(e instanceof Error ? e.message : "Unable to sign in.");
+    } finally {
+      setIsLoginSubmitting(false);
+    }
+  }, []);
 
   const signOut = useCallback(() => {
-    clearAuthenticatedSession();
-    setIsAuthenticated(false);
+    clearAuthHeader();
+    setBasicAuthHeader(null);
     setLoginError(null);
     setState({ status: "loading" });
     setPatient(createDefaultPatient());
-    if (window.location.pathname !== ROUTE_TO_PATH.intake) {
-      window.history.pushState({}, "", ROUTE_TO_PATH.intake);
-    }
+    if (window.location.pathname !== ROUTE_TO_PATH.intake) window.history.pushState({}, "", ROUTE_TO_PATH.intake);
     setRoute("intake");
   }, []);
 
@@ -343,7 +348,7 @@ export function useDashboard() {
 
   const applyScenario = useCallback(async (scenario: Patient) => {
     const current = stateRef.current;
-    if (current.status !== "ready") return;
+    if (current.status !== "ready" || current.prediction === null) return;
     setIsClinicianApplySubmitting(true);
     setClinicianApplyError(null);
     try {
@@ -370,6 +375,7 @@ export function useDashboard() {
     authEnabled,
     isAuthenticated,
     loginError,
+    isLoginSubmitting,
     attemptLogin,
     signOut,
     route,

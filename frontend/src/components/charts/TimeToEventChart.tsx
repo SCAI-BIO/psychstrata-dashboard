@@ -100,7 +100,6 @@ export function TimeToEventChart({
               fill="#dc2626"
               stroke="#fff"
               strokeWidth={1.5}
-              isFront
             />
           )}
         </LineChart>
