@@ -4,7 +4,8 @@ import type { ResultRoute, Route } from "./types";
 export const PSYCH_STRATA_LOGO_URL =
   "https://psych-strata.eu/wp-content/uploads/2023/05/logo_footer_blue.png";
 
-export const AUTH_SESSION_KEY = "psychstrata-authenticated";
+/** sessionStorage key under which the Basic-auth Authorization header is cached. */
+export const AUTH_HEADER_STORAGE_KEY = "psychstrata-auth-header";
 
 export const ROUTE_TO_PATH: Record<Route, string> = {
   intake: "/",

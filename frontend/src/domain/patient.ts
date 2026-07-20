@@ -141,7 +141,6 @@ export function isStepComplete(step: number, patient: Patient): boolean {
   switch (step) {
     case 0: {
       const d = patient.demographics;
-      console.log("Demographics: %o", d);
       return [d.name, d.dob, d.gender, d.diagnosis].every((v) => (v ?? "").trim() !== "");
     }
     case 1:
