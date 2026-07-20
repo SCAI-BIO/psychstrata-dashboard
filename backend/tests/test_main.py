@@ -67,7 +67,11 @@ def test_features_endpoint_requires_basic_auth_when_enabled(monkeypatch: pytest.
     response = client.get("/api/features")
 
     assert response.status_code == 401
-    assert response.headers["www-authenticate"] == "Basic"
+    assert response.json()["detail"] == "Invalid credentials."
+    # The 401 intentionally omits the WWW-Authenticate header: the SPA renders
+    # its own login view, and that header would trigger the browser's native
+    # Basic Auth dialog on top of it.
+    assert "www-authenticate" not in response.headers
 
 
 def test_features_endpoint_accepts_valid_basic_auth(monkeypatch: pytest.MonkeyPatch) -> None:
