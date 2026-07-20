@@ -18,6 +18,9 @@ lib/
 lib64/
 parts/
 sdist/
+# NOTE: the Python-template `lib/` rule above also matches the frontend source
+# directory `frontend/src/lib` — re-include it so those modules are tracked.
+!frontend/src/lib/
 var/
 wheels/
 share/python-wheels/
