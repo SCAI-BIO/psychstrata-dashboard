@@ -22,9 +22,9 @@ function App() {
 }
 
 function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {
-  const { authEnabled, isAuthenticated, route, state } = dashboard;
+  const { authRequired, isAuthenticated, route, state } = dashboard;
 
-  if (authEnabled && !isAuthenticated) {
+  if (authRequired && !isAuthenticated) {
     return <LoginView dashboard={dashboard} />;
   }
 
@@ -49,7 +49,7 @@ function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {
 
   if (state.prediction === null) {
     return (
-      <AppShell role={role} onNavigate={dashboard.navigate} onLogout={authEnabled ? dashboard.signOut : undefined}>
+      <AppShell role={role} onNavigate={dashboard.navigate} onLogout={authRequired ? dashboard.signOut : undefined}>
         <div className="flex flex-col items-center justify-center gap-3 h-full text-center">
           <p className="text-sm text-slate-500">No results yet. Start with the patient intake to generate a prediction.</p>
           <button
@@ -67,7 +67,7 @@ function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {
   const prediction = state.prediction;
 
   return (
-    <AppShell role={role} onNavigate={dashboard.navigate} onLogout={authEnabled ? dashboard.signOut : undefined}>
+    <AppShell role={role} onNavigate={dashboard.navigate} onLogout={authRequired ? dashboard.signOut : undefined}>
       {route === "patient" && <PatientView dashboard={dashboard} ready={state} prediction={prediction} />}
       {route === "clinician" && <ClinicianView dashboard={dashboard} ready={state} prediction={prediction} />}
       {route === "scientist" && <ScientistView dashboard={dashboard} ready={state} prediction={prediction} />}

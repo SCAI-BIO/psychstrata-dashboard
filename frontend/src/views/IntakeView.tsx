@@ -66,7 +66,7 @@ function IntakeForm({
             <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
             <span className="text-xl font-bold tracking-tight text-slate-900">TheraPath</span>
         </div>
-        {dashboard.authEnabled && (
+        {dashboard.authRequired && (
           <button
             type="button"
             onClick={dashboard.signOut}

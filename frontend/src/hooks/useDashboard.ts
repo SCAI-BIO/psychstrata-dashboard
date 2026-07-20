@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -17,7 +17,6 @@ import {
 import {
   clearAuthHeader,
   getInitialRoute,
-  getIsAuthEnabled,
   getStoredAuthHeader,
   persistAuthHeader,
 } from "../lib/auth";
@@ -29,13 +28,14 @@ import type { LoadState, ResultRoute, Route, SimValues } from "../types";
  * for model inputs; `featureValues` is a derived projection of it.
  */
 export function useDashboard() {
-  const authEnabled = getIsAuthEnabled();
-
   const [route, setRoute] = useState<Route>(getInitialRoute());
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [patient, setPatient] = useState<Patient>(() => createDefaultPatient());
   const [loginError, setLoginError] = useState<string | null>(null);
+  // Whether the backend requires auth (from /api/auth/status), and whether that
+  // check has completed yet — used to hold data loading until we know.
   const [authRequired, setAuthRequired] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [basicAuthHeader, setBasicAuthHeader] = useState<string | null>(() => getStoredAuthHeader());
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const isAuthenticated = !authRequired || basicAuthHeader !== null;
@@ -103,7 +103,9 @@ export function useDashboard() {
 
   // ── Initial data load (features + t-SNE), seeding the patient vector ────────
   useEffect(() => {
-    if (authEnabled && !isAuthenticated) {
+    // Wait until we know whether auth is required, then hold if a login is needed.
+    if (!authChecked) return;
+    if (authRequired && !isAuthenticated) {
       return;
     }
 
@@ -140,14 +142,19 @@ export function useDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [authEnabled, isAuthenticated]);
+  }, [authChecked, authRequired, isAuthenticated]);
 
   // ── Auth actions ───────────────────────────────────────────────────────────
     
   // learn whether auth is on, once, on mount:
-  useEffect(() => { fetchAuthStatus().then((status) => setAuthRequired(status.auth_enabled)).catch(() => setAuthRequired(false)); }, []);
-  // keep the api layer's header in sync:
-  useEffect(() => { setBasicAuthHeader(basicAuthHeader); }, [basicAuthHeader]);
+  useEffect(() => {
+    fetchAuthStatus()
+      .then((status) => setAuthRequired(status.auth_enabled))
+      .catch(() => setAuthRequired(false))
+      .finally(() => setAuthChecked(true));
+  }, []);
+  // keep the api layer's header in sync so every request carries it:
+  useEffect(() => { setApiAuthHeader(basicAuthHeader); }, [basicAuthHeader]);
 
   const attemptLogin = useCallback(async (username: string, password: string) => {
     const header = buildBasicAuthHeader(username.trim(), password);
@@ -156,6 +163,9 @@ export function useDashboard() {
     try {
       await verifyBasicAuth(header);
       persistAuthHeader(header);
+      // Set the api-layer header synchronously so the data-load effect that
+      // fires on this same state change already carries it.
+      setApiAuthHeader(header);
       setBasicAuthHeader(header);
     } catch (e) {
       setLoginError(e instanceof Error ? e.message : "Unable to sign in.");
@@ -166,6 +176,7 @@ export function useDashboard() {
 
   const signOut = useCallback(() => {
     clearAuthHeader();
+    setApiAuthHeader(null);
     setBasicAuthHeader(null);
     setLoginError(null);
     setState({ status: "loading" });
@@ -372,7 +383,7 @@ export function useDashboard() {
   }, []);
 
   return {
-    authEnabled,
+    authRequired,
     isAuthenticated,
     loginError,
     isLoginSubmitting,
