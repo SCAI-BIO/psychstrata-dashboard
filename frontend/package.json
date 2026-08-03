@@ -14,11 +14,11 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/react-plotly.js": "^2.6.4",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.27.0",
+    "lucide-react": "^1.28.0",
     "plotly.js-dist-min": "^3.7.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-plotly.js": "^4.0.0",
+    "react-plotly.js": "^4.1.0",
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3"
@@ -26,12 +26,12 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^6.0.3",
-    "jsdom": "^30.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "jsdom": "^30.0.1",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vitest": "^4.1.10"
   }
 }
