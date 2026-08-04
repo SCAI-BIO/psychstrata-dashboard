@@ -1,0 +1,66 @@
+import logging
+import os
+import secrets
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from slowapi.util import get_remote_address
+
+
+BASIC_AUTH_USERNAME_ENV = "BACKEND_BASIC_AUTH_USERNAME"
+BASIC_AUTH_PASSWORD_ENV = "BACKEND_BASIC_AUTH_PASSWORD"
+
+logger = logging.getLogger("psychstrata.api")
+basic_auth = HTTPBasic(auto_error=False)
+
+
+def get_client_ip(request: Request) -> str:
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    return get_remote_address(request)
+
+
+def get_basic_auth_credentials() -> tuple[str, str] | None:
+    configured_username = os.getenv(BASIC_AUTH_USERNAME_ENV)
+    configured_password = os.getenv(BASIC_AUTH_PASSWORD_ENV)
+    username = configured_username.strip() if configured_username else None
+    password = configured_password.strip() if configured_password else None
+    if username is None and password is None:
+        return None
+    if username is None or password is None:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Backend Basic Auth is misconfigured. "
+                f"Set both {BASIC_AUTH_USERNAME_ENV} and {BASIC_AUTH_PASSWORD_ENV}."
+            ),
+        )
+    return username, password
+
+
+def _unauthorized_exception() -> HTTPException:
+    return HTTPException(
+        status_code=401,
+        detail="Invalid credentials.",
+    )
+
+
+def require_basic_auth(
+    request: Request,
+    credentials: Annotated[HTTPBasicCredentials | None, Depends(basic_auth)],
+) -> None:
+    configured_credentials = get_basic_auth_credentials()
+    if configured_credentials is None:
+        return
+    if credentials is None:
+        logger.warning("Auth failure (no credentials) from %s", get_client_ip(request))
+        raise _unauthorized_exception()
+
+    configured_username, configured_password = configured_credentials
+    is_username_valid = secrets.compare_digest(credentials.username, configured_username)
+    is_password_valid = secrets.compare_digest(credentials.password, configured_password)
+    if not (is_username_valid and is_password_valid):
+        logger.warning("Auth failure (invalid credentials) from %s", get_client_ip(request))
+        raise _unauthorized_exception()

@@ -29,7 +29,7 @@ def test_explain_propagates_llm_errors(monkeypatch) -> None:
     def _raise_llm_error(*_args, **_kwargs):
         raise LLMServiceError("Prediction explanation unavailable: upstream LLM HTTP 500.")
 
-    monkeypatch.setattr("app.main.generate_prediction_summary", _raise_llm_error)
+    monkeypatch.setattr("app.services.prediction.generate_prediction_summary", _raise_llm_error)
 
     response = client.post(
         "/api/explain",
