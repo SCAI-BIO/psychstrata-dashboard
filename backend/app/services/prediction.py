@@ -13,18 +13,13 @@ from ..llm_summary import (
     generate_prediction_summary,
     select_influential_features,
 )
+from ..model_loader import get_model, model_source
 
 
 EXPLAIN_GLOBAL_DAILY_CAP = int(os.getenv("EXPLAIN_GLOBAL_DAILY_CAP", "5000"))
 _explain_usage = {"day": "", "count": 0}
 
 logger = logging.getLogger("psychstrata.api")
-
-
-def get_model():
-    from ..model import model
-
-    return model
 
 
 def _check_global_cap() -> None:
@@ -91,7 +86,7 @@ def build_prediction_response(values_dict: dict[str, Any], confidence_level: int
             "auc": round(treatment_model.auc, 6),
             "feature_order": treatment_model.feature_cols,
             "training_rows": len(treatment_model.X),
-            "synthetic": True,
+            "synthetic": model_source() == "synthetic",
         },
         "disclaimer": (
             "This demo uses synthetic data for illustration purposes only. "
@@ -137,4 +132,3 @@ def get_tsne_response() -> dict[str, Any]:
             "rows": len(points),
         },
     }
-

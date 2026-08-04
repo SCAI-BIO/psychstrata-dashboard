@@ -80,6 +80,12 @@ Basic Auth is controlled entirely in the backend:
 If both variables are omitted (or empty), authentication is disabled.
 If only one variable is set, the API returns a misconfiguration error so deployment issues are visible.
 
+## Model Configuration
+
+- `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
+
+If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
+
 ## Tests
 
 ```bash

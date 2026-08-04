@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from ..main import limiter
+from ..security.rate_limit import limiter
 
 router = APIRouter()
 

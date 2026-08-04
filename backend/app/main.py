@@ -4,11 +4,16 @@ import time
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from .services.auth import BASIC_AUTH_PASSWORD_ENV, BASIC_AUTH_USERNAME_ENV, get_client_ip
+from .routes.auth import router as auth_router
+from .routes.features import router as features_router
+from .routes.health import router as health_router
+from .routes.predict import router as predict_router
+from .routes.tsne import router as tsne_router
+from .security.basic_auth import BASIC_AUTH_PASSWORD_ENV, BASIC_AUTH_USERNAME_ENV
+from .security.rate_limit import get_client_ip, limiter
 
 
 DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://localhost:5173", "http://localhost:5174")
@@ -28,7 +33,6 @@ def get_cors_origins() -> list[str]:
 
 
 app = FastAPI(title="PsychStrata Dashboard API", version="0.1.0")
-limiter = Limiter(key_func=get_client_ip, storage_uri=os.getenv("RATE_LIMIT_STORAGE_URI", "memory://"))
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
@@ -65,13 +69,6 @@ async def log_requests(request: Request, call_next):
         duration_ms,
     )
     return response
-
-
-from .routes.auth import router as auth_router
-from .routes.features import router as features_router
-from .routes.health import router as health_router
-from .routes.predict import router as predict_router
-from .routes.tsne import router as tsne_router
 
 app.include_router(health_router)
 app.include_router(auth_router)

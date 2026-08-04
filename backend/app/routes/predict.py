@@ -2,8 +2,8 @@ from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 
-from ..main import limiter
-from ..services.auth import require_basic_auth
+from ..security.basic_auth import require_basic_auth
+from ..security.rate_limit import limiter
 from ..services.features import parse_prediction_payload
 from ..services.prediction import build_explanation_response, build_prediction_response
 

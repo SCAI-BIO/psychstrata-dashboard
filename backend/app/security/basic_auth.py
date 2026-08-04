@@ -5,7 +5,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from slowapi.util import get_remote_address
+
+from .rate_limit import get_client_ip
 
 
 BASIC_AUTH_USERNAME_ENV = "BACKEND_BASIC_AUTH_USERNAME"
@@ -13,13 +14,6 @@ BASIC_AUTH_PASSWORD_ENV = "BACKEND_BASIC_AUTH_PASSWORD"
 
 logger = logging.getLogger("psychstrata.api")
 basic_auth = HTTPBasic(auto_error=False)
-
-
-def get_client_ip(request: Request) -> str:
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip.strip()
-    return get_remote_address(request)
 
 
 def get_basic_auth_credentials() -> tuple[str, str] | None:
@@ -64,3 +58,4 @@ def require_basic_auth(
     if not (is_username_valid and is_password_valid):
         logger.warning("Auth failure (invalid credentials) from %s", get_client_ip(request))
         raise _unauthorized_exception()
+

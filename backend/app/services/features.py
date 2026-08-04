@@ -1,6 +1,7 @@
 from typing import Any
 
 from ..config import FEATURE_DEFAULTS, FEATURES_BY_ID, FEATURES_UI
+from ..model_loader import model_source
 
 
 CONFIDENCE_LEVEL_DEFAULT = 95
@@ -40,7 +41,7 @@ def get_features_response() -> dict[str, Any]:
         "model": {
             "type": "RandomForestClassifier",
             "feature_order": MODEL_FEATURE_ORDER,
-            "synthetic": True,
+            "synthetic": model_source() == "synthetic",
         },
     }
 
@@ -115,4 +116,3 @@ def parse_prediction_payload(payload: Any) -> tuple[dict[str, Any], int]:
     values_dict = _validate_features(features_payload)
     confidence_level = _extract_confidence_level(payload)
     return values_dict, confidence_level
-
