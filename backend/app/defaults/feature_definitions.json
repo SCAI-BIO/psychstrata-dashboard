@@ -1,0 +1,141 @@
+{
+  "features": [
+    {
+      "id": "age",
+      "label": "Age (years)",
+      "kind": "numeric",
+      "default": 40,
+      "min": 18,
+      "max": 80,
+      "step": 1
+    },
+    {
+      "id": "sex_female",
+      "label": "Sex",
+      "kind": "categorical",
+      "default": 0,
+      "options": [
+        { "label": "Male", "value": 0 },
+        { "label": "Female", "value": 1 }
+      ]
+    },
+    {
+      "id": "phq9",
+      "label": "PHQ-9 (0-27)",
+      "kind": "numeric",
+      "default": 18,
+      "min": 0,
+      "max": 27,
+      "step": 1
+    },
+    {
+      "id": "duration_months",
+      "label": "Current episode duration (months)",
+      "kind": "numeric",
+      "default": 6,
+      "min": 0,
+      "max": 60,
+      "step": 1
+    },
+    {
+      "id": "previous_failures",
+      "label": "Previous adequate treatment failures",
+      "kind": "numeric",
+      "default": 1,
+      "min": 0,
+      "max": 5,
+      "step": 1
+    },
+    {
+      "id": "adherence_pct",
+      "label": "Adherence (%)",
+      "kind": "numeric",
+      "default": 80,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sertraline_mg",
+      "label": "Sertraline dose (mg/day)",
+      "kind": "numeric",
+      "default": 100,
+      "min": 0,
+      "max": 200,
+      "step": 5
+    },
+    {
+      "id": "quetiapine_mg",
+      "label": "Quetiapine augmentation (mg/day)",
+      "kind": "numeric",
+      "default": 0,
+      "min": 0,
+      "max": 300,
+      "step": 25
+    },
+    {
+      "id": "lithium_mg",
+      "label": "Lithium dose (mg/day)",
+      "kind": "numeric",
+      "default": 0,
+      "min": 0,
+      "max": 1200,
+      "step": 100
+    },
+    {
+      "id": "early_improvement",
+      "label": "Early improvement at 2 weeks",
+      "kind": "categorical",
+      "default": 0,
+      "options": [
+        { "label": "No", "value": 0 },
+        { "label": "Yes", "value": 1 }
+      ]
+    },
+    {
+      "id": "sleep_severity",
+      "label": "Sleep disturbance",
+      "kind": "categorical",
+      "default": 1,
+      "options": [
+        { "label": "None", "value": 0 },
+        { "label": "Mild", "value": 1 },
+        { "label": "Severe", "value": 2 }
+      ]
+    },
+    {
+      "id": "substance_use",
+      "label": "Substance use",
+      "kind": "categorical",
+      "default": 0,
+      "options": [
+        { "label": "None", "value": 0 },
+        { "label": "Occasional", "value": 1 },
+        { "label": "Regular", "value": 2 }
+      ]
+    },
+    {
+      "id": "comorbid_anxiety",
+      "label": "Comorbid anxiety",
+      "kind": "categorical",
+      "default": 0,
+      "options": [
+        { "label": "No", "value": 0 },
+        { "label": "Yes", "value": 1 }
+      ]
+    },
+    {
+      "id": "side_effects",
+      "label": "Side effect burden",
+      "kind": "categorical",
+      "default": 1,
+      "options": [
+        { "label": "None", "value": 0 },
+        { "label": "Mild", "value": 1 },
+        { "label": "Moderate", "value": 2 },
+        { "label": "Severe", "value": 3 }
+      ]
+    }
+  ]
+}
+

@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from app.llm_summary import LLMServiceError
-from app.main import BASIC_AUTH_PASSWORD_ENV, BASIC_AUTH_USERNAME_ENV, app
+from app.services.llm_summary import LLMServiceError
+from app.main import app
+from app.settings import _reset_backend_settings_for_tests
 
 
 client = TestClient(app)
@@ -10,8 +11,9 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def _clear_auth_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv(BASIC_AUTH_USERNAME_ENV, raising=False)
-    monkeypatch.delenv(BASIC_AUTH_PASSWORD_ENV, raising=False)
+    monkeypatch.delenv("BACKEND_BASIC_AUTH_USERNAME", raising=False)
+    monkeypatch.delenv("BACKEND_BASIC_AUTH_PASSWORD", raising=False)
+    _reset_backend_settings_for_tests()
 
 
 def test_health_endpoint() -> None:
@@ -51,8 +53,8 @@ def test_auth_status_endpoint_reports_disabled_by_default() -> None:
 
 
 def test_auth_status_endpoint_reports_enabled_when_credentials_are_configured(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(BASIC_AUTH_USERNAME_ENV, "dashboard-user")
-    monkeypatch.setenv(BASIC_AUTH_PASSWORD_ENV, "dashboard-password")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "dashboard-password")
 
     response = client.get("/api/auth/status")
 
@@ -61,8 +63,8 @@ def test_auth_status_endpoint_reports_enabled_when_credentials_are_configured(mo
 
 
 def test_features_endpoint_requires_basic_auth_when_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(BASIC_AUTH_USERNAME_ENV, "dashboard-user")
-    monkeypatch.setenv(BASIC_AUTH_PASSWORD_ENV, "dashboard-password")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "dashboard-password")
 
     response = client.get("/api/features")
 
@@ -75,8 +77,8 @@ def test_features_endpoint_requires_basic_auth_when_enabled(monkeypatch: pytest.
 
 
 def test_features_endpoint_accepts_valid_basic_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(BASIC_AUTH_USERNAME_ENV, "dashboard-user")
-    monkeypatch.setenv(BASIC_AUTH_PASSWORD_ENV, "dashboard-password")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "dashboard-password")
 
     response = client.get("/api/features", auth=("dashboard-user", "dashboard-password"))
 
@@ -84,7 +86,7 @@ def test_features_endpoint_accepts_valid_basic_auth(monkeypatch: pytest.MonkeyPa
 
 
 def test_auth_status_endpoint_reports_misconfiguration(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(BASIC_AUTH_USERNAME_ENV, "dashboard-user")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
 
     response = client.get("/api/auth/status")
 

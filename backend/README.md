@@ -74,17 +74,37 @@ curl -u dashboard-user:change-me http://localhost:8000/api/summary
 
 Basic Auth is controlled entirely in the backend:
 
+- `BACKEND_CONFIG_FILE` (optional path to a TOML file with shared backend settings)
 - `BACKEND_BASIC_AUTH_USERNAME`
 - `BACKEND_BASIC_AUTH_PASSWORD`
 
 If both variables are omitted (or empty), authentication is disabled.
 If only one variable is set, the API returns a misconfiguration error so deployment issues are visible.
 
+Example `backend.toml`:
+
+```toml
+log_level = "INFO"
+backend_cors_origins = ["http://localhost:3000"]
+backend_basic_auth_username = "dashboard-user"
+backend_basic_auth_password = "change-me"
+model_artifact_path = "/models/model.pkl"
+features_config_path = "/configs/features.json"
+```
+
 ## Model Configuration
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
+You can also set it in `BACKEND_CONFIG_FILE`.
+
+## Feature Configuration
+
+- `FEATURES_CONFIG_PATH` (optional path to a JSON file with a top-level `features` array)
+
+If `FEATURES_CONFIG_PATH` is not set, the backend uses the built-in feature definitions from `app/defaults/feature_definitions.json`.
+You can also set it in `BACKEND_CONFIG_FILE`.
 
 ## Tests
 

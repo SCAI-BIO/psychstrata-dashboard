@@ -4,7 +4,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app import model_loader
+from app.io import model_loader
+from app.settings import _reset_backend_settings_for_tests
 
 
 class _DummyModel:
@@ -31,13 +32,17 @@ class _DummyModel:
 
 @pytest.fixture(autouse=True)
 def _reset_model_loader(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv(model_loader.MODEL_ARTIFACT_PATH_ENV, raising=False)
+    monkeypatch.delenv("MODEL_ARTIFACT_PATH", raising=False)
     model_loader._reset_model_loader_for_tests()
+    _reset_backend_settings_for_tests()
+    yield
+    model_loader._reset_model_loader_for_tests()
+    _reset_backend_settings_for_tests()
 
 
 def test_model_loader_uses_synthetic_when_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
     synthetic_model = object()
-    monkeypatch.setattr("app.model_loader._load_synthetic_model", lambda: synthetic_model)
+    monkeypatch.setattr("app.io.model_loader._load_synthetic_model", lambda: synthetic_model)
 
     loaded_model = model_loader.get_model()
 
@@ -49,7 +54,7 @@ def test_model_loader_loads_model_from_disk(tmp_path: Path, monkeypatch: pytest.
     artifact_path = tmp_path / "model.pkl"
     with artifact_path.open("wb") as handle:
         pickle.dump(_DummyModel(), handle)
-    monkeypatch.setenv(model_loader.MODEL_ARTIFACT_PATH_ENV, str(artifact_path))
+    monkeypatch.setenv("MODEL_ARTIFACT_PATH", str(artifact_path))
 
     loaded_model = model_loader.get_model()
 
@@ -58,8 +63,7 @@ def test_model_loader_loads_model_from_disk(tmp_path: Path, monkeypatch: pytest.
 
 
 def test_model_loader_raises_when_configured_path_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(model_loader.MODEL_ARTIFACT_PATH_ENV, "/tmp/does-not-exist-model.pkl")
+    monkeypatch.setenv("MODEL_ARTIFACT_PATH", "/tmp/does-not-exist-model.pkl")
 
     with pytest.raises(RuntimeError, match="file does not exist"):
         model_loader.get_model()
-

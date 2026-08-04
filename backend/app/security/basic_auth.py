@@ -1,26 +1,21 @@
 import logging
-import os
 import secrets
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
+from ..settings import get_backend_settings
 from .rate_limit import get_client_ip
-
-
-BASIC_AUTH_USERNAME_ENV = "BACKEND_BASIC_AUTH_USERNAME"
-BASIC_AUTH_PASSWORD_ENV = "BACKEND_BASIC_AUTH_PASSWORD"
 
 logger = logging.getLogger("psychstrata.api")
 basic_auth = HTTPBasic(auto_error=False)
 
 
 def get_basic_auth_credentials() -> tuple[str, str] | None:
-    configured_username = os.getenv(BASIC_AUTH_USERNAME_ENV)
-    configured_password = os.getenv(BASIC_AUTH_PASSWORD_ENV)
-    username = configured_username.strip() if configured_username else None
-    password = configured_password.strip() if configured_password else None
+    settings = get_backend_settings()
+    username = settings.backend_basic_auth_username
+    password = settings.backend_basic_auth_password
     if username is None and password is None:
         return None
     if username is None or password is None:
@@ -28,7 +23,7 @@ def get_basic_auth_credentials() -> tuple[str, str] | None:
             status_code=500,
             detail=(
                 "Backend Basic Auth is misconfigured. "
-                f"Set both {BASIC_AUTH_USERNAME_ENV} and {BASIC_AUTH_PASSWORD_ENV}."
+                "Set both BACKEND_BASIC_AUTH_USERNAME and BACKEND_BASIC_AUTH_PASSWORD."
             ),
         )
     return username, password
@@ -58,4 +53,3 @@ def require_basic_auth(
     if not (is_username_valid and is_password_valid):
         logger.warning("Auth failure (invalid credentials) from %s", get_client_ip(request))
         raise _unauthorized_exception()
-

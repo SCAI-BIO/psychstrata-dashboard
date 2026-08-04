@@ -6,14 +6,14 @@ from typing import Any
 import pandas as pd
 from fastapi import HTTPException
 
-from ..config import FEATURES_BY_ID
-from ..llm_summary import (
+from ..io.feature_loader import get_features_by_id
+from .llm_summary import (
     LLMServiceError,
     format_feature_value,
     generate_prediction_summary,
     select_influential_features,
 )
-from ..model_loader import get_model, model_source
+from ..io.model_loader import get_model, model_source
 
 
 EXPLAIN_GLOBAL_DAILY_CAP = int(os.getenv("EXPLAIN_GLOBAL_DAILY_CAP", "5000"))
@@ -44,13 +44,14 @@ def _pack_instance(values_dict: dict[str, Any], feature_cols: list[str]) -> pd.D
 
 
 def _shap_entries(values_dict: dict[str, Any], shap_values, feature_cols: list[str]) -> list[dict[str, Any]]:
+    features_by_id = get_features_by_id()
     entries = []
     for feature_id, shap_value in zip(feature_cols, shap_values):
         rounded_value = round(float(shap_value), 6)
         entries.append(
             {
                 "feature_id": feature_id,
-                "feature_label": FEATURES_BY_ID[feature_id].label,
+                "feature_label": features_by_id[feature_id].label,
                 "selected_value": values_dict[feature_id],
                 "selected_value_label": format_feature_value(feature_id, values_dict[feature_id]),
                 "shap_value": rounded_value,
@@ -77,7 +78,7 @@ def build_prediction_response(values_dict: dict[str, Any], confidence_level: int
             "conformal_prediction": treatment_model.get_conformal_prediction(X_row, confidence_level),
         },
         "shap_values": _shap_entries(values_dict, shap_values, treatment_model.feature_cols),
-        "top_contributors": select_influential_features(values_dict, shap_values),
+        "top_contributors": select_influential_features(values_dict, shap_values, treatment_model.feature_cols),
         "tsne": {
             "selected": {"x": round(selected_x, 4), "y": round(selected_y, 4)},
         },
@@ -103,7 +104,7 @@ def build_explanation_response(values_dict: dict[str, Any], confidence_level: in
     probability = treatment_model.predict_proba(X_row)
     shap_values = treatment_model.get_shap_values(X_row)
     try:
-        explanation = generate_prediction_summary(values_dict, probability, shap_values)
+        explanation = generate_prediction_summary(values_dict, probability, shap_values, treatment_model.feature_cols)
     except LLMServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -114,7 +115,7 @@ def build_explanation_response(values_dict: dict[str, Any], confidence_level: in
             "predicted_class": "Resistant" if probability >= 0.5 else "Responsive",
             "conformal_prediction": treatment_model.get_conformal_prediction(X_row, confidence_level),
         },
-        "top_contributors": select_influential_features(values_dict, shap_values),
+        "top_contributors": select_influential_features(values_dict, shap_values, treatment_model.feature_cols),
         "explanation": explanation,
     }
 
