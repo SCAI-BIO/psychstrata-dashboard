@@ -33,7 +33,7 @@ export function IntakeView({ dashboard }: { dashboard: DashboardApi }) {
   if (state.status === "error") {
     return (
       <CenteredMessage>
-        <span className="font-semibold text-slate-900">Backend unavailable.</span> {state.message}
+        <span className="font-semibold text-slate-900 dark:text-slate-100">Backend unavailable.</span> {state.message}
       </CenteredMessage>
     );
   }
@@ -60,17 +60,17 @@ function IntakeForm({
   const canProceed = isStepComplete(step, patient);
 
   return (
-    <main className="min-h-screen bg-[#faf7f5] text-slate-900">
-      <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200/60 bg-white">
+    <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-900">
         <div className="flex items-center">
             <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
-            <span className="text-xl font-bold tracking-tight text-slate-900">TheraPath</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TheraPath</span>
         </div>
         {dashboard.authRequired && (
           <button
             type="button"
             onClick={dashboard.signOut}
-            className="text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
+            className="text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
           >
             Sign out
           </button>
@@ -79,22 +79,22 @@ function IntakeForm({
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold tracking-tight">New Patient</h1>
-        <p className="text-sm text-slate-500 mt-1 mb-6">Perform a high-precision clinical data entry to calibrate risk models.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Perform a high-precision clinical data entry to calibrate risk models.</p>
 
-        <div className="rounded-xl bg-blue-50 border border-blue-100 px-5 py-4 mb-6">
-          <div className="flex items-center gap-1.5 text-slate-600 mb-1">
+        <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 px-5 py-4 mb-6">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 mb-1">
             <Info size={14} />
             <span className="text-[11px] font-semibold uppercase tracking-wide">Assessment Context</span>
           </div>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            <span className="font-semibold text-slate-600">PREVIEW MODE</span> · This interface is for demonstration only. It does
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            <span className="font-semibold text-slate-600 dark:text-slate-300">PREVIEW MODE</span> · This interface is for demonstration only. It does
             not provide medical advice or definitive diagnosis and is not a certified medical product.
           </p>
           <div className="mt-3">
-            <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
-              <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${STEP_PROGRESS[step]}%` }} />
+            <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="h-full rounded-full bg-slate-900 dark:bg-slate-100 transition-all" style={{ width: `${STEP_PROGRESS[step]}%` }} />
             </div>
-            <p className="text-[11px] font-semibold text-slate-600 text-right mt-1">{STEP_PROGRESS[step]}% Complete</p>
+            <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 text-right mt-1">{STEP_PROGRESS[step]}% Complete</p>
           </div>
         </div>
 
@@ -106,14 +106,14 @@ function IntakeForm({
           {step === 2 && <GeneticsStep patient={patient} api={patientApi} />}
         </div>
 
-        {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400 mt-4">{error}</p>}
 
           <div className="flex items-center justify-between mt-8">
             <button
               type="button"
               onClick={() => setStep(Math.max(0, step - 1))}
               disabled={step === 0}
-            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 disabled:opacity-40 disabled:hover:text-slate-500 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 disabled:opacity-40 disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400 transition-colors"
           >
             <ChevronLeft size={16} />
             Back
@@ -125,7 +125,7 @@ function IntakeForm({
                 type="button"
                 onClick={() => void dashboard.runPrediction("clinician")}
                 disabled={!canProceed || isSubmitting}
-                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
               >
                 {isSubmitting ? "Calculating…" : "Calculate Risk"}
                 {!isSubmitting && <ArrowRight size={16} />}
@@ -135,7 +135,7 @@ function IntakeForm({
                 type="button"
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed}
-                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
               >
                 Next Step
                 <ArrowRight size={16} />
@@ -234,7 +234,7 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         title="Medication & Adherence"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">The patient is currently on medication</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">The patient is currently on medication</span>
             <Toggle value={patient.onMedication ?? false} onChange={(v) => api.updateProfile({ onMedication: v })} />
           </div>
         }
@@ -262,7 +262,7 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
                   step={5}
                   value={num("adherence_pct", 85)}
                   onChange={(event) => api.writeFeature("adherence_pct", parseNumberValue(event.target.value))}
-                  className="w-full accent-slate-900"
+                  className="w-full accent-slate-900 dark:accent-slate-100"
                 />
               </Field>
             </div>
@@ -281,13 +281,13 @@ function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         title="Genomic Data"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Data available</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Data available</span>
             <Toggle value={patient.genetics.available} onChange={(v) => api.updateGenetics({ available: v })} />
           </div>
         }
       >
         {patient.genetics.available && (
-          <div className="grid grid-cols-3 gap-4 text-sm text-slate-500">
+          <div className="grid grid-cols-3 gap-4 text-sm text-slate-500 dark:text-slate-400">
             <span>CYP2D6 Metabolizer Status</span>
             <span>SLC6A4 Genotype</span>
             <span>BDNF Val66Met</span>
@@ -300,13 +300,13 @@ function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         title="Proteomic Data"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Data available</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Data available</span>
             <Toggle value={patient.proteomics.available} onChange={(v) => api.updateProteomics({ available: v })} />
           </div>
         }
       >
         {patient.proteomics.available && (
-          <div className="grid grid-cols-3 gap-4 text-sm text-slate-500">
+          <div className="grid grid-cols-3 gap-4 text-sm text-slate-500 dark:text-slate-400">
             <span>CRP (mg/L)</span>
             <span>IL-6 (pg/mL)</span>
             <span>TNF-alpha (pg/mL)</span>
@@ -325,21 +325,51 @@ function Stepper({ step }: { step: number }) {
       {STEPS.map((label, index) => {
         const active = index === step;
         const done = index < step;
+
+        const stepPosition =
+          index === 0
+            ? "translate-x-0"
+            : index === 1
+              ? "-translate-x-10"
+              : "translate-x-0";
+
+        const linePosition =
+          index === 0
+            ? "mr-12.5"
+            : index === 1
+              ? "-mr-7"
+              : "";
+
         return (
-          <div key={label} className="flex items-center flex-1 last:flex-none">
+          <div
+            key={label}
+            className={`flex items-center flex-1 last:flex-none ${stepPosition}`}
+          >
             <div className="flex items-center gap-2">
               <span
                 className={`flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-semibold ${
-                  active || done ? "border-slate-900 text-slate-900" : "border-slate-300 text-slate-400"
+                  active || done
+                    ? "border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100"
+                    : "border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500"
                 }`}
               >
                 {index + 1}
               </span>
-              <span className={`text-xs font-semibold uppercase tracking-wide ${active ? "text-slate-900" : "text-slate-400"}`}>
+
+              <span
+                className={`text-xs font-semibold uppercase tracking-wide ${
+                  active ? "text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
                 {label}
               </span>
             </div>
-            {index < STEPS.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-4" />}
+
+            {index < STEPS.length - 1 && (
+              <div
+                className={`flex-1 h-px bg-slate-200 dark:bg-slate-700 mx-4 ${linePosition}`}
+              />
+            )}
           </div>
         );
       })}
@@ -359,11 +389,11 @@ function WizardCard({
   children: ReactNode;
 }) {
   return (
-    <section className="bg-white rounded-xl border border-slate-200/70 shadow-sm p-6">
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 shadow-sm p-6">
       <header className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Icon size={18} className="text-slate-700" />
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <Icon size={18} className="text-slate-700 dark:text-slate-300" />
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
         </div>
         {action}
       </header>
@@ -375,15 +405,15 @@ function WizardCard({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
       {children}
     </label>
   );
 }
 
 const inputClass =
-  "w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 " +
-  "appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 " +
+  "appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400";
 
 function TextInput({ value, onChange, placeholder, readOnly, type = "text" }: {
   value: string | null;
@@ -399,7 +429,7 @@ function TextInput({ value, onChange, placeholder, readOnly, type = "text" }: {
       placeholder={placeholder}
       readOnly={readOnly}
       onChange={(e) => onChange(e.target.value)}
-      className={`${inputClass} ${readOnly ? "bg-slate-100 text-slate-500" : ""}`}
+      className={`${inputClass} ${readOnly ? "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" : ""}`}
     />
   );
 }
@@ -441,7 +471,7 @@ function SelectInput({ value, onChange, options, placeholder }: {
           <option key={o} value={o}>{o}</option>
         ))}
       </select>
-      <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
     </div>
   );
 }
@@ -453,8 +483,8 @@ function RadioYesNo({ value, onChange }: { value: boolean; onChange: (yes: boole
         { label: "Yes", val: true },
         { label: "No", val: false }
       ].map((option) => (
-        <label key={option.label} className="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
-          <input type="radio" checked={value === option.val} onChange={() => onChange(option.val)} className="accent-slate-900" />
+        <label key={option.label} className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+          <input type="radio" checked={value === option.val} onChange={() => onChange(option.val)} className="accent-slate-900 dark:accent-slate-100" />
           {option.label}
         </label>
       ))}
@@ -469,10 +499,10 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       role="switch"
       aria-checked={value}
       onClick={() => onChange(!value)}
-      className={`relative w-11 h-6 rounded-full transition-colors ${value ? "bg-slate-900" : "bg-slate-300"}`}
+      className={`relative w-11 h-6 rounded-full transition-colors ${value ? "bg-slate-900 dark:bg-slate-100" : "bg-slate-300 dark:bg-slate-600"}`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-slate-900 shadow transition-transform ${
           value ? "translate-x-5" : ""
         }`}
       />
@@ -482,8 +512,8 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
 
 function CenteredMessage({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#faf7f5] flex items-center justify-center p-8">
-      <p className="text-sm text-slate-500 text-center max-w-md">{children}</p>
+    <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 flex items-center justify-center p-8">
+      <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-md">{children}</p>
     </main>
   );
 }

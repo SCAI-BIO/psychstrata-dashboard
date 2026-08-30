@@ -29,13 +29,13 @@ export function RiskCard({ riskProbability, isHighRisk, confidence }: RiskCardPr
       action={<RiskBadge isHighRisk={isHighRisk} />}
       className="flex flex-col"
     >
-      <p className="text-6xl font-bold text-slate-900 tracking-tight text-center mt-2">{pct(riskProbability)}</p>
+      <p className="text-6xl font-bold text-slate-900 dark:text-slate-300 tracking-tight text-center mt-2">{pct(riskProbability)}</p>
       <RiskGaugeBar probability={riskProbability} />
 
       {confidence && (
         <div className="mt-6">
           <label className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Model Certainty — Confidence Interval (%)
             </span>
             <input
@@ -48,9 +48,9 @@ export function RiskCard({ riskProbability, isHighRisk, confidence }: RiskCardPr
               onMouseUp={() => confidence.onCommit?.()}
               onTouchEnd={() => confidence.onCommit?.()}
               onKeyUp={() => confidence.onCommit?.()}
-              className="w-full accent-slate-900"
+              className="w-full accent-slate-900 dark:accent-slate-100"
             />
-            <div className="flex justify-between text-[11px] text-slate-400">
+            <div className="flex justify-between text-[11px] text-slate-400 dark:text-slate-500">
               <span>{confidence.min}</span>
               <span>{confidence.value}</span>
               <span>{confidence.max}</span>
@@ -59,7 +59,7 @@ export function RiskCard({ riskProbability, isHighRisk, confidence }: RiskCardPr
         </div>
       )}
 
-      <p className="text-xs text-slate-400 leading-relaxed text-center mt-4">
+      <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed text-center mt-4">
         Likelihood of treatment non-response within current regimen based on clinical and biological markers
         {confidence ? " using the specified model certainty." : "."}
       </p>
