@@ -6,7 +6,7 @@ from urllib import error, request
 
 import numpy as np
 
-from .config import FEATURE_OPTION_LABELS, FEATURES_BY_ID
+from ..io.feature_loader import get_feature_option_labels, get_features_by_id
 
 
 OPENAI_API_URL = "https://api.openai.com/v1/responses"
@@ -91,8 +91,9 @@ FEATURE_EVIDENCE: dict[str, FeatureEvidence] = {
 
 
 def format_feature_value(feature_id: str, value: Any) -> str:
-    if feature_id in FEATURE_OPTION_LABELS:
-        option_label = FEATURE_OPTION_LABELS[feature_id].get(value, str(value))
+    feature_option_labels = get_feature_option_labels()
+    if feature_id in feature_option_labels:
+        option_label = feature_option_labels[feature_id].get(value, str(value))
         if feature_id == "early_improvement":
             return "Yes" if value == 1 else "No"
         return option_label
@@ -115,10 +116,11 @@ def format_feature_value(feature_id: str, value: Any) -> str:
 
 
 def _build_feature_item(feature_id: str, value: Any, shap_value: float) -> dict[str, Any]:
+    features_by_id = get_features_by_id()
     evidence = FEATURE_EVIDENCE.get(feature_id)
     return {
         "feature_id": feature_id,
-        "feature_label": FEATURES_BY_ID[feature_id].label,
+        "feature_label": features_by_id[feature_id].label,
         "selected_value": format_feature_value(feature_id, value),
         "shap_value": round(float(shap_value), 4),
         "direction": "raises" if shap_value > 0 else "lowers",
@@ -132,9 +134,15 @@ def _build_feature_item(feature_id: str, value: Any, shap_value: float) -> dict[
     }
 
 
-def select_influential_features(values_dict: dict[str, Any], shap_vals: np.ndarray) -> dict[str, list[dict[str, Any]]]:
+def select_influential_features(
+    values_dict: dict[str, Any],
+    shap_vals: np.ndarray,
+    feature_order: list[str] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    features_by_id = get_features_by_id()
+    ordered_features = feature_order or list(features_by_id.keys())
     ranked = sorted(
-        zip(FEATURES_BY_ID.keys(), np.asarray(shap_vals, dtype=float)),
+        zip(ordered_features, np.asarray(shap_vals, dtype=float)),
         key=lambda item: abs(item[1]),
         reverse=True,
     )
@@ -150,8 +158,13 @@ def select_influential_features(values_dict: dict[str, Any], shap_vals: np.ndarr
     return {"positive": positive, "negative": negative}
 
 
-def build_llm_prompt(values_dict: dict[str, Any], probability: float, shap_vals: np.ndarray) -> str:
-    influential = select_influential_features(values_dict, shap_vals)
+def build_llm_prompt(
+    values_dict: dict[str, Any],
+    probability: float,
+    shap_vals: np.ndarray,
+    feature_order: list[str] | None = None,
+) -> str:
+    influential = select_influential_features(values_dict, shap_vals, feature_order)
     prompt_payload = {
         "task": "Summarize why the model predicted this resistance probability using only the supplied SHAP-based feature list and evidence notes.",
         "prediction_probability_of_resistance": round(float(probability), 4),
@@ -253,6 +266,11 @@ def fetch_llm_summary(prompt: str) -> str:
     return text
 
 
-def generate_prediction_summary(values_dict: dict[str, Any], probability: float, shap_vals: np.ndarray) -> str:
-    prompt = build_llm_prompt(values_dict, probability, shap_vals)
+def generate_prediction_summary(
+    values_dict: dict[str, Any],
+    probability: float,
+    shap_vals: np.ndarray,
+    feature_order: list[str] | None = None,
+) -> str:
+    prompt = build_llm_prompt(values_dict, probability, shap_vals, feature_order)
     return fetch_llm_summary(prompt)

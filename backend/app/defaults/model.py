@@ -10,8 +10,14 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
 
-from .config import CALM_AMBER, CALM_AMBER_LIGHT, CALM_BLUE, CALM_BLUE_LIGHT, CALM_TEAL, CALM_TEAL_LIGHT
 from .data_synth import generate_synthetic_dataset
+
+CALM_BLUE = "#4C78A8"
+CALM_TEAL = "#72B7B2"
+CALM_AMBER = "#D4A72C"
+CALM_BLUE_LIGHT = "#EAF2FB"
+CALM_TEAL_LIGHT = "#E3F4F2"
+CALM_AMBER_LIGHT = "#FBF3D1"
 
 
 class TreatmentResistanceModel:

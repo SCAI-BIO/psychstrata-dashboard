@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -7,15 +6,6 @@ import pandas as pd
 
 RANDOM_STATE = 42
 np.random.seed(RANDOM_STATE)
-
-
-@dataclass(frozen=True)
-class FeatureConfig:
-    id: str
-    label: str
-    kind: str
-    default: Any
-    params: dict[str, Any]
 
 
 def generate_synthetic_dataset(
@@ -104,3 +94,4 @@ def generate_synthetic_dataset(
         }
     )
     return data, pd.Series(y, name="treatment_resistant")
+
