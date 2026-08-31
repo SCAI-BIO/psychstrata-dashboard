@@ -18,18 +18,18 @@ interface AppShellProps extends SidebarProps {
 
 /** Full result-view chrome: sidebar + top bar + scrolling content + footer. */
 export function AppShell({ role, onNavigate, onLogout, children }: AppShellProps) {
-  const { resetPatient } = usePatient();
+  // const { resetPatient } = usePatient();
   
-  const handleNewPatient = () => {
-    resetPatient();
-    onNavigate("intake");
-  };
+  // const handleNewPatient = () => {
+  //   resetPatient();
+  //   onNavigate("intake");
+  // };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar role={role} onNavigate={onNavigate} onLogout={onLogout} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar onNewPatient={handleNewPatient} />
+        <TopBar />
         <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
         <Footer />
       </div>
@@ -87,7 +87,7 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
           className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-slate-700 dark:bg-slate-700 text-white text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
         >
           <Plus size={16} />
-          Add Assessment
+          Add New Patient
         </button>
 
         {onLogout && (
@@ -120,17 +120,10 @@ function PatientCard() {
   );
 }
 
-function TopBar({ onNewPatient }: { onNewPatient: () => void }) {
+function TopBar() {
   return (
     <div className="flex-none flex items-center justify-end px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60">
-      <button
-        type="button"
-        onClick={onNewPatient}
-        className="flex items-center gap-2 bg-slate-900 dark:bg-slate-400 text-white dark:text-slate-900 text-xs font-semibold uppercase tracking-wide px-4 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-700 transition-colors"
-      >
-        <Plus size={15} />
-        New Patient
-      </button>
+      
     </div>
   );
 }
