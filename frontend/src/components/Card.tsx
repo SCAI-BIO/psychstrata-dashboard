@@ -19,12 +19,12 @@ interface CardProps {
 export function Card({ icon: Icon, title, action, className = "", bodyClassName = "", children }: CardProps) {
   const hasHeader = Boolean(title) || Boolean(action);
   return (
-    <article className={`bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 ${className}`}>
+    <article className={`bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-700/70 shadow-sm p-6 ${className}`}>
       {hasHeader && (
         <header className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2 text-slate-900">
-            {Icon && <Icon size={18} className="text-slate-500" />}
-            {title && <h2 className="text-base font-semibold text-slate-900">{title}</h2>}
+          <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
+            {Icon && <Icon size={18} className="text-slate-500 dark:text-slate-400" />}
+            {title && <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>}
           </div>
           {action}
         </header>
@@ -36,5 +36,5 @@ export function Card({ icon: Icon, title, action, className = "", bodyClassName 
 
 /** Small uppercase section label used inside cards (e.g. "Clinical Factors"). */
 export function SectionLabel({ children }: { children: ReactNode }) {
-  return <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">{children}</p>;
+  return <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">{children}</p>;
 }

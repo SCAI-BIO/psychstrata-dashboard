@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+//import type { ReactNode } from "react";
+import { ThemeProvider } from "./context/ThemeContext";
 import { AppShell } from "./components/AppShell";
 import { PatientProvider } from "./context/PatientContext";
 import { useDashboard } from "./hooks/useDashboard";
@@ -17,8 +18,11 @@ import "./App.css";
  */
 function App() {
   const dashboard = useDashboard();
-
-  return <PatientProvider value={dashboard.patientApi}>{renderRoute(dashboard)}</PatientProvider>;
+  return(
+  <ThemeProvider>
+    <PatientProvider value={dashboard.patientApi}>{renderRoute(dashboard)}</PatientProvider>
+  </ThemeProvider>
+  );
 }
 
 function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {

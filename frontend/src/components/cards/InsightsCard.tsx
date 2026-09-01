@@ -21,7 +21,7 @@ export function InsightsCard({ explanation, isRefreshing, onRefresh, error }: In
       onClick={onRefresh}
       disabled={isRefreshing}
       title="Regenerate the plain-language explanation for the current profile."
-      className="text-[11px] font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 px-3 py-1.5 rounded-md transition-colors"
+      className="text-[11px] font-medium text-slate-500 dark:text-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 disabled:opacity-50 px-3 py-1.5 rounded-md transition-colors"
     >
       {isRefreshing ? "Updating…" : "LLM-Generated Explanation"}
     </button>
@@ -33,13 +33,13 @@ export function InsightsCard({ explanation, isRefreshing, onRefresh, error }: In
         <div>
           {explanation ? (
             isRefreshing ? (
-              <p className="text-sm text-slate-500">Refreshing explanation for the current profile…</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Refreshing explanation for the current profile…</p>
             ) : (
               renderSummaryMarkdown(explanation)
             )
           ) : (
             <div className="flex flex-col items-start gap-3">
-              <p className="text-sm text-slate-500 leading-relaxed">
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Generate a plain-language summary of the drivers behind this prediction, grounded in the current patient profile.
               </p>
               <button
