@@ -6,7 +6,12 @@ type Theme = "light" | "dark";
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; 
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  
+  // Fallback to light theme if matchMedia is not available
+  return "light";
 }//will check system settings for preferences
 
 interface ThemeApi {
