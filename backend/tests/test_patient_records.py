@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.persistence.database import _reset_database_for_tests
+from app.persistence.demo_data import DEMO_PATIENT_ID, seed_demo_data
 from app.io.feature_loader import _reset_feature_loader_for_tests, get_model_feature_order
 from app.main import app
 from app.settings import _reset_backend_settings_for_tests
@@ -95,7 +96,7 @@ def test_patient_aggregate_crud_and_config_defaults(client: TestClient) -> None:
 
     list_response = client.get("/api/patients", auth=_auth())
     assert list_response.status_code == 200
-    assert [patient["id"] for patient in list_response.json()] == [created["id"]]
+    assert {patient["id"] for patient in list_response.json()} == {DEMO_PATIENT_ID, created["id"]}
 
     update_response = client.patch(
         f"/api/patients/{created['id']}",
@@ -131,6 +132,20 @@ def test_clinical_data_is_immutable(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "extra_forbidden"
+
+
+def test_startup_seeds_max_mustermann_with_three_treatment_plans_once(client: TestClient) -> None:
+    patient_response = client.get(f"/api/patients/{DEMO_PATIENT_ID}", auth=_auth())
+
+    assert patient_response.status_code == 200
+    assert patient_response.json()["first_name"] == "Max"
+    assert patient_response.json()["last_name"] == "Mustermann"
+
+    seed_demo_data()
+    plans_response = client.get(f"/api/patients/{DEMO_PATIENT_ID}/treatment-plans", auth=_auth())
+
+    assert plans_response.status_code == 200
+    assert len(plans_response.json()) == 3
 
 
 def test_treatment_plan_crud_and_persisted_prediction(client: TestClient) -> None:

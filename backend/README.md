@@ -126,6 +126,8 @@ Configured clinical, medication, and adherence values are stored as JSON objects
 
 The current version supports one clinician. When Basic Auth is enabled, the configured username is stored as `clinician_id`; when auth is disabled for local development, records use `default-clinician`. Patient deletion cascades through clinical data and treatment plans.
 
+At startup, the backend idempotently creates the demo patient `Max Mustermann` with three treatment plans for the configured clinician. Stable IDs prevent duplicate demo records across restarts.
+
 This development-stage schema does not include migrations. If a local `db.sqlite3` was created by the previous SQLModel implementation, recreate that database before starting this version.
 
 ## Model Configuration

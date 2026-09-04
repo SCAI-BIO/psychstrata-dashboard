@@ -8,6 +8,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from .persistence.database import init_db
+from .persistence.demo_data import seed_demo_data
 from .routes.patient_records import router as patients_router
 from .routes.auth import router as auth_router
 from .routes.features import router as features_router
@@ -30,6 +31,7 @@ logger = logging.getLogger("psychstrata.api")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    seed_demo_data()
     yield
 
 
