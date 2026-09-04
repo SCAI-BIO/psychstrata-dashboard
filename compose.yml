@@ -7,8 +7,11 @@ services:
     environment:
       BACKEND_BASIC_AUTH_USERNAME: ${BACKEND_BASIC_AUTH_USERNAME:-}
       BACKEND_BASIC_AUTH_PASSWORD: ${BACKEND_BASIC_AUTH_PASSWORD:-}
+      BACKEND_DATABASE_URL: ${BACKEND_DATABASE_URL:-sqlite:////data/db.sqlite3}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - backend_data:/data
     expose:
       - "8000"
     healthcheck:
@@ -36,3 +39,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  backend_data:

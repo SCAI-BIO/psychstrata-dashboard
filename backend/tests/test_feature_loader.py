@@ -1,10 +1,11 @@
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
 
 from app.io import feature_loader
-from app.services.features import get_features_response
+from app.services.features import get_features_response, parse_prediction_payload
 from app.settings import _reset_backend_settings_for_tests
 
 
@@ -30,27 +31,48 @@ def test_feature_loader_loads_json_config_from_disk(tmp_path: Path, monkeypatch:
     config_path.write_text(
         json.dumps(
             {
-                "features": [
+                "clinical": [
                     {
                         "id": "age",
                         "label": "Age custom",
-                        "kind": "numeric",
+                        "dtype": "numeric",
                         "default": 50,
                         "min": 18,
                         "max": 80,
                         "step": 1,
                     },
                     {
-                        "id": "sex_female",
+                        "id": "sex_at_birth",
                         "label": "Sex custom",
-                        "kind": "categorical",
+                        "dtype": "categorical",
                         "default": 0,
                         "options": [
                             {"label": "Male", "value": 0},
                             {"label": "Female", "value": 1},
                         ],
                     },
-                ]
+                ],
+                "medications": [
+                    {
+                        "id": "sertraline_mg",
+                        "label": "Sertraline",
+                        "dtype": "numeric",
+                        "default": 0,
+                        "min": 0,
+                        "max": 200,
+                    }
+                ],
+                "adherence": [
+                    {
+                        "id": "adherence_pct",
+                        "label": "Adherence",
+                        "dtype": "numeric",
+                        "default": 80,
+                        "min": 0,
+                        "max": 100,
+                    }
+                ],
+                "model_feature_order": ["age", "sex_at_birth", "sertraline_mg", "adherence_pct"],
             }
         ),
         encoding="utf-8",
@@ -62,6 +84,7 @@ def test_feature_loader_loads_json_config_from_disk(tmp_path: Path, monkeypatch:
     assert feature_loader.feature_source() == "file"
     assert response["features"][0]["label"] == "Age custom"
     assert response["defaults"]["age"] == 50
+    assert response["feature_groups"]["medications"][0]["id"] == "sertraline_mg"
 
 
 def test_feature_loader_raises_when_path_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -69,3 +92,16 @@ def test_feature_loader_raises_when_path_missing(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(RuntimeError, match="file does not exist"):
         get_features_response()
+
+
+def test_prediction_payload_derives_age_from_date_of_birth() -> None:
+    response = get_features_response()
+
+    features, _ = parse_prediction_payload(
+        {
+            "features": response["defaults"],
+            "date_of_birth": "2000-01-01",
+        }
+    )
+
+    assert features["age"] == date.today().year - 2000

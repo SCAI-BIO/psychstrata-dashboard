@@ -21,7 +21,7 @@ export function FeatureField({ feature, value, onChange }: FeatureFieldProps) {
   return (
     <label className="flex flex-col gap-1.5" htmlFor={inputId}>
       <span className="text-xs font-medium text-slate-600">{feature.label}</span>
-      {feature.kind === "numeric" ? (
+      {feature.dtype === "numeric" ? (
         <div className="flex items-center gap-3">
           <input
             id={inputId}

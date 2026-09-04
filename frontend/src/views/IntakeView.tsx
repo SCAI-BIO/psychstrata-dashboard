@@ -157,20 +157,23 @@ function DemographicsStep({
   demographics: PatientDemographics;
   onChange: (patch: Partial<PatientDemographics>) => void;
 }) {
+  const api = usePatient();
+  const updateGender = (gender: string) => {
+    onChange({ gender });
+    const value = { Male: 0, Female: 1, Other: 2 }[gender];
+    if (value !== undefined) api.writeFeature("sex_at_birth", value);
+  };
   return (
     <WizardCard icon={FileText} title="Core Demographics">
       <div className="grid grid-cols-2 gap-5">
         <Field label="Full Name">
           <TextInput value={demographics.name ?? ""} placeholder="John Doe" onChange={(v) => onChange({ name: v })} />
         </Field>
-        <Field label="Patient ID">
-          <TextInput value={demographics.patientId ?? ""} placeholder="00000" onChange={(v) => onChange({ patientId: v })} />
-        </Field>
         <Field label="Date of Birth">
-          <TextInput type="date" value={demographics.dob ?? ""} placeholder="01.01.1970" onChange={(v) => onChange({ dob: v })} />
+          <TextInput type="date" value={demographics.dob ?? ""} placeholder="01.01.1970" onChange={(dob) => onChange({ dob })} />
         </Field>
         <Field label="Gender at Birth">
-          <SelectInput value={demographics.gender ?? ""} placeholder="Select Gender" options={["Male", "Female", "Other"]} onChange={(v) => onChange({ gender: v })} />
+          <SelectInput value={demographics.gender ?? ""} placeholder="Select Gender" options={["Male", "Female", "Other"]} onChange={updateGender} />
         </Field>
         <div className="col-span-2">
           <Field label="Primary Diagnosis">
@@ -189,6 +192,14 @@ function DemographicsStep({
 
 function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
   const num = (id: string, fallback = 0) => api.readFeature(id) ?? fallback;
+  const setMedicationEnabled = (enabled: boolean) => {
+    api.updateProfile({ onMedication: enabled });
+    api.writeFeature("sertraline_mg", enabled ? 100 : 0);
+    if (!enabled) {
+      api.writeFeature("quetiapine_mg", 0);
+      api.writeFeature("lithium_mg", 0);
+    }
+  };
   return (
     <>
       <WizardCard icon={FileText} title="Clinical Information">
@@ -198,32 +209,40 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
           </Field>
           <Field label="Episode Duration (months)">
             <NumberInput
-              value={patient.episodeDurationMonths ?? 0}
+              value={num("duration_months")}
               min={0}
+              max={60}
               placeholder="Months"
-              onChange={(v) => api.updateProfile({ episodeDurationMonths: v })}
+              onChange={(value) => {
+                api.updateProfile({ episodeDurationMonths: value });
+                api.writeFeature("duration_months", value);
+              }}
             />
           </Field>
           <Field label="Adequate Treatment Failures">
-            <NumberInput value={num("previous_failures")} min={0} max={10} placeholder="0-10" onChange={(v) => api.writeFeature("previous_failures", v)} />
+            <NumberInput value={num("previous_failures")} min={0} max={5} placeholder="0-5" onChange={(v) => api.writeFeature("previous_failures", v)} />
           </Field>
           <Field label="Sleep Disturbance">
-            <SelectInput
-              value={patient.sleepDisturbance ?? ""}
-              placeholder="Select Severity"
-              options={["None", "Mild", "Moderate", "Severe"]}
-              onChange={(v) => api.updateProfile({ sleepDisturbance: v })}
+            <NumericSelectInput
+              value={num("sleep_severity")}
+              options={[["None", 0], ["Mild", 1], ["Severe", 2]]}
+              onChange={(value, label) => {
+                api.updateProfile({ sleepDisturbance: label });
+                api.writeFeature("sleep_severity", value);
+              }}
             />
           </Field>
           <Field label="Comorbid Anxiety">
             <RadioYesNo value={num("comorbid_anxiety") === 1} onChange={(yes) => api.writeFeature("comorbid_anxiety", yes ? 1 : 0)} />
           </Field>
           <Field label="Substance Use">
-            <SelectInput
-              value={patient.substanceUse ?? ""}
-              placeholder="Select Substance Use"
-              options={["None", "Alcohol", "Cannabis", "Other"]}
-              onChange={(v) => api.updateProfile({ substanceUse: v })}
+            <NumericSelectInput
+              value={num("substance_use")}
+              options={[["None", 0], ["Occasional", 1], ["Regular", 2]]}
+              onChange={(value, label) => {
+                api.updateProfile({ substanceUse: label });
+                api.writeFeature("substance_use", value);
+              }}
             />
           </Field>
         </div>
@@ -235,14 +254,14 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         action={
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">The patient is currently on medication</span>
-            <Toggle value={patient.onMedication ?? false} onChange={(v) => api.updateProfile({ onMedication: v })} />
+            <Toggle value={patient.onMedication ?? false} onChange={setMedicationEnabled} />
           </div>
         }
       >
         {patient.onMedication && (
           <div className="grid grid-cols-2 gap-5">
             <Field label="Sertraline Dose (mg/day)">
-              <NumberInput value={num("sertraline_mg")} min={0} max={400} placeholder="0-400" onChange={(v) => api.writeFeature("sertraline_mg", v)} />
+              <NumberInput value={num("sertraline_mg")} min={0} max={200} placeholder="0-200" onChange={(v) => api.writeFeature("sertraline_mg", v)} />
             </Field>
             <Field label="Quetiapine Augmentation (mg/day)">
               <NumberInput value={num("quetiapine_mg")} min={0} max={300} placeholder="0-300" onChange={(v) => api.writeFeature("quetiapine_mg", v)} />
@@ -266,6 +285,13 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
                 />
               </Field>
             </div>
+            <Field label="Side Effect Burden">
+              <NumericSelectInput
+                value={num("side_effects")}
+                options={[["None", 0], ["Mild", 1], ["Moderate", 2], ["Severe", 3]]}
+                onChange={(v) => api.writeFeature("side_effects", v)}
+              />
+            </Field>
           </div>
         )}
       </WizardCard>
@@ -469,6 +495,35 @@ function SelectInput({ value, onChange, options, placeholder }: {
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
           <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+      <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+    </div>
+  );
+}
+
+function NumericSelectInput({
+  value,
+  onChange,
+  options
+}: {
+  value: number;
+  onChange: (value: number, label: string) => void;
+  options: Array<[string, number]>;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={String(value)}
+        onChange={(event) => {
+          const optionValue = parseNumberValue(event.target.value);
+          const label = options.find(([, value]) => value === optionValue)?.[0] ?? "";
+          onChange(optionValue, label);
+        }}
+        className={`${inputClass} pr-9`}
+      >
+        {options.map(([label, optionValue]) => (
+          <option key={optionValue} value={String(optionValue)}>{label}</option>
         ))}
       </select>
       <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />

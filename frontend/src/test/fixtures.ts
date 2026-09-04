@@ -21,12 +21,17 @@ import type { LoadState, ReadyState } from "../types";
 
 export const featuresPayload: FeaturesResponse = {
   features: [
-    { id: "phq9", label: "PHQ-9", kind: "numeric", default: 12, params: { min: 0, max: 27, step: 1 }, min: 0, max: 27, step: 1 },
-    { id: "adherence_pct", label: "Adherence (%)", kind: "numeric", default: 80, params: { min: 0, max: 100, step: 1 }, min: 0, max: 100, step: 1 },
-    { id: "sertraline_mg", label: "Sertraline", kind: "numeric", default: 100, params: { min: 0, max: 200, step: 5 }, min: 0, max: 200, step: 5 },
-    { id: "lithium_mg", label: "Lithium", kind: "numeric", default: 0, params: { min: 0, max: 1200, step: 100 }, min: 0, max: 1200, step: 100 },
-    { id: "quetiapine_mg", label: "Quetiapine", kind: "numeric", default: 0, params: { min: 0, max: 300, step: 25 }, min: 0, max: 300, step: 25 }
+    { id: "phq9", label: "PHQ-9", dtype: "numeric", category: "clinical", default: 12, params: { min: 0, max: 27, step: 1 }, min: 0, max: 27, step: 1 },
+    { id: "adherence_pct", label: "Adherence (%)", dtype: "numeric", category: "adherence", default: 80, params: { min: 0, max: 100, step: 1 }, min: 0, max: 100, step: 1 },
+    { id: "sertraline_mg", label: "Sertraline", dtype: "numeric", category: "medications", default: 100, params: { min: 0, max: 200, step: 5 }, min: 0, max: 200, step: 5 },
+    { id: "lithium_mg", label: "Lithium", dtype: "numeric", category: "medications", default: 0, params: { min: 0, max: 1200, step: 100 }, min: 0, max: 1200, step: 100 },
+    { id: "quetiapine_mg", label: "Quetiapine", dtype: "numeric", category: "medications", default: 0, params: { min: 0, max: 300, step: 25 }, min: 0, max: 300, step: 25 }
   ],
+  feature_groups: {
+    clinical: [],
+    medications: [],
+    adherence: []
+  },
   defaults: { phq9: 12, adherence_pct: 80, sertraline_mg: 100, lithium_mg: 0, quetiapine_mg: 0 },
   model_feature_order: ["phq9", "adherence_pct", "sertraline_mg", "lithium_mg", "quetiapine_mg"],
   confidence_level: { default: 95, min: 80, max: 99, step: 1 }
@@ -84,13 +89,12 @@ export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
     ...base,
     demographics: {
       name: "John Doe",
-      patientId: "98421",
       dob: "1978-05-12",
       gender: "Male",
       diagnosis: "F33.1 — Major depressive disorder, recurrent, moderate"
     },
     episodeDurationMonths: 8,
-    sleepDisturbance: "Moderate",
+    sleepDisturbance: "Mild",
     substanceUse: "None",
     ...overrides
   };

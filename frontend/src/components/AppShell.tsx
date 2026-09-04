@@ -108,12 +108,11 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
 
 function PatientCard() {
   const { patient } = usePatient();
-  const { name, patientId, dob } = patient.demographics;
+  const { name, dob } = patient.demographics;
   return (
     <div className="flex items-center gap-3 px-1 mb-6">
       <div className="leading-tight">
         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{name}</p>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400">ID: {patientId}</p>
         <p className="text-[11px] text-slate-500 dark:text-slate-400">DOB: {dob}</p>
       </div>
     </div>

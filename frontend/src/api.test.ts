@@ -76,12 +76,16 @@ describe("auth header propagation", () => {
 
   it("fetchPredict posts JSON with a content-type header", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(predictionResponse));
-    await fetchPredict({ features: { phq9: 12 }, confidence_level: 95 });
+    await fetchPredict({ features: { phq9: 12 }, confidence_level: 95, date_of_birth: "1980-01-01" });
     const [url, init] = fetchMock.mock.calls[0] as FetchArgs;
     expect(url).toBe("/api/predict");
     expect(init?.method).toBe("POST");
     expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json");
-    expect(JSON.parse(init?.body as string)).toEqual({ features: { phq9: 12 }, confidence_level: 95 });
+    expect(JSON.parse(init?.body as string)).toEqual({
+      features: { phq9: 12 },
+      confidence_level: 95,
+      date_of_birth: "1980-01-01"
+    });
   });
 });
 

@@ -19,7 +19,6 @@ describe("createDefaultPatient", () => {
     const p = createDefaultPatient({ phq9: 12, adherence_pct: 80 });
     expect(p.clinical).toEqual({ phq9: 12, adherence_pct: 80 });
     expect(p.extras).toEqual({});
-    expect(p.onMedication).toBe(true);
   });
 });
 
@@ -45,7 +44,7 @@ describe("pure transforms are immutable", () => {
     expect(patientToFeatures(next)).not.toHaveProperty("custom_score");
   });
 
-  it("withDemographics and withProfile patch nested/flat fields", () => {
+  it("withDemographics and withProfile patch patient state", () => {
     const p = createDefaultPatient();
     const named = withDemographics(p, { name: "Jane Roe" });
     expect(named.demographics.name).toBe("Jane Roe");

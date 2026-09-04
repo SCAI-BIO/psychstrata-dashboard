@@ -9,7 +9,6 @@
 
 export interface PatientDemographics {
   name: string | null;
-  patientId: string | null;
   dob: string | null;
   gender: string | null;
   diagnosis: string | null;
@@ -46,7 +45,6 @@ export interface Patient {
 /** Presentation-only default identity (mirrors the mockups). */
 const DEFAULT_DEMOGRAPHICS: PatientDemographics = {
   name: null,
-  patientId: null,
   dob: null,
   gender: null,
   diagnosis: null
@@ -100,6 +98,8 @@ export function withProteomics(patient: Patient, patch: Partial<PatientProteomic
   return { ...patient, proteomics: { ...patient.proteomics, ...patch } };
 }
 
+// ── Selectors ─────────────────────────────────────────────────────────────
+
 export type PatientProfilePatch = Partial<
   Pick<Patient, "onMedication" | "episodeDurationMonths" | "sleepDisturbance" | "substanceUse">
 >;
@@ -107,8 +107,6 @@ export type PatientProfilePatch = Partial<
 export function withProfile(patient: Patient, patch: PatientProfilePatch): Patient {
   return { ...patient, ...patch };
 }
-
-// ── Selectors ─────────────────────────────────────────────────────────────
 
 export function firstName(patient: Patient): string {
   const name = patient.demographics.name ?? "";

@@ -10,6 +10,7 @@ from .rate_limit import get_client_ip
 
 logger = logging.getLogger("psychstrata.api")
 basic_auth = HTTPBasic(auto_error=False)
+DEFAULT_CLINICIAN_ID = "default-clinician"
 
 
 def get_basic_auth_credentials() -> tuple[str, str] | None:
@@ -36,13 +37,13 @@ def _unauthorized_exception() -> HTTPException:
     )
 
 
-def require_basic_auth(
+def get_current_clinician_id(
     request: Request,
     credentials: Annotated[HTTPBasicCredentials | None, Depends(basic_auth)],
-) -> None:
+) -> str:
     configured_credentials = get_basic_auth_credentials()
     if configured_credentials is None:
-        return
+        return DEFAULT_CLINICIAN_ID
     if credentials is None:
         logger.warning("Auth failure (no credentials) from %s", get_client_ip(request))
         raise _unauthorized_exception()
@@ -53,3 +54,11 @@ def require_basic_auth(
     if not (is_username_valid and is_password_valid):
         logger.warning("Auth failure (invalid credentials) from %s", get_client_ip(request))
         raise _unauthorized_exception()
+    return configured_username
+
+
+def require_basic_auth(
+    request: Request,
+    credentials: Annotated[HTTPBasicCredentials | None, Depends(basic_auth)],
+) -> None:
+    get_current_clinician_id(request, credentials)
