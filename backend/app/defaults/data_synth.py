@@ -1,10 +1,9 @@
-from typing import Any
-
 import numpy as np
 import pandas as pd
 
-
 RANDOM_STATE = 42
+SEX_AT_BIRTH_VALUES = [0, 1, 2]
+SEX_AT_BIRTH_PROBABILITIES = [0.49, 0.49, 0.02]
 np.random.seed(RANDOM_STATE)
 
 
@@ -15,7 +14,7 @@ def generate_synthetic_dataset(
     rng = np.random.default_rng(random_state)
 
     age = rng.integers(18, 81, size=n)
-    sex = rng.choice([0, 1], p=[0.5, 0.5], size=n)
+    sex = rng.choice(SEX_AT_BIRTH_VALUES, p=SEX_AT_BIRTH_PROBABILITIES, size=n)
     phq9 = rng.integers(0, 28, size=n)
     duration_months = rng.integers(0, 61, size=n)
     previous_failures = rng.integers(0, 6, size=n)
@@ -78,7 +77,7 @@ def generate_synthetic_dataset(
     data = pd.DataFrame(
         {
             "age": age,
-            "sex_female": sex,
+            "sex_at_birth": sex,
             "phq9": phq9,
             "duration_months": duration_months,
             "previous_failures": previous_failures,
@@ -94,4 +93,3 @@ def generate_synthetic_dataset(
         }
     )
     return data, pd.Series(y, name="treatment_resistant")
-

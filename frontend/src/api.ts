@@ -12,14 +12,9 @@ export type FeatureOption = {
 export type FeatureSchema = {
   id: string;
   label: string;
-  kind: "numeric" | "categorical";
+  dtype: "numeric" | "categorical";
   default: number;
-  params: {
-    min?: number;
-    max?: number;
-    step?: number;
-    options?: FeatureOption[];
-  };
+  category: "clinical" | "medications" | "adherence";
   min?: number;
   max?: number;
   step?: number;
@@ -28,6 +23,11 @@ export type FeatureSchema = {
 
 export type FeaturesResponse = {
   features: FeatureSchema[];
+  feature_groups: {
+    clinical: FeatureSchema[];
+    medications: FeatureSchema[];
+    adherence: FeatureSchema[];
+  };
   defaults: Record<string, number>;
   model_feature_order: string[];
   confidence_level: {
@@ -185,6 +185,7 @@ export function fetchTsne(): Promise<TsneResponse> {
 export function fetchPredict(payload: {
   features: Record<string, number>;
   confidence_level: number;
+  date_of_birth?: string | null;
 }): Promise<PredictionResponse> {
   return requestJson<PredictionResponse>("/api/predict", {
     method: "POST",
@@ -196,6 +197,7 @@ export function fetchPredict(payload: {
 export function fetchExplain(payload: {
   features: Record<string, number>;
   confidence_level: number;
+  date_of_birth?: string | null;
 }): Promise<ExplainResponse> {
   return requestJson<ExplainResponse>("/api/explain", {
     method: "POST",

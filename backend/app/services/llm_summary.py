@@ -82,7 +82,7 @@ FEATURE_EVIDENCE: dict[str, FeatureEvidence] = {
         pmids=["31178367", "33779973"],
         note="Indirect evidence rather than a well-established predictor.",
     ),
-    "sex_female": FeatureEvidence(
+    "sex_at_birth": FeatureEvidence(
         association="Sex differences in antidepressant response exist, but they are not large enough to guide care alone and do not establish a strong standalone treatment-resistance predictor.",
         pmids=["16012273"],
         note="Use cautious wording because this is about antidepressant response differences, not a direct treatment-resistance predictor.",

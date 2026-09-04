@@ -8,6 +8,7 @@ services:
       BACKEND_CORS_ORIGINS: http://localhost:3000,http://localhost:5173
       BACKEND_BASIC_AUTH_USERNAME: ${BACKEND_BASIC_AUTH_USERNAME:-}
       BACKEND_BASIC_AUTH_PASSWORD: ${BACKEND_BASIC_AUTH_PASSWORD:-}
+      BACKEND_DATABASE_URL: ${BACKEND_DATABASE_URL:-sqlite:///./db.sqlite3}
     volumes:
       - ./backend:/app
       - backend_venv:/app/.venv

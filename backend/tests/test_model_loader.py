@@ -9,8 +9,8 @@ from app.settings import _reset_backend_settings_for_tests
 
 
 class _DummyModel:
-    def __init__(self) -> None:
-        self.feature_cols = ["age"]
+    def __init__(self, feature_cols: list[str] | None = None) -> None:
+        self.feature_cols = feature_cols or ["age"]
         self.auc = 0.9
         self.X = pd.DataFrame({"age": [1]})
 
@@ -66,4 +66,17 @@ def test_model_loader_raises_when_configured_path_is_missing(monkeypatch: pytest
     monkeypatch.setenv("MODEL_ARTIFACT_PATH", "/tmp/does-not-exist-model.pkl")
 
     with pytest.raises(RuntimeError, match="file does not exist"):
+        model_loader.get_model()
+
+
+def test_model_loader_rejects_features_absent_from_configuration(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    artifact_path = tmp_path / "model.pkl"
+    with artifact_path.open("wb") as handle:
+        pickle.dump(_DummyModel(["unknown_feature"]), handle)
+    monkeypatch.setenv("MODEL_ARTIFACT_PATH", str(artifact_path))
+
+    with pytest.raises(RuntimeError, match="absent from feature configuration"):
         model_loader.get_model()

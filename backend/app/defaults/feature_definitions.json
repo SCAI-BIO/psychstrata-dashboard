@@ -1,28 +1,29 @@
 {
-  "features": [
+  "clinical": [
     {
       "id": "age",
       "label": "Age (years)",
-      "kind": "numeric",
+      "dtype": "numeric",
       "default": 40,
       "min": 18,
       "max": 80,
       "step": 1
     },
     {
-      "id": "sex_female",
-      "label": "Sex",
-      "kind": "categorical",
+      "id": "sex_at_birth",
+      "label": "Sex at birth",
+      "dtype": "categorical",
       "default": 0,
       "options": [
         { "label": "Male", "value": 0 },
-        { "label": "Female", "value": 1 }
+        { "label": "Female", "value": 1 },
+        { "label": "Other", "value": 2 }
       ]
     },
     {
       "id": "phq9",
       "label": "PHQ-9 (0-27)",
-      "kind": "numeric",
+      "dtype": "numeric",
       "default": 18,
       "min": 0,
       "max": 27,
@@ -31,7 +32,7 @@
     {
       "id": "duration_months",
       "label": "Current episode duration (months)",
-      "kind": "numeric",
+      "dtype": "numeric",
       "default": 6,
       "min": 0,
       "max": 60,
@@ -40,62 +41,16 @@
     {
       "id": "previous_failures",
       "label": "Previous adequate treatment failures",
-      "kind": "numeric",
+      "dtype": "numeric",
       "default": 1,
       "min": 0,
       "max": 5,
       "step": 1
     },
     {
-      "id": "adherence_pct",
-      "label": "Adherence (%)",
-      "kind": "numeric",
-      "default": 80,
-      "min": 0,
-      "max": 100,
-      "step": 1
-    },
-    {
-      "id": "sertraline_mg",
-      "label": "Sertraline dose (mg/day)",
-      "kind": "numeric",
-      "default": 100,
-      "min": 0,
-      "max": 200,
-      "step": 5
-    },
-    {
-      "id": "quetiapine_mg",
-      "label": "Quetiapine augmentation (mg/day)",
-      "kind": "numeric",
-      "default": 0,
-      "min": 0,
-      "max": 300,
-      "step": 25
-    },
-    {
-      "id": "lithium_mg",
-      "label": "Lithium dose (mg/day)",
-      "kind": "numeric",
-      "default": 0,
-      "min": 0,
-      "max": 1200,
-      "step": 100
-    },
-    {
-      "id": "early_improvement",
-      "label": "Early improvement at 2 weeks",
-      "kind": "categorical",
-      "default": 0,
-      "options": [
-        { "label": "No", "value": 0 },
-        { "label": "Yes", "value": 1 }
-      ]
-    },
-    {
       "id": "sleep_severity",
       "label": "Sleep disturbance",
-      "kind": "categorical",
+      "dtype": "categorical",
       "default": 1,
       "options": [
         { "label": "None", "value": 0 },
@@ -106,7 +61,7 @@
     {
       "id": "substance_use",
       "label": "Substance use",
-      "kind": "categorical",
+      "dtype": "categorical",
       "default": 0,
       "options": [
         { "label": "None", "value": 0 },
@@ -117,7 +72,57 @@
     {
       "id": "comorbid_anxiety",
       "label": "Comorbid anxiety",
-      "kind": "categorical",
+      "dtype": "categorical",
+      "default": 0,
+      "options": [
+        { "label": "No", "value": 0 },
+        { "label": "Yes", "value": 1 }
+      ]
+    }
+  ],
+  "medications": [
+    {
+      "id": "sertraline_mg",
+      "label": "Sertraline dose (mg/day)",
+      "dtype": "numeric",
+      "default": 100,
+      "min": 0,
+      "max": 200,
+      "step": 5
+    },
+    {
+      "id": "quetiapine_mg",
+      "label": "Quetiapine augmentation (mg/day)",
+      "dtype": "numeric",
+      "default": 0,
+      "min": 0,
+      "max": 300,
+      "step": 25
+    },
+    {
+      "id": "lithium_mg",
+      "label": "Lithium dose (mg/day)",
+      "dtype": "numeric",
+      "default": 0,
+      "min": 0,
+      "max": 1200,
+      "step": 100
+    }
+  ],
+  "adherence": [
+    {
+      "id": "adherence_pct",
+      "label": "Adherence (%)",
+      "dtype": "numeric",
+      "default": 80,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "early_improvement",
+      "label": "Early improvement at 2 weeks",
+      "dtype": "categorical",
       "default": 0,
       "options": [
         { "label": "No", "value": 0 },
@@ -127,7 +132,7 @@
     {
       "id": "side_effects",
       "label": "Side effect burden",
-      "kind": "categorical",
+      "dtype": "categorical",
       "default": 1,
       "options": [
         { "label": "None", "value": 0 },
@@ -136,6 +141,21 @@
         { "label": "Severe", "value": 3 }
       ]
     }
+  ],
+  "model_feature_order": [
+    "age",
+    "sex_at_birth",
+    "phq9",
+    "duration_months",
+    "previous_failures",
+    "adherence_pct",
+    "sertraline_mg",
+    "quetiapine_mg",
+    "lithium_mg",
+    "early_improvement",
+    "sleep_severity",
+    "substance_use",
+    "comorbid_anxiety",
+    "side_effects"
   ]
 }
-

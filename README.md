@@ -103,6 +103,17 @@ Base URL: `http://localhost:8000`
 - `GET /api/auth/status` — reports whether backend Basic Auth is enabled
 - `POST /api/auth/login` — validates provided Basic Auth credentials
 - `GET /api/features` — feature schema, defaults, and confidence-level bounds
+- `POST /api/patients` — create a patient for the current clinician
+- `GET /api/patients` — list patients for the current clinician
+- `GET /api/patients/{patient_id}` — read a patient
+- `PATCH /api/patients/{patient_id}` — update a patient
+- `DELETE /api/patients/{patient_id}` — delete a patient and cascade-delete treatment plans
+- `POST /api/patients/{patient_id}/treatment-plans` — create a treatment plan for a patient
+- `GET /api/patients/{patient_id}/treatment-plans` — list a patient's treatment plans
+- `GET /api/treatment-plans/{treatment_plan_id}` — read a treatment plan
+- `PATCH /api/treatment-plans/{treatment_plan_id}` — update a treatment plan
+- `DELETE /api/treatment-plans/{treatment_plan_id}` — delete a treatment plan
+- `POST /api/treatment-plans/{treatment_plan_id}/predict` — predict from persisted patient and treatment-plan data
 - `POST /api/predict` — prediction, SHAP values, top contributors, and selected t-SNE point
 - `POST /api/explain` — prediction context plus generated explanation text
 - `GET /api/tsne` — population t-SNE coordinates and class labels
@@ -115,3 +126,5 @@ curl http://localhost:8000/api/tsne
 ```
 
 When auth is enabled, call protected endpoints with `-u <username>:<password>`.
+
+Patient and treatment-plan persistence uses plain SQLAlchemy 2.0. Configure `BACKEND_DATABASE_URL` to choose the database; if omitted, the backend uses `sqlite:///./db.sqlite3`. Configured clinical, medication, and treatment values are stored as validated JSON objects in their aggregate tables.

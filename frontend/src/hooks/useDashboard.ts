@@ -243,7 +243,8 @@ export function useDashboard() {
       try {
         const prediction = await fetchPredict({
           features: patientToFeatures(patientRef.current),
-          confidence_level: current.confidenceLevel
+          confidence_level: current.confidenceLevel,
+          date_of_birth: patientRef.current.demographics.dob
         });
         setPatient((prev) => withClinicalMerged(prev, prediction.features));
         setState((prev) => {
@@ -278,7 +279,8 @@ export function useDashboard() {
     try {
       const explanationPayload = await fetchExplain({
         features: patientToFeatures(patientRef.current),
-        confidence_level: current.confidenceLevel
+        confidence_level: current.confidenceLevel,
+        date_of_birth: patientRef.current.demographics.dob
       });
       setState((prev) => {
         if (prev.status !== "ready") return prev;
@@ -306,7 +308,8 @@ export function useDashboard() {
     try {
       const response = await fetchPredict({
         features: { ...patientToFeatures(patientRef.current), ...simRef.current },
-        confidence_level: current.confidenceLevel
+        confidence_level: current.confidenceLevel,
+        date_of_birth: patientRef.current.demographics.dob
       });
       const baselineRisk = current.prediction.prediction.probability_resistance;
       const simulatedRisk = response.prediction.probability_resistance;
@@ -324,7 +327,11 @@ export function useDashboard() {
     setIsClinicianImpactSubmitting(true);
     setClinicianImpactError(null);
     try {
-      const response = await fetchPredict({ features, confidence_level: current.confidenceLevel });
+      const response = await fetchPredict({
+        features,
+        confidence_level: current.confidenceLevel,
+        date_of_birth: patientRef.current.demographics.dob
+      });
       const baseline = current.prediction.prediction.probability_resistance;
       setClinicianImpactPct((baseline - response.prediction.probability_resistance) * 100);
     } catch (e) {
@@ -343,7 +350,8 @@ export function useDashboard() {
     try {
       const response = await fetchPredict({
         features: { ...patientToFeatures(patientRef.current), ...simRef.current },
-        confidence_level: current.confidenceLevel
+        confidence_level: current.confidenceLevel,
+        date_of_birth: patientRef.current.demographics.dob
       });
       setPatient((prev) => withClinicalMerged(prev, response.features));
       setState((prev) => {
@@ -366,7 +374,8 @@ export function useDashboard() {
       const baseline = current.prediction.prediction.probability_resistance;
       const response = await fetchPredict({
         features: patientToFeatures(scenario),
-        confidence_level: current.confidenceLevel
+        confidence_level: current.confidenceLevel,
+        date_of_birth: scenario.demographics.dob
       });
       setClinicianAppliedImpactPct((baseline - response.prediction.probability_resistance) * 100);
       // commit the scenario as the real patient (syncing model-returned features)…

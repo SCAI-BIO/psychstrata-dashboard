@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
+from .feature_loader import get_features_by_id
 from ..settings import get_backend_settings
 
 
@@ -33,6 +34,12 @@ class _LoadedModelContract(BaseModel):
         missing_methods = [name for name in required_methods if not callable(getattr(self.model, name, None))]
         if missing_methods:
             raise ValueError(f"Model is missing required methods: {', '.join(missing_methods)}.")
+        configured_feature_ids = set(get_features_by_id())
+        unknown_features = [feature_id for feature_id in self.model.feature_cols if feature_id not in configured_feature_ids]
+        if unknown_features:
+            raise ValueError(
+                f"Model uses features absent from feature configuration: {', '.join(unknown_features)}."
+            )
         return self
 
 

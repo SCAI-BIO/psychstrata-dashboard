@@ -17,6 +17,7 @@ class BackendSettings(BaseModel):
     backend_cors_origins: list[str] = Field(default_factory=lambda: list(DEFAULT_CORS_ORIGINS))
     backend_basic_auth_username: str | None = None
     backend_basic_auth_password: str | None = None
+    backend_database_url: str = "sqlite:///./db.sqlite3"
     model_artifact_path: str | None = None
     features_config_path: str | None = None
 
@@ -24,6 +25,7 @@ class BackendSettings(BaseModel):
         "log_level",
         "backend_basic_auth_username",
         "backend_basic_auth_password",
+        "backend_database_url",
         "model_artifact_path",
         "features_config_path",
         mode="before",
@@ -87,6 +89,7 @@ def _load_backend_settings() -> BackendSettings:
         "backend_cors_origins": os.getenv("BACKEND_CORS_ORIGINS"),
         "backend_basic_auth_username": os.getenv("BACKEND_BASIC_AUTH_USERNAME"),
         "backend_basic_auth_password": os.getenv("BACKEND_BASIC_AUTH_PASSWORD"),
+        "backend_database_url": os.getenv("BACKEND_DATABASE_URL"),
         "model_artifact_path": os.getenv("MODEL_ARTIFACT_PATH"),
         "features_config_path": os.getenv("FEATURES_CONFIG_PATH"),
     }

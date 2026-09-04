@@ -1,7 +1,15 @@
+from datetime import date
 from typing import Any
 
-from ..io.feature_loader import get_feature_defaults, get_features_by_id, get_features_ui
+from ..io.feature_loader import (
+    get_feature_defaults,
+    get_features_by_category,
+    get_features_by_id,
+    get_features_ui,
+    get_model_feature_order,
+)
 from ..io.model_loader import model_source
+from ..utils.datetime import age_on_date
 
 
 CONFIDENCE_LEVEL_DEFAULT = 95
@@ -13,11 +21,11 @@ def feature_schema(cfg) -> dict[str, Any]:
     schema = {
         "id": cfg.id,
         "label": cfg.label,
-        "kind": cfg.kind,
+        "dtype": cfg.dtype,
         "default": cfg.default,
-        "params": cfg.params,
+        "category": cfg.category,
     }
-    if cfg.kind == "numeric":
+    if cfg.dtype == "numeric":
         schema["min"] = cfg.params["min"]
         schema["max"] = cfg.params["max"]
         schema["step"] = cfg.params.get("step", 1)
@@ -29,9 +37,13 @@ def feature_schema(cfg) -> dict[str, Any]:
 def get_features_response() -> dict[str, Any]:
     features_ui = get_features_ui()
     feature_defaults = get_feature_defaults()
-    model_feature_order = [cfg.id for cfg in features_ui]
+    model_feature_order = get_model_feature_order()
     return {
         "features": [feature_schema(cfg) for cfg in features_ui],
+        "feature_groups": {
+            category: [feature_schema(cfg) for cfg in get_features_by_category(category)]
+            for category in ("clinical", "medications", "adherence")
+        },
         "defaults": feature_defaults,
         "model_feature_order": model_feature_order,
         "confidence_level": {
@@ -49,7 +61,7 @@ def get_features_response() -> dict[str, Any]:
 
 
 def _coerce_feature_value(cfg, raw_value: Any) -> Any:
-    if cfg.kind == "numeric":
+    if cfg.dtype == "numeric":
         if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
             raise ValueError(f"Feature '{cfg.id}' must be numeric.")
 
@@ -90,7 +102,7 @@ def _extract_features_payload(payload: dict[str, Any]) -> Any:
     if "features" in payload:
         return payload["features"]
 
-    allowed_control_keys = {"confidence_level", "confidenceLevel"}
+    allowed_control_keys = {"confidence_level", "confidenceLevel", "date_of_birth"}
     unknown = sorted(set(payload.keys()) - set(features_by_id.keys()) - allowed_control_keys)
     if unknown:
         raise ValueError(f"Unknown fields provided: {', '.join(unknown)}.")
@@ -118,6 +130,13 @@ def parse_prediction_payload(payload: Any) -> tuple[dict[str, Any], int]:
         raise ValueError("Request body must be a JSON object.")
 
     features_payload = _extract_features_payload(payload)
+    date_of_birth = payload.get("date_of_birth")
+    if date_of_birth:
+        try:
+            parsed_date_of_birth = date.fromisoformat(date_of_birth)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("date_of_birth must be an ISO date.") from exc
+        features_payload = {**features_payload, "age": age_on_date(parsed_date_of_birth)}
     values_dict = _validate_features(features_payload)
     confidence_level = _extract_confidence_level(payload)
     return values_dict, confidence_level
