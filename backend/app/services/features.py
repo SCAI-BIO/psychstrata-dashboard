@@ -23,7 +23,6 @@ def feature_schema(cfg) -> dict[str, Any]:
         "label": cfg.label,
         "dtype": cfg.dtype,
         "default": cfg.default,
-        "params": cfg.params,
         "category": cfg.category,
     }
     if cfg.dtype == "numeric":

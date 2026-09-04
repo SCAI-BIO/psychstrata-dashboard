@@ -15,12 +15,6 @@ export type FeatureSchema = {
   dtype: "numeric" | "categorical";
   default: number;
   category: "clinical" | "medications" | "adherence";
-  params: {
-    min?: number;
-    max?: number;
-    step?: number;
-    options?: FeatureOption[];
-  };
   min?: number;
   max?: number;
   step?: number;

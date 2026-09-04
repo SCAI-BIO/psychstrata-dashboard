@@ -23,6 +23,12 @@ def test_feature_loader_uses_default_config_when_not_configured() -> None:
     response = get_features_response()
 
     assert response["features"]
+    assert all("params" not in feature for feature in response["features"])
+    assert all(
+        "params" not in feature
+        for features in response["feature_groups"].values()
+        for feature in features
+    )
     assert feature_loader.feature_source() == "default"
 
 

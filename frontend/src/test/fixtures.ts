@@ -21,11 +21,11 @@ import type { LoadState, ReadyState } from "../types";
 
 export const featuresPayload: FeaturesResponse = {
   features: [
-    { id: "phq9", label: "PHQ-9", dtype: "numeric", category: "clinical", default: 12, params: { min: 0, max: 27, step: 1 }, min: 0, max: 27, step: 1 },
-    { id: "adherence_pct", label: "Adherence (%)", dtype: "numeric", category: "adherence", default: 80, params: { min: 0, max: 100, step: 1 }, min: 0, max: 100, step: 1 },
-    { id: "sertraline_mg", label: "Sertraline", dtype: "numeric", category: "medications", default: 100, params: { min: 0, max: 200, step: 5 }, min: 0, max: 200, step: 5 },
-    { id: "lithium_mg", label: "Lithium", dtype: "numeric", category: "medications", default: 0, params: { min: 0, max: 1200, step: 100 }, min: 0, max: 1200, step: 100 },
-    { id: "quetiapine_mg", label: "Quetiapine", dtype: "numeric", category: "medications", default: 0, params: { min: 0, max: 300, step: 25 }, min: 0, max: 300, step: 25 }
+    { id: "phq9", label: "PHQ-9", dtype: "numeric", category: "clinical", default: 12, min: 0, max: 27, step: 1 },
+    { id: "adherence_pct", label: "Adherence (%)", dtype: "numeric", category: "adherence", default: 80, min: 0, max: 100, step: 1 },
+    { id: "sertraline_mg", label: "Sertraline", dtype: "numeric", category: "medications", default: 100, min: 0, max: 200, step: 5 },
+    { id: "lithium_mg", label: "Lithium", dtype: "numeric", category: "medications", default: 0, min: 0, max: 1200, step: 100 },
+    { id: "quetiapine_mg", label: "Quetiapine", dtype: "numeric", category: "medications", default: 0, min: 0, max: 300, step: 25 }
   ],
   feature_groups: {
     clinical: [],
