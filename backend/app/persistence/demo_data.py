@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlalchemy import select
 
-from ..domain.patient_records import Patient, PatientClinicalData, TreatmentPlan
+from .patient_record import Patient, PatientClinicalData, TreatmentPlan
 from ..io.feature_loader import validate_feature_values
 from ..security.basic_auth import DEFAULT_CLINICIAN_ID
 from ..settings import get_backend_settings

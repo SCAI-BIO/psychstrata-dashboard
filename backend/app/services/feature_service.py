@@ -7,6 +7,7 @@ from ..io.feature_loader import (
     get_features_by_id,
     get_features_ui,
     get_model_feature_order,
+    validate_model_feature_values,
 )
 from ..io.model_loader import model_source
 from ..utils.datetime import age_on_date
@@ -60,41 +61,10 @@ def get_features_response() -> dict[str, Any]:
     }
 
 
-def _coerce_feature_value(cfg, raw_value: Any) -> Any:
-    if cfg.dtype == "numeric":
-        if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
-            raise ValueError(f"Feature '{cfg.id}' must be numeric.")
-
-        numeric_value = float(raw_value)
-        if not numeric_value.is_integer():
-            raise ValueError(f"Feature '{cfg.id}' must be an integer value.")
-
-        integer_value = int(numeric_value)
-        if integer_value < cfg.params["min"] or integer_value > cfg.params["max"]:
-            raise ValueError(f"Feature '{cfg.id}' must be between {cfg.params['min']} and {cfg.params['max']}.")
-        return integer_value
-
-    valid_values = {option["value"] for option in cfg.params["options"]}
-    if raw_value not in valid_values:
-        raise ValueError(f"Feature '{cfg.id}' must be one of {sorted(valid_values)}.")
-    return raw_value
-
-
 def _validate_features(features_payload: Any) -> dict[str, Any]:
-    features_ui = get_features_ui()
-    features_by_id = get_features_by_id()
     if not isinstance(features_payload, dict):
         raise ValueError("Request field 'features' must be a JSON object.")
-
-    missing = [cfg.id for cfg in features_ui if cfg.id not in features_payload]
-    if missing:
-        raise ValueError(f"Missing required features: {', '.join(missing)}.")
-
-    unknown = sorted(set(features_payload.keys()) - set(features_by_id.keys()))
-    if unknown:
-        raise ValueError(f"Unknown features provided: {', '.join(unknown)}.")
-
-    return {cfg.id: _coerce_feature_value(cfg, features_payload[cfg.id]) for cfg in features_ui}
+    return validate_model_feature_values(features_payload)
 
 
 def _extract_features_payload(payload: dict[str, Any]) -> Any:
@@ -133,10 +103,10 @@ def parse_prediction_payload(payload: Any) -> tuple[dict[str, Any], int]:
     date_of_birth = payload.get("date_of_birth")
     if date_of_birth:
         try:
-            parsed_date_of_birth = date.fromisoformat(date_of_birth)
+            date_of_birth = date.fromisoformat(date_of_birth)
         except (TypeError, ValueError) as exc:
             raise ValueError("date_of_birth must be an ISO date.") from exc
-        features_payload = {**features_payload, "age": age_on_date(parsed_date_of_birth)}
+        features_payload = {**features_payload, "age": age_on_date(date_of_birth)}
     values_dict = _validate_features(features_payload)
     confidence_level = _extract_confidence_level(payload)
     return values_dict, confidence_level

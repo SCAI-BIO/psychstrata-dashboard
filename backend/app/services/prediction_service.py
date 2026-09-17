@@ -6,13 +6,10 @@ from typing import Any
 import pandas as pd
 from fastapi import HTTPException
 
+from ..clients.llm_client import LLMClientError
 from ..io.feature_loader import get_features_by_id
-from .llm_summary import (
-    LLMServiceError,
-    format_feature_value,
-    generate_prediction_summary,
-    select_influential_features,
-)
+from ..schemas.prediction_schema import ExplainResponse, PredictionResponse, TsneResponse
+from .llm_summary_service import format_feature_value, generate_prediction_summary, select_influential_features
 from ..io.model_loader import get_model, model_source
 
 
@@ -20,6 +17,7 @@ EXPLAIN_GLOBAL_DAILY_CAP = int(os.getenv("EXPLAIN_GLOBAL_DAILY_CAP", "5000"))
 _explain_usage = {"day": "", "count": 0}
 
 logger = logging.getLogger("psychstrata.api")
+CONFIDENCE_LEVEL_DEFAULT = 95
 
 
 def _check_global_cap() -> None:
@@ -63,20 +61,24 @@ def _shap_entries(values_dict: dict[str, Any], shap_values, feature_cols: list[s
     return sorted(entries, key=lambda entry: entry["abs_shap_value"], reverse=True)
 
 
-def build_prediction_response(values_dict: dict[str, Any], confidence_level: int) -> dict[str, Any]:
+def _prediction_fields(treatment_model, X_row: pd.DataFrame, probability: float, confidence_level: int) -> dict[str, Any]:
+    return {
+        "probability_resistance": round(float(probability), 6),
+        "predicted_class": "Resistant" if probability >= 0.5 else "Responsive",
+        "conformal_prediction": treatment_model.get_conformal_prediction(X_row, confidence_level),
+    }
+
+
+def build_prediction_response(values_dict: dict[str, Any], confidence_level: int) -> PredictionResponse:
     treatment_model = get_model()
     X_row = _pack_instance(values_dict, treatment_model.feature_cols)
     probability = treatment_model.predict_proba(X_row)
     shap_values = treatment_model.get_shap_values(X_row)
     selected_x, selected_y = treatment_model.approximate_tsne_position(X_row)
 
-    return {
+    return PredictionResponse.model_validate({
         "features": values_dict,
-        "prediction": {
-            "probability_resistance": round(float(probability), 6),
-            "predicted_class": "Resistant" if probability >= 0.5 else "Responsive",
-            "conformal_prediction": treatment_model.get_conformal_prediction(X_row, confidence_level),
-        },
+        "prediction": _prediction_fields(treatment_model, X_row, probability, confidence_level),
         "shap_values": _shap_entries(values_dict, shap_values, treatment_model.feature_cols),
         "top_contributors": select_influential_features(values_dict, shap_values, treatment_model.feature_cols),
         "tsne": {
@@ -93,10 +95,10 @@ def build_prediction_response(values_dict: dict[str, Any], confidence_level: int
             "This demo uses synthetic data for illustration purposes only. "
             "It is not a medical device and must not be used for diagnosis or treatment decisions."
         ),
-    }
+    })
 
 
-def build_explanation_response(values_dict: dict[str, Any], confidence_level: int) -> dict[str, Any]:
+def build_explanation_response(values_dict: dict[str, Any], confidence_level: int) -> ExplainResponse:
     _check_global_cap()
 
     treatment_model = get_model()
@@ -105,24 +107,20 @@ def build_explanation_response(values_dict: dict[str, Any], confidence_level: in
     shap_values = treatment_model.get_shap_values(X_row)
     try:
         explanation = generate_prediction_summary(values_dict, probability, shap_values, treatment_model.feature_cols)
-    except LLMServiceError as exc:
+    except LLMClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    return {
+    return ExplainResponse.model_validate({
         "features": values_dict,
-        "prediction": {
-            "probability_resistance": round(float(probability), 6),
-            "predicted_class": "Resistant" if probability >= 0.5 else "Responsive",
-            "conformal_prediction": treatment_model.get_conformal_prediction(X_row, confidence_level),
-        },
+        "prediction": _prediction_fields(treatment_model, X_row, probability, confidence_level),
         "top_contributors": select_influential_features(values_dict, shap_values, treatment_model.feature_cols),
         "explanation": explanation,
-    }
+    })
 
 
-def get_tsne_response() -> dict[str, Any]:
+def get_tsne_response() -> TsneResponse:
     points = get_model().tsne_points()
-    return {
+    return TsneResponse.model_validate({
         "points": points,
         "classes": [
             {"value": 0, "label": "Responsive"},
@@ -132,4 +130,4 @@ def get_tsne_response() -> dict[str, Any]:
             "source": "synthetic_training_population",
             "rows": len(points),
         },
-    }
+    })

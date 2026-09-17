@@ -133,9 +133,17 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 ## Model Configuration
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
+- `LLM_CLIENT_URL` (optional LLM endpoint URL; defaults to the OpenAI Responses API)
+- `LLM_CLIENT_MODEL` (optional model name; defaults to `gpt-4.1-mini`)
+- `LLM_CLIENT_SECRET` (optional client secret; used by hosted providers such as OpenAI)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
 You can also set it in `BACKEND_CONFIG_FILE`.
+
+LLM explanations select a client strategy from the configured URL. OpenAI URLs use the
+OpenAI Responses API client; localhost URLs use the Ollama client and default to `/api/chat`.
+The secret is optional for local Ollama use. `OPENAI_API_URL`, `OPENAI_MODEL`, and
+`OPENAI_API_KEY` remain supported as compatibility fallbacks.
 
 ## Feature Configuration
 

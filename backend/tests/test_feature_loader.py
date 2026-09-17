@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from app.io import feature_loader
-from app.services.features import get_features_response, parse_prediction_payload
+from app.services.feature_service import get_features_response, parse_prediction_payload
 from app.settings import _reset_backend_settings_for_tests
 
 

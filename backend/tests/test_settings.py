@@ -16,6 +16,12 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
         "BACKEND_DATABASE_URL",
         "MODEL_ARTIFACT_PATH",
         "FEATURES_CONFIG_PATH",
+        "LLM_CLIENT_URL",
+        "LLM_CLIENT_MODEL",
+        "LLM_CLIENT_SECRET",
+        "OPENAI_API_URL",
+        "OPENAI_MODEL",
+        "OPENAI_API_KEY",
     ):
         monkeypatch.delenv(env_name, raising=False)
     settings._reset_backend_settings_for_tests()
@@ -31,6 +37,9 @@ def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BACKEND_DATABASE_URL", "sqlite:///./env.sqlite3")
     monkeypatch.setenv("MODEL_ARTIFACT_PATH", "/models/model.pkl")
     monkeypatch.setenv("FEATURES_CONFIG_PATH", "/configs/features.json")
+    monkeypatch.setenv("LLM_CLIENT_URL", "http://localhost:11434")
+    monkeypatch.setenv("LLM_CLIENT_MODEL", "llama3")
+    monkeypatch.setenv("LLM_CLIENT_SECRET", "local-secret")
 
     backend_settings = settings.get_backend_settings()
 
@@ -41,6 +50,9 @@ def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     assert backend_settings.backend_database_url == "sqlite:///./env.sqlite3"
     assert backend_settings.model_artifact_path == "/models/model.pkl"
     assert backend_settings.features_config_path == "/configs/features.json"
+    assert backend_settings.llm_client_url == "http://localhost:11434"
+    assert backend_settings.llm_client_model == "llama3"
+    assert backend_settings.llm_client_secret == "local-secret"
 
 
 def test_settings_load_values_from_toml_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
