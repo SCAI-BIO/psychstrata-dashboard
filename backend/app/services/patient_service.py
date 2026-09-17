@@ -6,22 +6,12 @@ from ..persistence.patient_repository import PatientRepository
 from ..persistence.patient_record import Patient, TreatmentPlan
 from ..schemas.patient_schema import PatientCreate, PatientUpdate, TreatmentPlanCreate, TreatmentPlanUpdate
 from ..utils.datetime import age_on_date
-
-
-class PatientNotFoundError(LookupError):
-    pass
-
-
-class TreatmentPlanNotFoundError(LookupError):
-    pass
-
-
-class InvalidPatientDataError(ValueError):
-    pass
-
-
-class MissingModelFeaturesError(ValueError):
-    pass
+from .errors import (
+    InvalidPatientDataError,
+    MissingModelFeaturesError,
+    PatientNotFoundError,
+    TreatmentPlanNotFoundError,
+)
 
 
 def validate_patient_age(date_of_birth: date) -> None:
