@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from app.services.llm_summary import LLMServiceError
+from app.clients.llm_client import LLMClientError
 from app.main import app
 from app.settings import _reset_backend_settings_for_tests
 
@@ -29,9 +29,9 @@ def test_explain_propagates_llm_errors(monkeypatch) -> None:
     defaults = features_response.json()["defaults"]
 
     def _raise_llm_error(*_args, **_kwargs):
-        raise LLMServiceError("Prediction explanation unavailable: upstream LLM HTTP 500.")
+        raise LLMClientError("Prediction explanation unavailable: upstream LLM HTTP 500.")
 
-    monkeypatch.setattr("app.services.prediction.generate_prediction_summary", _raise_llm_error)
+    monkeypatch.setattr("app.services.prediction_service.generate_prediction_summary", _raise_llm_error)
 
     response = client.post(
         "/api/explain",

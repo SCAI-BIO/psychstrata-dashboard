@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
 from .feature_loader import get_features_by_id
 from ..settings import get_backend_settings
-
+from ..defaults.model import create_synthetic_model
 
 _model_instance: Any | None = None
 _model_source: str | None = None
@@ -58,8 +58,7 @@ def _load_model_from_disk(path: Path) -> Any:
 
 
 def _load_synthetic_model() -> Any:
-    from ..defaults.model import model
-
+    model = create_synthetic_model()
     _validate_loaded_model(model)
     return model
 

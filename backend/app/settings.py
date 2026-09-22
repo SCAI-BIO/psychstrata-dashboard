@@ -20,6 +20,9 @@ class BackendSettings(BaseModel):
     backend_database_url: str = "sqlite:///./db.sqlite3"
     model_artifact_path: str | None = None
     features_config_path: str | None = None
+    llm_client_url: str = "https://api.openai.com/v1/responses"
+    llm_client_model: str = "gpt-4.1-mini"
+    llm_client_secret: str | None = None
 
     @field_validator(
         "log_level",
@@ -28,6 +31,9 @@ class BackendSettings(BaseModel):
         "backend_database_url",
         "model_artifact_path",
         "features_config_path",
+        "llm_client_url",
+        "llm_client_model",
+        "llm_client_secret",
         mode="before",
     )
     @classmethod
@@ -92,6 +98,9 @@ def _load_backend_settings() -> BackendSettings:
         "backend_database_url": os.getenv("BACKEND_DATABASE_URL"),
         "model_artifact_path": os.getenv("MODEL_ARTIFACT_PATH"),
         "features_config_path": os.getenv("FEATURES_CONFIG_PATH"),
+        "llm_client_url": os.getenv("LLM_CLIENT_URL") or os.getenv("OPENAI_API_URL"),
+        "llm_client_model": os.getenv("LLM_CLIENT_MODEL") or os.getenv("OPENAI_MODEL"),
+        "llm_client_secret": os.getenv("LLM_CLIENT_SECRET") or os.getenv("OPENAI_API_KEY"),
     }
     for key, raw_value in env_overrides.items():
         if key == "backend_cors_origins" and raw_value is not None:

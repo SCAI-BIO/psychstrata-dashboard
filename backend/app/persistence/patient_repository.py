@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from ..domain.patient_records import Patient, PatientClinicalData, TreatmentPlan
+from .patient_record import Patient, PatientClinicalData, TreatmentPlan
 from ..utils.datetime import utc_now
 
 

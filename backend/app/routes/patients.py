@@ -4,11 +4,19 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from ..persistence.database import get_session
-from ..domain.patient_schemas import PatientCreate, PatientRead, PatientUpdate, TreatmentPlanCreate, TreatmentPlanRead, TreatmentPlanUpdate
+from ..schemas.patient_schema import (
+    PatientCreate,
+    PatientRead,
+    PatientUpdate,
+    TreatmentPlanCreate,
+    TreatmentPlanRead,
+    TreatmentPlanUpdate,
+)
 from ..persistence.patient_repository import PatientRepository
 from ..security.basic_auth import get_current_clinician_id
+from ..schemas.prediction_schema import PredictionResponse
 from ..services.patient_service import PatientService
-from ..services.prediction import build_prediction_response
+from ..services.prediction_service import CONFIDENCE_LEVEL_DEFAULT, build_prediction_response
 
 router = APIRouter()
 
@@ -113,11 +121,17 @@ def delete_treatment_plan(
     return Response(status_code=204)
 
 
-@router.post("/api/treatment-plans/{treatment_plan_id}/predict")
+@router.post(
+    "/api/treatment-plans/{treatment_plan_id}/predict",
+    response_model=PredictionResponse,
+)
 def predict_treatment_plan(
     treatment_plan_id: str,
     clinician_id: Annotated[str, Depends(get_current_clinician_id)],
     service: Annotated[PatientService, Depends(get_patient_service)],
 ):
     treatment_plan = service.get_treatment_plan(clinician_id, treatment_plan_id)
-    return build_prediction_response(service.build_model_features(treatment_plan), 95)
+    return build_prediction_response(
+        service.build_model_features(treatment_plan),
+        CONFIDENCE_LEVEL_DEFAULT,
+    )

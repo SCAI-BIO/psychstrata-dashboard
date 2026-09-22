@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..security.basic_auth import require_basic_auth
 from ..security.rate_limit import limiter
-from ..services.features import get_features_response
+from ..services.feature_service import get_features_response
 
 router = APIRouter()
 

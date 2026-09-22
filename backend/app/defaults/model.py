@@ -12,13 +12,6 @@ from sklearn.neighbors import NearestNeighbors
 
 from .data_synth import generate_synthetic_dataset
 
-CALM_BLUE = "#4C78A8"
-CALM_TEAL = "#72B7B2"
-CALM_AMBER = "#D4A72C"
-CALM_BLUE_LIGHT = "#EAF2FB"
-CALM_TEAL_LIGHT = "#E3F4F2"
-CALM_AMBER_LIGHT = "#FBF3D1"
-
 
 class TreatmentResistanceModel:
     def __init__(self, n_samples: int = 2500, random_state: int = 42):
@@ -133,18 +126,11 @@ class TreatmentResistanceModel:
         else:
             label = "Uncertain"
 
-        styles = {
-            "Responsive": {"background": CALM_TEAL_LIGHT, "border": f"1px solid {CALM_TEAL}", "color": "#1F5F5B"},
-            "Resistant": {"background": CALM_BLUE_LIGHT, "border": f"1px solid {CALM_BLUE}", "color": "#1F3B63"},
-            "Uncertain": {"background": CALM_AMBER_LIGHT, "border": f"1px solid {CALM_AMBER}", "color": "#7A5C00"},
-        }
-
         return {
             "confidence_level": ci_level,
             "alpha": round(alpha, 4),
             "label": label,
             "included_classes": included_classes,
-            "style": styles[label],
         }
 
     def approximate_tsne_position(self, X_row: pd.DataFrame, k: int = 15) -> tuple[float, float]:
@@ -173,4 +159,5 @@ class TreatmentResistanceModel:
         ]
 
 
-model = TreatmentResistanceModel()
+def create_synthetic_model() -> TreatmentResistanceModel:
+    return TreatmentResistanceModel()
