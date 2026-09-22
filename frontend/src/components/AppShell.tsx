@@ -4,6 +4,7 @@ import { NAV_ITEMS, PATIENT_META, PREVIEW_MODE_TEXT, PSYCH_STRATA_LOGO_URL } fro
 import { usePatient } from "../context/PatientContext";
 import { useTheme } from "../context/ThemeContext";
 import type { ResultRoute, Route } from "../types";
+import { VersionBadge } from "./VersionBadge";
 
 
 interface SidebarProps {
@@ -29,7 +30,6 @@ export function AppShell({ role, onNavigate, onLogout, children }: AppShellProps
     <div className="flex h-screen overflow-hidden bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar role={role} onNavigate={onNavigate} onLogout={onLogout} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
         <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
         <Footer />
       </div>
@@ -43,6 +43,9 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
       <div className="flex items-center gap-2 px-1 mb-6">
         <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
         <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TheraPath</span>
+      </div>
+      <div className="px-1 mb-6">
+        <VersionBadge />
       </div>
 
       <PatientCard />
@@ -115,14 +118,6 @@ function PatientCard() {
         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{name}</p>
         <p className="text-[11px] text-slate-500 dark:text-slate-400">DOB: {dob}</p>
       </div>
-    </div>
-  );
-}
-
-function TopBar() {
-  return (
-    <div className="flex-none flex items-center justify-end px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60">
-      
     </div>
   );
 }

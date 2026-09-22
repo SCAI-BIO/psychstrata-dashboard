@@ -14,6 +14,7 @@ class BackendSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     log_level: str = "INFO"
+    app_version: str = "development" # replaced on deployment build
     backend_cors_origins: list[str] = Field(default_factory=lambda: list(DEFAULT_CORS_ORIGINS))
     backend_basic_auth_username: str | None = None
     backend_basic_auth_password: str | None = None
@@ -26,6 +27,7 @@ class BackendSettings(BaseModel):
 
     @field_validator(
         "log_level",
+        "app_version",
         "backend_basic_auth_username",
         "backend_basic_auth_password",
         "backend_database_url",
@@ -92,6 +94,7 @@ def _load_backend_settings() -> BackendSettings:
 
     env_overrides = {
         "log_level": os.getenv("LOG_LEVEL"),
+        "app_version": os.getenv("APP_VERSION"),
         "backend_cors_origins": os.getenv("BACKEND_CORS_ORIGINS"),
         "backend_basic_auth_username": os.getenv("BACKEND_BASIC_AUTH_USERNAME"),
         "backend_basic_auth_password": os.getenv("BACKEND_BASIC_AUTH_PASSWORD"),

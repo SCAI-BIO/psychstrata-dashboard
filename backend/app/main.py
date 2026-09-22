@@ -16,6 +16,7 @@ from .routes.features import router as features_router
 from .routes.health import router as health_router
 from .routes.predict import router as predict_router
 from .routes.tsne import router as tsne_router
+from .routes.version import router as version_router
 from .security.rate_limit import get_client_ip, limiter
 from .services import errors
 from .settings import get_backend_settings
@@ -37,7 +38,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="PsychStrata Dashboard API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="PsychStrata Dashboard API", version=_settings.app_version, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -101,3 +102,4 @@ app.include_router(features_router)
 app.include_router(patients_router)
 app.include_router(predict_router)
 app.include_router(tsne_router)
+app.include_router(version_router)

@@ -10,6 +10,7 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     for env_name in (
         "BACKEND_CONFIG_FILE",
         "LOG_LEVEL",
+        "APP_VERSION",
         "BACKEND_CORS_ORIGINS",
         "BACKEND_BASIC_AUTH_USERNAME",
         "BACKEND_BASIC_AUTH_PASSWORD",
@@ -31,6 +32,7 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("APP_VERSION", "1.2.3")
     monkeypatch.setenv("BACKEND_CORS_ORIGINS", "https://one.example, https://two.example")
     monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
     monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "dashboard-password")
@@ -44,6 +46,7 @@ def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     backend_settings = settings.get_backend_settings()
 
     assert backend_settings.log_level == "DEBUG"
+    assert backend_settings.app_version == "1.2.3"
     assert backend_settings.backend_cors_origins == ["https://one.example", "https://two.example"]
     assert backend_settings.backend_basic_auth_username == "dashboard-user"
     assert backend_settings.backend_basic_auth_password == "dashboard-password"
