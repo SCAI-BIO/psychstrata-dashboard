@@ -1,10 +1,14 @@
 FROM python:3.12-slim AS base
 
+# fallback for if build fails (should not happen)
+ARG APP_VERSION=development
+
 COPY --from=ghcr.io/astral-sh/uv:0.9.12 /uv /uvx /bin/
 
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH" \
+    APP_VERSION="${APP_VERSION}" \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy

@@ -61,6 +61,7 @@ The backend exposes a small JSON API.
 Public endpoints:
 
 - `GET /api/health` - basic health check
+- `GET /api/version` - deployed application release version
 - `GET /api/auth/status` - whether backend Basic Auth is enabled
 - `POST /api/auth/login` - credential check endpoint for the frontend login flow
 
@@ -139,6 +140,10 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
 You can also set it in `BACKEND_CONFIG_FILE`.
+
+The deployed release version is configured with `APP_VERSION`. Release Docker
+builds set it from the GitHub release tag; local runs use `development` when it
+is not set.
 
 LLM explanations select a client strategy from the configured URL. OpenAI URLs use the
 OpenAI Responses API client; localhost URLs use the Ollama client and default to `/api/chat`.

@@ -106,6 +106,10 @@ export type AuthStatusResponse = {
   auth_enabled: boolean;
 };
 
+export type VersionResponse = {
+  version: string;
+};
+
 function getAuthHeaders(init?: RequestInit): Headers {
   const headers = new Headers(init?.headers);
   if (basicAuthHeader && !headers.has("Authorization")) {
@@ -165,6 +169,10 @@ export function setBasicAuthHeader(header: string | null): void {
 
 export function fetchAuthStatus(): Promise<AuthStatusResponse> {
   return requestJson<AuthStatusResponse>("/api/auth/status");
+}
+
+export function fetchVersion(): Promise<VersionResponse> {
+  return requestJson<VersionResponse>("/api/version");
 }
 
 export function verifyBasicAuth(header: string): Promise<void> {

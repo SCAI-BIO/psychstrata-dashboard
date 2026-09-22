@@ -23,6 +23,23 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_version_endpoint_is_public() -> None:
+    response = client.get("/api/version")
+
+    assert response.status_code == 200
+    assert response.json() == {"version": "development"}
+
+
+def test_version_endpoint_auth_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_USERNAME", "dashboard-user")
+    monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "dashboard-password")
+
+    response = client.get("/api/version")
+
+    assert response.status_code == 200
+    assert response.json() == {"version": "development"}
+
+
 def test_explain_propagates_llm_errors(monkeypatch) -> None:
     features_response = client.get("/api/features")
     assert features_response.status_code == 200
