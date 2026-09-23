@@ -9,6 +9,7 @@ export const AUTH_HEADER_STORAGE_KEY = "psychstrata-auth-header";
 
 export const ROUTE_TO_PATH: Record<Route, string> = {
   intake: "/",
+  patients: "/patients",
   patient: "/results/patient",
   clinician: "/results/clinician",
   scientist: "/results/scientist"
