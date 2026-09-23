@@ -1,54 +1,35 @@
 {
-  "title": "PsychStrata CDSS",
-  "description": "Interactive dashboard enabling shared decision making for treatment resistance in depression.\n\nThe Psych-STRATA project has received funding from the European Union’s Horizon Europe research and innovation programme under grant agreement No 101057454.\n\nDeveloped as part of the Psych-STRATA project: https://psych-strata.eu/\n\nDisclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
+  "title": "Zenodo Multiple Affiliation Array Test",
+  "description": "Test record for checking whether Zenodo's GitHub integration accepts multiple creator affiliations as an array.",
   "creators": [
     {
-      "name": "Adams, Tim",
-      "orcid": "https://orcid.org/0000-0002-2823-0102",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing"
-    },
-    {
-      "name": "Reimer, Lara Marie",
-      "orcid": "https://orcid.org/0000-0002-6546-8531",
-      "affiliation": "University Hospital Bonn, Institute for Digital Medicine"
+      "name": "Doe, Jane",
+      "affiliation": [
+        "University of Example, Department of Computer Science",
+        "Example Research Institute, Department of Data Science"
+      ]
     }
   ],
   "contributors": [
     {
-      "name": "Ranasinghe, Kuranage Roche Raveen",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing",
-      "type": "Other"
-    },
-    {
-      "name": "Fröhlich, Holger",
-      "orcid": "https://orcid.org/0000-0002-5328-1243",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing",
-      "type": "Supervisor"
-    }
-  ],
-  "grants": [
-    {
-      "id": "101057454"
-    }
-  ],
-  "related_identifiers": [
-    {
-      "identifier": "https://psych-strata.eu/",
-      "relation": "isPartOf",
-      "scheme": "url",
-      "resource_type": "other"
+      "name": "Smith, John",
+      "affiliation": "Example Research Institute",
+      "type": "Researcher"
     }
   ],
   "keywords": [
-    "dashboard",
-    "major depressive disorder",
-    "psychiatry",
-    "shared decision making",
-    "treatment resistance",
-    "treatment response"
+    "test",
+    "zenodo",
+    "metadata",
+    "multiple affiliations"
   ],
   "license": "Apache-2.0",
   "upload_type": "software",
   "access_right": "open",
-  "language": "eng"
+  "language": "eng",
+  "grants": [
+    {
+      "id": "10.13039/501100000780::101057454"
+    }
+  ]
 }
