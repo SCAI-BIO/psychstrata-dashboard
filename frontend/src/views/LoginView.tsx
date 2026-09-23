@@ -12,7 +12,7 @@ export function LoginView({ dashboard }: { dashboard: DashboardApi }) {
       <section className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-8 w-full max-w-md">
         <div className="flex items-center gap-3 mb-6">
           <img src={PSYCH_STRATA_LOGO_URL} alt="Psych-STRATA" className="h-7 w-7 object-contain" />
-          <span className="text-xl font-bold tracking-tight text-slate-900">TheraPath</span>
+          <span className="text-xl font-bold tracking-tight text-slate-900">PsychStrata CDSS</span>
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard login</h1>
         <p className="text-sm text-slate-500 mb-6">Enter the shared username and password to access the dashboard.</p>

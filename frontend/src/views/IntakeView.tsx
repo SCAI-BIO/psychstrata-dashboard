@@ -73,7 +73,7 @@ function IntakeForm({
       <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-900">
         <div className="flex items-center">
             <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TheraPath</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">PsychStrata CDSS</span>
         </div>
         {dashboard.authRequired && (
           <button

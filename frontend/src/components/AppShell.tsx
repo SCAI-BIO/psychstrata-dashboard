@@ -43,7 +43,7 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
     <aside className="w-60 flex-none flex flex-col bg-white dark:bg-slate-800 border-r border-slate-200/70 dark:border-slate-700/70 px-4 py-5">
       <div className="flex items-center gap-2 px-1 mb-6">
         <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
-        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TheraPath</span>
+        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">PsychStrata CDSS</span>
       </div>
       <div className="px-1 mb-6">
         <VersionBadge />
