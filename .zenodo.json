@@ -1,6 +1,7 @@
 {
   "title": "PsychStrata CDSS",
-  "description": "Interactive dashboard enabling shared decision making for treatment resistance in depression.\n\nThe Psych-STRATA project has received funding from the European Union’s Horizon Europe research and innovation programme under grant agreement No 101057454.\n\nDeveloped as part of the Psych-STRATA project: https://psych-strata.eu/\n\nDisclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
+  "description": "Interactive dashboard enabling shared decision making for treatment resistance in depression. Disclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
+  "notes": "Disclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
   "creators": [
     {
       "name": "Adams, Tim",
