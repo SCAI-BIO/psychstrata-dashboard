@@ -1,0 +1,59 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: PsychStrata CDSS
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Tim
+    family-names: Adams
+    email: tim.adams@scai.fraunhofer.de
+    orcid: 'https://orcid.org/0000-0002-2823-0102'
+    affiliation: >-
+      Fraunhofer Institute for Algorithms and Scientific
+      Computing SCAI
+  - given-names: Lara Marie
+    family-names: Reimer
+    email: Lara.Reimer@ukbonn.de
+    orcid: 'https://orcid.org/0000-0002-6546-8531'
+    affiliation: >-
+      University Hospital Bonn, Institute for Digital
+      Medicine
+contributors:
+  - given-names: Kuranage Roche Raveen
+    family-names: Ranasinghe
+    email: kuranage.ranasinghe@scai.fraunhofer.de
+    affiliation: >-
+      Fraunhofer Institute for Algorithms and Scientific
+      Computing SCAI
+url: 'https://demo.psychstrata.bio.scai.fraunhofer.de/'
+repository-artifact: >-
+  https://github.com/orgs/SCAI-BIO/packages?repo_name=psychstrata-dashboard
+abstract: >-
+  Interactive dashboard enabling shared decision making for
+  treatment resistance in depression.
+
+  The Psych-STRATA project has received funding from the European 
+  Union’s Horizon Europe research and innovation programme under 
+  grant agreement No 101057454.
+
+  Developed as part of the Psych-STRATA project:
+
+  https://psych-strata.eu/
+
+
+  Disclaimer: This demo uses synthetic data for illustration
+  purposes only. It is not a medical device and must not be
+  used for clinical decisions.
+keywords:
+  - dashboard
+  - major-depressive-disorder
+  - psychiatry
+  - SDM
+  - treatment-resistance
+  - treatment-response
+license: Apache-2.0
+ 
