@@ -88,7 +88,8 @@ export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
   return {
     ...base,
     demographics: {
-      name: "John Doe",
+      firstName: "John",
+      lastName: "Doe",
       dob: "1978-05-12",
       gender: "Male",
       diagnosis: "F33.1 — Major depressive disorder, recurrent, moderate"
