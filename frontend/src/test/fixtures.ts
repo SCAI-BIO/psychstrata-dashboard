@@ -88,7 +88,8 @@ export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
   return {
     ...base,
     demographics: {
-      name: "John Doe",
+      firstName: "John",
+      lastName: "Doe",
       dob: "1978-05-12",
       gender: "Male",
       diagnosis: "F33.1 — Major depressive disorder, recurrent, moderate"
@@ -167,7 +168,8 @@ export function makeDashboard(overrides: Partial<DashboardApi> = {}): DashboardA
     applyClinicianSimulationToPage: vi.fn(async () => {}),
     runScenarioImpact: vi.fn(async () => {}),
     applyScenario: vi.fn(async () => {}),
-    ...overrides
+    ...overrides,
+    persistIntake: overrides.persistIntake ?? vi.fn(async () => null)
   };
   return dashboard;
 }

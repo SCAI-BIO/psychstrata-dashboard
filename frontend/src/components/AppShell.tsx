@@ -1,8 +1,9 @@
-import { Info, LogOut, Plus, Moon, Sun } from "lucide-react";
+import { Info, LogOut, Plus, Moon, Sun, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { NAV_ITEMS, PATIENT_META, PREVIEW_MODE_TEXT, PSYCH_STRATA_LOGO_URL } from "../constants";
 import { usePatient } from "../context/PatientContext";
 import { useTheme } from "../context/ThemeContext";
+import { displayName } from "../domain/patient";
 import type { ResultRoute, Route } from "../types";
 import { VersionBadge } from "./VersionBadge";
 
@@ -86,6 +87,15 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
 
         <button
           type="button"
+          onClick={() => onNavigate("patients")}
+          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 mb-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+        >
+          <Users size={16} />
+          Patient list
+        </button>
+
+        <button
+          type="button"
           onClick={() => onNavigate("intake")}
           className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-slate-700 dark:bg-slate-700 text-white text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
         >
@@ -111,11 +121,11 @@ function Sidebar({ role, onNavigate, onLogout }: SidebarProps) {
 
 function PatientCard() {
   const { patient } = usePatient();
-  const { name, dob } = patient.demographics;
+  const { dob } = patient.demographics;
   return (
     <div className="flex items-center gap-3 px-1 mb-6">
       <div className="leading-tight">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{name}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{displayName(patient)}</p>
         <p className="text-[11px] text-slate-500 dark:text-slate-400">DOB: {dob}</p>
       </div>
     </div>

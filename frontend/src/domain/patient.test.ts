@@ -46,8 +46,9 @@ describe("pure transforms are immutable", () => {
 
   it("withDemographics and withProfile patch patient state", () => {
     const p = createDefaultPatient();
-    const named = withDemographics(p, { name: "Jane Roe" });
-    expect(named.demographics.name).toBe("Jane Roe");
+    const named = withDemographics(p, { firstName: "Jane", lastName: "Roe" });
+    expect(named.demographics.firstName).toBe("Jane");
+    expect(named.demographics.lastName).toBe("Roe");
     const profiled = withProfile(p, { onMedication: false });
     expect(profiled.onMedication).toBe(false);
   });
@@ -62,8 +63,8 @@ describe("patientToFeatures", () => {
 });
 
 describe("selectors", () => {
-  it("firstName returns the first token of the name", () => {
-    const p = withDemographics(createDefaultPatient(), { name: "John Doe" });
+  it("firstName returns the first name", () => {
+    const p = withDemographics(createDefaultPatient(), { firstName: "John", lastName: "Doe" });
     expect(firstName(p)).toBe("John");
   });
 
@@ -79,11 +80,12 @@ describe("selectors", () => {
 
 describe("isStepComplete", () => {
   it("requires all key demographics for step 0", () => {
-    const incomplete = withDemographics(createDefaultPatient(), { name: "John Doe" });
+    const incomplete = withDemographics(createDefaultPatient(), { firstName: "John" });
     expect(isStepComplete(0, incomplete)).toBe(false);
 
     const complete = withDemographics(createDefaultPatient(), {
-      name: "John Doe",
+      firstName: "John",
+      lastName: "Doe",
       dob: "1978-05-12",
       gender: "Male",
       diagnosis: "F33.1"
