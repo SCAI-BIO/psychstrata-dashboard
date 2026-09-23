@@ -8,6 +8,7 @@ import { ClinicianView } from "./views/ClinicianView";
 import { IntakeView } from "./views/IntakeView";
 import { LoginView } from "./views/LoginView";
 import { PatientView } from "./views/PatientView";
+import { PatientListView } from "./views/PatientListView";
 import { ScientistView } from "./views/ScientistView";
 import "./App.css";
 
@@ -35,6 +36,10 @@ function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {
   if (route === "intake") {
     return <IntakeView dashboard={dashboard} />;
   }
+
+  if (route === "patients") {
+    return <PatientListView dashboard={dashboard} />;
+}
 
   // ── Result routes: guard on the async data lifecycle ─────────────────────
   const role: ResultRoute = route === "patient" ? "patient" : route === "scientist" ? "scientist" : "clinician";

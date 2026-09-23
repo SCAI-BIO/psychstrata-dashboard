@@ -8,7 +8,8 @@
  */
 
 export interface PatientDemographics {
-  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
   dob: string | null;
   gender: string | null;
   diagnosis: string | null;
@@ -44,7 +45,8 @@ export interface Patient {
 
 /** Presentation-only default identity (mirrors the mockups). */
 const DEFAULT_DEMOGRAPHICS: PatientDemographics = {
-  name: null,
+  firstName: null,
+  lastName: null,
   dob: null,
   gender: null,
   diagnosis: null
@@ -109,12 +111,14 @@ export function withProfile(patient: Patient, patch: PatientProfilePatch): Patie
 }
 
 export function firstName(patient: Patient): string {
-  const name = patient.demographics.name ?? "";
-  return name.split(" ")[0] || name;
+  return (patient.demographics.firstName ?? "").trim();
 }
 
 export function displayName(patient: Patient): string {
-  return patient.demographics.name ?? "";
+  return [patient.demographics.firstName, patient.demographics.lastName]
+    .map((part) => (part ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function isGeneticsAvailable(patient: Patient): boolean {
@@ -139,7 +143,7 @@ export function isStepComplete(step: number, patient: Patient): boolean {
   switch (step) {
     case 0: {
       const d = patient.demographics;
-      return [d.name, d.dob, d.gender, d.diagnosis].every((v) => (v ?? "").trim() !== "");
+      return [d.firstName, d.lastName, d.dob, d.gender, d.diagnosis].every((v) => (v ?? "").trim() !== "");
     }
     case 1:
       return ["phq9", "sertraline_mg", "adherence_pct"].every((id) => Number.isFinite(featureValue(patient, id)));

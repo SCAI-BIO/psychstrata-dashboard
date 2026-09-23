@@ -58,6 +58,15 @@ function IntakeForm({
   const { patient } = patientApi;
   const isLast = step === STEPS.length - 1;
   const canProceed = isStepComplete(step, patient);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleCalculate = async () => {
+    setIsSaving(true);
+    const saved = await dashboard.persistIntake();
+    setIsSaving(false);
+    if (saved) await dashboard.runPrediction("clinician");
+  };
+  
 
   return (
     <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -123,12 +132,12 @@ function IntakeForm({
             {isLast ? (
               <button
                 type="button"
-                onClick={() => void dashboard.runPrediction("clinician")}
-                disabled={!canProceed || isSubmitting}
+                onClick={() => void handleCalculate()}
+                disabled={!canProceed || isSubmitting || isSaving}
                 className="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
               >
-                {isSubmitting ? "Calculating…" : "Calculate Risk"}
-                {!isSubmitting && <ArrowRight size={16} />}
+                {isSubmitting || isSaving ? "Calculating…" : "Calculate Risk"}
+                {!isSubmitting && !isSaving && <ArrowRight size={16} />}
               </button>
             ) : (
               <button
@@ -166,8 +175,11 @@ function DemographicsStep({
   return (
     <WizardCard icon={FileText} title="Core Demographics">
       <div className="grid grid-cols-2 gap-5">
-        <Field label="Full Name">
-          <TextInput value={demographics.name ?? ""} placeholder="John Doe" onChange={(v) => onChange({ name: v })} />
+        <Field label="First Name">
+          <TextInput value={demographics.firstName ?? ""} placeholder="John" onChange={(v) => onChange({ firstName: v })} />
+        </Field>
+        <Field label="Last Name">
+          <TextInput value={demographics.lastName ?? ""} placeholder="Doe" onChange={(v) => onChange({ lastName: v })} />
         </Field>
         <Field label="Date of Birth">
           <TextInput type="date" value={demographics.dob ?? ""} placeholder="01.01.1970" onChange={(dob) => onChange({ dob })} />
@@ -481,7 +493,7 @@ function NumberInput({
       max={max}
       placeholder={placeholder}
       onChange={(e) => onChange(parseNumberValue(e.target.value))}
-      className={inputClass}
+      className={`${inputClass} dark:[&::-webkit-inner-spin-button]:invert dark:[&::-webkit-outer-spin-button]:invert`}
     />
   );
 }

@@ -20,6 +20,56 @@ export type FeatureSchema = {
   step?: number;
   options?: FeatureOption[];
 };
+export type PatientRecord = {
+  id: string;
+  clinician_id: string;
+  first_name: string;
+  last_name: string;
+  clinical_data: {
+    date_of_birth: string; // "YYYY-MM-DD"
+    diagnosis: string;
+    clinical_features: Record<string, number>;
+    genetics: Record<string, unknown>;
+    proteomics: Record<string, unknown>;
+  };
+  created_at: string;
+  updated_at: string;
+};
+
+export function fetchPatients(): Promise<PatientRecord[]> {
+  return requestJson<PatientRecord[]>("/api/patients");
+}
+
+
+export type PatientCreatePayload = {
+  first_name: string;
+  last_name: string;
+  clinical_data: {
+    date_of_birth: string; // YYYY-MM-DD
+    diagnosis: string;
+    clinical_features: Record<string, number>;
+    genetics: Record<string, unknown>;
+    proteomics: Record<string, unknown>;
+  };
+};
+
+export type PatientRead = {
+  id: string;
+  clinician_id: string;
+  first_name: string;
+  last_name: string;
+  clinical_data: PatientCreatePayload["clinical_data"];
+  created_at: string;
+  updated_at: string;
+};
+
+export function createPatient(payload: PatientCreatePayload): Promise<PatientRead> {
+  return requestJson<PatientRead>("/api/patients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
 
 export type FeaturesResponse = {
   features: FeatureSchema[];

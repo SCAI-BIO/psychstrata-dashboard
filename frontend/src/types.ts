@@ -1,10 +1,10 @@
 import type { FeatureSchema, PredictionResponse, TsneResponse } from "./api";
 
 /** The four top-level screens of the app. */
-export type Route = "intake" | "patient" | "clinician" | "scientist";
+export type Route = "intake" | "patient" | "patients" | "clinician" | "scientist";
 
 /** Result routes only (everything except the intake wizard). */
-export type ResultRoute = Exclude<Route, "intake">;
+export type ResultRoute = Exclude<Route, "intake" | "patients">;
 
 /** The narrowed, data-loaded variant of {@link LoadState}. */
 export type ReadyState = Extract<LoadState, { status: "ready" }>;

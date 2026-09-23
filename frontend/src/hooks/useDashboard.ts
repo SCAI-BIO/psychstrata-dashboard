@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, type PatientRead } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -20,6 +20,7 @@ import {
   getStoredAuthHeader,
   persistAuthHeader,
 } from "../lib/auth";
+import { patientToCreatePayload } from "../lib/patientPersistence";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
 
 /**
@@ -60,6 +61,8 @@ export function useDashboard() {
   patientRef.current = patient;
   const simRef = useRef(clinicianSimValues);
   simRef.current = clinicianSimValues;
+  // Last successfully saved intake, so re-clicking Calculate doesn't create duplicates.
+  const lastSavedRef = useRef<{ fingerprint: string; record: PatientRead } | null>(null);
 
   const featureValues = useMemo(() => patientToFeatures(patient), [patient]);
   const knownFeatureIds = useMemo(
@@ -181,6 +184,7 @@ export function useDashboard() {
     setLoginError(null);
     setState({ status: "loading" });
     setPatient(createDefaultPatient());
+    lastSavedRef.current = null;
     if (window.location.pathname !== ROUTE_TO_PATH.intake) window.history.pushState({}, "", ROUTE_TO_PATH.intake);
     setRoute("intake");
   }, []);
@@ -203,6 +207,7 @@ export function useDashboard() {
     const current = stateRef.current;
     const seed = current.status === "ready" ? Object.fromEntries(current.features.map((f) => [f.id, 0])) : {};
     setPatient(createDefaultPatient());
+    lastSavedRef.current = null;
     // optional: clear the previous patient's results so nothing stale lingers
     setState((prev) => (prev.status === "ready" ? { ...prev, prediction: null, explanation: "" } : prev));
   }, []);
@@ -228,6 +233,30 @@ export function useDashboard() {
       return { ...prev, confidenceLevel: value };
     });
   }, []);
+
+  const persistIntake = useCallback(async (): Promise<PatientRead | null> => {
+    const current = stateRef.current;
+    if (current.status !== "ready") return null;
+
+    const payload = patientToCreatePayload(patientRef.current, current.features);
+    const fingerprint = JSON.stringify(payload);
+    if (lastSavedRef.current?.fingerprint === fingerprint) return lastSavedRef.current.record;
+
+    setState((prev) => (prev.status === "ready" ? { ...prev, error: null } : prev));
+    try {
+      const record = await createPatient(payload);
+      lastSavedRef.current = { fingerprint, record };
+      return record;
+    } catch (error: unknown) {
+      setState((prev) =>
+        prev.status === "ready"
+          ? { ...prev, error: error instanceof Error ? error.message : "Saving the patient failed." }
+          : prev
+      );
+      return null;
+    }
+  }, []);
+
 
   // ── Core prediction ────────────────────────────────────────────────────────
   const runPrediction = useCallback(
@@ -407,6 +436,7 @@ export function useDashboard() {
     setFeatureValue,
     setConfidenceLevel,
     runPrediction,
+    persistIntake,
     refreshExplanation,
     clinicianSimValues,
     setClinicianSimValues,
