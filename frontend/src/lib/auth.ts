@@ -17,6 +17,6 @@ export function getInitialRoute(): Route {
   if (pathname === ROUTE_TO_PATH.patient) return "patient";
   if (pathname === ROUTE_TO_PATH.clinician) return "clinician";
   if (pathname === ROUTE_TO_PATH.scientist) return "scientist";
-  if (pathname === ROUTE_TO_PATH.patients) return "patients";
-  return "intake";
+  if (pathname === ROUTE_TO_PATH.intake) return "intake";
+  return "patients";
 }
