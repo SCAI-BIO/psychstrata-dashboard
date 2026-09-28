@@ -130,14 +130,20 @@ def _is_public_path(path: str) -> bool:
 def _safe_next_url(target: str | None) -> str:
     if not target:
         return "/"
-    parsed = urlparse(target)
+
+    normalized = target.replace("\\", "/").strip()
+    if not normalized:
+        return "/"
+
+    parsed = urlparse(normalized)
     if parsed.scheme or parsed.netloc:
         return "/"
-    if not target.startswith("/"):
+    if not normalized.startswith("/"):
         return "/"
-    if target.startswith("//"):
+    if normalized.startswith("//"):
         return "/"
-    return target
+
+    return normalized
 
 
 def configure_auth(server):
