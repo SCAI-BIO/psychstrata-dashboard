@@ -117,8 +117,8 @@ def register_api(server):
         features_payload = payload.get("features", payload)
         try:
             values_dict = _validate_features(features_payload)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
+        except ValueError:
+            return jsonify({"error": "Invalid request payload."}), 400
 
         X_row = _pack_instance(values_dict)
         probability = model.predict_proba(X_row)
