@@ -1,0 +1,13 @@
+{
+  "name": "psychstrata-dashboard-e2e",
+  "private": true,
+  "type": "module",
+  "description": "System/end-to-end tests against the docker-compose stack",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

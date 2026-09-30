@@ -17,6 +17,7 @@ This demo uses synthetic data for illustration purposes only. It is not a medica
 ├── backend/          
 ├── frontend/         
 ├── legacy-dash/      # Previous Dash/Flask dashboard preserved for reference
+├── e2e/              # Playwright system tests against the compose stack
 ├── compose.yml       # Production-like local stack
 ├── compose.dev.yml   # Development override with live reload
 └── .github/workflows
@@ -99,6 +100,29 @@ Frontend:
 cd frontend
 pnpm test
 ```
+
+System (Playwright end-to-end against the full compose stack):
+
+```bash
+cd e2e
+pnpm install
+npx playwright install --with-deps chromium
+pnpm test
+```
+
+The system tests expect the stack to be running with Basic Auth enabled, e.g.:
+
+```bash
+BACKEND_BASIC_AUTH_USERNAME=e2e-user BACKEND_BASIC_AUTH_PASSWORD=e2e-pass docker compose up --build
+E2E_BASE_URL=http://localhost:3000 pnpm test   # from the e2e directory
+```
+
+Override credentials with `E2E_AUTH_USERNAME` / `E2E_AUTH_PASSWORD`. The
+Playwright HTML report is written to `e2e/playwright-report/`.
+
+In CI (`.github/workflows/system-tests.yaml`) these tests run only after a
+reviewer approves the pull request and both the backend and frontend unit-test
+suites are green.
 
 ## REST API
 

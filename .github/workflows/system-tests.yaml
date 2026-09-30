@@ -1,0 +1,124 @@
+name: System Tests
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  actions: read
+
+jobs:
+  system-tests:
+    # Only run after a reviewer approves the PR.
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Issue #80: run only once code review passed AND both the backend and
+      # frontend unit-test suites are green. Check runs are matched by their
+      # job name ("test_backend") and the frontend job's display name. A check
+      # that did not run because its path filter did not match is treated as
+      # satisfied so pure e2e/workflow changes are not blocked.
+      - name: Gate on backend and frontend unit tests
+        id: unit-tests-gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha="${{ github.event.pull_request.head.sha }}"
+          echo "Checking unit-test check runs for head SHA $sha"
+          checks=$(gh api "repos/${{ github.repository }}/commits/${sha}/check-runs" \
+            --jq '[.check_runs[] | {name: .name, status: .status, conclusion: .conclusion}]')
+          echo "$checks"
+          ok=true
+          for name in "test_backend" "Test, type-check, and build frontend"; do
+            conclusion=$(jq -r --arg n "$name" '.[] | select(.name == $n) | .conclusion' <<< "$checks")
+            status=$(jq -r --arg n "$name" '.[] | select(.name == $n) | .status' <<< "$checks")
+            if [[ -z "$conclusion" ]]; then
+              echo "::notice::No check run '$name' for this head SHA (path filter likely skipped it) — treated as satisfied."
+              continue
+            fi
+            if [[ "$status" != "completed" ]]; then
+              echo "::notice::Check '$name' is still '$status' — skipping system tests for now."
+              ok=false
+              break
+            fi
+            if [[ "$conclusion" != "success" ]]; then
+              echo "::notice::Check '$name' concluded '$conclusion' — skipping system tests for now."
+              ok=false
+              break
+            fi
+            echo "Check '$name' passed."
+          done
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+
+      - name: Build and start the compose stack (Basic Auth enabled)
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        run: docker compose up -d --build
+        env:
+          BACKEND_BASIC_AUTH_USERNAME: e2e-user
+          BACKEND_BASIC_AUTH_PASSWORD: e2e-pass
+
+      - name: Wait for the frontend and backend to become healthy
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null 2>&1; then
+              echo "Stack is up (frontend + backend healthy)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Stack did not become healthy in time." >&2
+          docker compose logs --tail 200 || true
+          exit 1
+
+      - name: Set up pnpm
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: e2e/package.json
+
+      - name: Set up Node.js
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: e2e/pnpm-lock.yaml
+
+      - name: Install e2e dependencies
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        working-directory: e2e
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run system tests
+        if: steps.unit-tests-gate.outputs.ok == 'true'
+        working-directory: e2e
+        run: pnpm test
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_AUTH_USERNAME: e2e-user
+          E2E_AUTH_PASSWORD: e2e-pass
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+
+      - name: Tear down the stack
+        if: always()
+        run: docker compose down -v
