@@ -40,6 +40,23 @@ export function fetchPatients(): Promise<PatientRecord[]> {
   return requestJson<PatientRecord[]>("/api/patients");
 }
 
+export type TreatmentPlanRecord = {
+  id: string;
+  patient_id: string;
+  clinician_id: string;
+  start_date: string | null; // "YYYY-MM-DD"
+  end_date: string | null; // null = ongoing
+  medications: Record<string, number>;
+  adherence: Record<string, number>;
+  created_at: string;
+  updated_at: string;
+};
+
+export function fetchTreatmentPlans(patientId: string): Promise<TreatmentPlanRecord[]> {
+  return requestJson<TreatmentPlanRecord[]>(
+    `/api/patients/${encodeURIComponent(patientId)}/treatment-plans`
+  );
+}
 
 export type PatientCreatePayload = {
   first_name: string;

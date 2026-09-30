@@ -168,6 +168,7 @@ export function makeDashboard(overrides: Partial<DashboardApi> = {}): DashboardA
     applyClinicianSimulationToPage: vi.fn(async () => {}),
     runScenarioImpact: vi.fn(async () => {}),
     applyScenario: vi.fn(async () => {}),
+    openPatientResults: vi.fn(async () => {}),
     ...overrides,
     persistIntake: overrides.persistIntake ?? vi.fn(async () => null)
   };
