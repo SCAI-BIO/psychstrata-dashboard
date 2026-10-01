@@ -35,7 +35,7 @@ function installFetchMock(authEnabled: boolean) {
 describe("App", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
-    window.history.pushState({}, "", "/");
+    window.history.pushState({}, "", "/intake");
     setBasicAuthHeader(null);
   });
 

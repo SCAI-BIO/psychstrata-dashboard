@@ -1,5 +1,6 @@
 # Psych-STRATA Dashboard 
-<a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI">
+<a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI"></a>
+[![CI](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml)
 
 
 
@@ -17,6 +18,7 @@ This demo uses synthetic data for illustration purposes only. It is not a medica
 ├── backend/          
 ├── frontend/         
 ├── legacy-dash/      # Previous Dash/Flask dashboard preserved for reference
+├── e2e/              # Playwright system tests against the compose stack
 ├── compose.yml       # Production-like local stack
 ├── compose.dev.yml   # Development override with live reload
 └── .github/workflows
@@ -99,6 +101,29 @@ Frontend:
 cd frontend
 pnpm test
 ```
+
+System (Playwright end-to-end against the full compose stack):
+
+```bash
+cd e2e
+pnpm install
+npx playwright install --with-deps chromium
+pnpm test
+```
+
+The system tests expect the stack to be running with Basic Auth enabled, e.g.:
+
+```bash
+BACKEND_BASIC_AUTH_USERNAME=e2e-user BACKEND_BASIC_AUTH_PASSWORD=e2e-pass docker compose up --build
+E2E_BASE_URL=http://localhost:3000 pnpm test   # from the e2e directory
+```
+
+Override credentials with `E2E_AUTH_USERNAME` / `E2E_AUTH_PASSWORD`. The
+Playwright HTML report is written to `e2e/playwright-report/`.
+
+In CI (`.github/workflows/ci.yaml`) the system tests run in the same workflow
+as the unit tests, but only once both the backend and frontend unit-test
+suites are green — the job depends on them via `needs`.
 
 ## REST API
 
