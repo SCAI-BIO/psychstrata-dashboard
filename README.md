@@ -17,7 +17,6 @@ This demo uses synthetic data for illustration purposes only. It is not a medica
 ```text
 ├── backend/          
 ├── frontend/         
-├── legacy-dash/      # Previous Dash/Flask dashboard preserved for reference
 ├── e2e/              # Playwright system tests against the compose stack
 ├── compose.yml       # Production-like local stack
 ├── compose.dev.yml   # Development override with live reload
