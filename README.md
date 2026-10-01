@@ -1,5 +1,6 @@
 # Psych-STRATA Dashboard 
 <a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI">
+[![CI](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml)
 
 
 
