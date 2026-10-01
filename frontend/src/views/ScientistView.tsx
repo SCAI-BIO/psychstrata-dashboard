@@ -2,8 +2,7 @@ import { LineChart as LineChartIcon, Users } from "lucide-react";
 import type { PredictionResponse } from "../api";
 import { Card } from "../components/Card";
 import { InsightsCard } from "../components/cards/InsightsCard";
-import { RiskCard } from "../components/cards/RiskCard";
-import { ShapChart } from "../components/charts/ShapChart";
+import { ModelExplorer } from "../components/ModelExplorer";
 import { TimeToEventChart } from "../components/charts/TimeToEventChart";
 import { TsneChart } from "../components/charts/TsneChart";
 import type { DashboardApi } from "../hooks/useDashboard";
@@ -22,34 +21,25 @@ export function ScientistView({ dashboard, ready, prediction }: ScientistViewPro
 
   return (
     <div className="space-y-4">
-      <section className="grid grid-cols-[5fr_7fr] gap-4">
-        <RiskCard
-          riskProbability={d.riskProbability}
-          isHighRisk={d.isHighRisk}
-          confidence={{
-            value: ready.confidenceLevel,
-            min: ready.confidenceBounds.min,
-            max: ready.confidenceBounds.max,
-            step: ready.confidenceBounds.step,
-            onChange: dashboard.setConfidenceLevel,
-            onCommit: () => void dashboard.runPrediction("scientist")
-          }}
-        />
-        <Card icon={LineChartIcon} title="Probability of Non-Response Over Time (Time-to-Event)">
-          <TimeToEventChart currentProbability={d.riskProbability} currentLabel="Current Care Plan" height={260} />
-        </Card>
-      </section>
-
-      <InsightsCard
-        explanation={ready.explanation}
-        isRefreshing={ready.isSummaryRefreshing}
-        onRefresh={() => void dashboard.refreshExplanation()}
-        error={ready.error}
+      <ModelExplorer
+        features={ready.features}
+        baselineFeatures={dashboard.featureValues}
+        baselinePrediction={prediction}
+        confidenceLevel={ready.confidenceLevel}
+        dateOfBirth={dashboard.patient.demographics.dob}
+        confidence={{
+          value: ready.confidenceLevel,
+          min: ready.confidenceBounds.min,
+          max: ready.confidenceBounds.max,
+          step: ready.confidenceBounds.step,
+          onChange: dashboard.setConfidenceLevel,
+          onCommit: () => void dashboard.runPrediction("scientist")
+        }}
       />
 
       <section className="grid grid-cols-2 gap-4">
-        <Card icon={LineChartIcon} title="Risk Factor Analysis (SHAP)">
-          <ShapChart shapValues={prediction.shap_values} />
+        <Card icon={LineChartIcon} title="Probability of Non-Response Over Time (Time-to-Event)">
+          <TimeToEventChart currentProbability={d.riskProbability} currentLabel="Current Care Plan" height={260} />
         </Card>
         <Card icon={Users} title="t-SNE Population Map">
           {ready.tsne ? (
@@ -59,6 +49,13 @@ export function ScientistView({ dashboard, ready, prediction }: ScientistViewPro
           )}
         </Card>
       </section>
+
+      <InsightsCard
+        explanation={ready.explanation}
+        isRefreshing={ready.isSummaryRefreshing}
+        onRefresh={() => void dashboard.refreshExplanation()}
+        error={ready.error}
+      />
     </div>
   );
 }
