@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test_backend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run tests
+        run: uv run pytest
+
+  test_frontend:
+    name: Test, type-check, and build frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Type-check and create production build
+        run: pnpm build
+
+  # Issue #80: run the system tests only after both unit-test suites are green,
+  # expressed natively with `needs`.
+  system-tests:
+    needs: [test_backend, test_frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start the compose stack (Basic Auth enabled)
+        run: docker compose up -d --build
+        env:
+          BACKEND_BASIC_AUTH_USERNAME: e2e-user
+          BACKEND_BASIC_AUTH_PASSWORD: e2e-pass
+
+      - name: Wait for the frontend and backend to become healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null 2>&1; then
+              echo "Stack is up (frontend + backend healthy)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Stack did not become healthy in time." >&2
+          docker compose logs --tail 200 || true
+          exit 1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: e2e/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: e2e/pnpm-lock.yaml
+
+      - name: Install e2e dependencies
+        working-directory: e2e
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run system tests
+        working-directory: e2e
+        run: pnpm test
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_AUTH_USERNAME: e2e-user
+          E2E_AUTH_PASSWORD: e2e-pass
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+
+      - name: Tear down the stack
+        if: always()
+        run: docker compose down -v
