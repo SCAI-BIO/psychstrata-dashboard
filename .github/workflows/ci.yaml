@@ -3,10 +3,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, labeled]
-  pull_request_review:
-    types: [submitted]
-    branches: [main]
 
 permissions:
   contents: read
@@ -72,15 +68,9 @@ jobs:
       - name: Type-check and create production build
         run: pnpm build
 
-  # Issue #80: run system tests only after a reviewer approves the PR and both
-  # unit-test suites are green. Expressing the dependency with `needs` makes the
-  # gate native to Actions; on `pull_request` events this job is simply skipped.
-  # GitHub does not allow an author to self-approve (admins included), so adding
-  # the `run-system-tests` label to the PR is accepted as an explicit trigger.
+  # Issue #80: run the system tests only after both unit-test suites are green,
+  # expressed natively with `needs`.
   system-tests:
-    if: >-
-      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
-      contains(github.event.pull_request.labels.*.name, 'run-system-tests')
     needs: [test_backend, test_frontend]
     runs-on: ubuntu-latest
 

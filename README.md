@@ -122,10 +122,8 @@ Override credentials with `E2E_AUTH_USERNAME` / `E2E_AUTH_PASSWORD`. The
 Playwright HTML report is written to `e2e/playwright-report/`.
 
 In CI (`.github/workflows/ci.yaml`) the system tests run in the same workflow
-as the unit tests, but only after a reviewer approves the pull request — the
-job depends on both unit-test suites passing first. Since GitHub does not allow
-an author to approve their own pull request, maintainers can trigger the system
-tests on their own PR by adding the `run-system-tests` label.
+as the unit tests, but only once both the backend and frontend unit-test
+suites are green — the job depends on them via `needs`.
 
 ## REST API
 
