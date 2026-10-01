@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, type PatientRead } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, type PatientRead, type PatientRecord, type TreatmentPlanRecord } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -20,7 +20,7 @@ import {
   getStoredAuthHeader,
   persistAuthHeader,
 } from "../lib/auth";
-import { patientToCreatePayload } from "../lib/patientPersistence";
+import { patientToCreatePayload, recordToPatient } from "../lib/patientPersistence";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
 
 /**
@@ -185,8 +185,8 @@ export function useDashboard() {
     setState({ status: "loading" });
     setPatient(createDefaultPatient());
     lastSavedRef.current = null;
-    if (window.location.pathname !== ROUTE_TO_PATH.intake) window.history.pushState({}, "", ROUTE_TO_PATH.intake);
-    setRoute("intake");
+    if (window.location.pathname !== ROUTE_TO_PATH.patients) window.history.pushState({}, "", ROUTE_TO_PATH.patients);
+    setRoute("patients");
   }, []);
 
   // ── Patient model editing ───────────────────────────────────────────────────
@@ -257,6 +257,27 @@ export function useDashboard() {
     }
   }, []);
 
+    /** Load a saved patient (+ one of their plans) into the dashboard, predict, and open the Medical view. */
+  const openPatientResults = useCallback(
+    async (record: PatientRecord, plan: TreatmentPlanRecord | null) => {
+      const current = stateRef.current;
+      if (current.status !== "ready") return;
+
+      const loaded = recordToPatient(record, plan, current.features);
+      const prediction = await fetchPredict({
+        features: patientToFeatures(loaded),
+        confidence_level: current.confidenceLevel,
+        date_of_birth: loaded.demographics.dob
+      });
+
+      setPatient(withClinicalMerged(loaded, prediction.features));
+      setState((prev) =>
+        prev.status === "ready" ? { ...prev, prediction, explanation: "", error: null } : prev
+      );
+      navigate("clinician");
+    },
+    [navigate]
+  );
 
   // ── Core prediction ────────────────────────────────────────────────────────
   const runPrediction = useCallback(
@@ -437,6 +458,7 @@ export function useDashboard() {
     setConfidenceLevel,
     runPrediction,
     persistIntake,
+    openPatientResults,
     refreshExplanation,
     clinicianSimValues,
     setClinicianSimValues,
