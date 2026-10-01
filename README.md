@@ -124,8 +124,8 @@ Playwright HTML report is written to `e2e/playwright-report/`.
 In CI (`.github/workflows/ci.yaml`) the system tests run in the same workflow
 as the unit tests, but only after a reviewer approves the pull request — the
 job depends on both unit-test suites passing first. Since GitHub does not allow
-an author to approve their own pull request, you can also trigger the system
-tests manually via **Actions → CI → Run workflow** on the PR branch.
+an author to approve their own pull request, maintainers can trigger the system
+tests on their own PR by adding the `run-system-tests` label.
 
 ## REST API
 
