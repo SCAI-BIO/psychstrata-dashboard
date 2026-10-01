@@ -120,9 +120,9 @@ E2E_BASE_URL=http://localhost:3000 pnpm test   # from the e2e directory
 Override credentials with `E2E_AUTH_USERNAME` / `E2E_AUTH_PASSWORD`. The
 Playwright HTML report is written to `e2e/playwright-report/`.
 
-In CI (`.github/workflows/system-tests.yaml`) these tests run only after a
-reviewer approves the pull request and both the backend and frontend unit-test
-suites are green.
+In CI (`.github/workflows/ci.yaml`) the system tests run in the same workflow
+as the unit tests, but only after a reviewer approves the pull request — the
+job depends on both unit-test suites passing first.
 
 ## REST API
 
