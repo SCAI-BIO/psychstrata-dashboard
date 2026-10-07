@@ -14,7 +14,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/react-plotly.js": "^2.6.4",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.48.0",
+    "lucide-react": "^1.50.0",
     "plotly.js-dist-min": "^4.1.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -31,7 +31,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.1.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1",
+    "vite": "^8.3.2",
     "vitest": "^5.0.3"
   },
   "pnpm": {
