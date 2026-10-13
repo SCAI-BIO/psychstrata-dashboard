@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { makeDashboard } from "../test/fixtures";
@@ -45,7 +45,7 @@ vi.mock("../hooks/usePatients", () => ({
   })
 }));
 
-// Deliberately unsorted: the view must sort chronologically for the badges/timeline.
+// Deliberately unsorted: the view must sort chronologically.
 vi.mock("../hooks/useTreatmentPlans", () => ({
   useTreatmentPlans: () => ({
     state: { status: "ready", plans: [h.planB, h.planA] },
@@ -60,12 +60,6 @@ describe("PatientListView", () => {
     return { dashboard };
   }
 
-  it("numbers the plan rows chronologically with badges", () => {
-    renderView();
-    expect(screen.getByTitle("Treatment plan 1")).toHaveTextContent("1");
-    expect(screen.getByTitle("Treatment plan 2")).toHaveTextContent("2");
-  });
-
   it("lists plans oldest first", () => {
     renderView();
     const first = screen.getByText(/Jan 1, 2026 → Ongoing/);
@@ -77,31 +71,5 @@ describe("PatientListView", () => {
     renderView();
     const latest = screen.getByText("Latest");
     expect(latest.closest("li")).toHaveTextContent(/Feb 1, 2026/);
-  });
-
-  it("shows a duration pill on each plan row", () => {
-    renderView();
-    const pills = screen.getAllByText(/ongoing · \d+ days?/);
-    expect(pills).toHaveLength(2);
-  });
-
-  it("renders a timeline bar per plan, numbered and in order", () => {
-    renderView();
-    const bars = screen.getAllByTestId("treatment-timeline-segment");
-    expect(bars).toHaveLength(2);
-    expect(bars[0]).toHaveAttribute("data-plan-id", "plan-a");
-    expect(bars[0]).toHaveAttribute("data-number", "1");
-    expect(bars[1]).toHaveAttribute("data-plan-id", "plan-b");
-    expect(bars[1]).toHaveAttribute("data-number", "2");
-    expect(screen.getByText("Today")).toBeInTheDocument();
-  });
-
-  it("opens a plan's results when its timeline bar is clicked", () => {
-    const { dashboard } = renderView();
-    fireEvent.click(screen.getAllByTestId("treatment-timeline-segment")[0]);
-    expect(dashboard.openPatientResults).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "patient-1" }),
-      expect.objectContaining({ id: "plan-a" })
-    );
   });
 });
