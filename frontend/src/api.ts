@@ -58,6 +58,27 @@ export function fetchTreatmentPlans(patientId: string): Promise<TreatmentPlanRec
   );
 }
 
+export type TreatmentPlanCreatePayload = {
+  start_date?: string | null; // "YYYY-MM-DD"; omit to default to today
+  end_date?: string | null;
+  medications: Record<string, number>;
+  adherence: Record<string, number>;
+};
+
+export function createTreatmentPlan(
+  patientId: string,
+  payload: TreatmentPlanCreatePayload
+): Promise<TreatmentPlanRecord> {
+  return requestJson<TreatmentPlanRecord>(
+    `/api/patients/${encodeURIComponent(patientId)}/treatment-plans`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
 export type PatientCreatePayload = {
   first_name: string;
   last_name: string;

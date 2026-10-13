@@ -191,6 +191,45 @@ def test_deleting_patient_cascades_aggregate(client: TestClient) -> None:
     assert client.get(f"/api/treatment-plans/{treatment_plan['id']}", auth=_auth()).status_code == 404
 
 
+def test_new_treatment_plan_closes_previous_open_plan(client: TestClient) -> None:
+    patient = _create_patient(client)
+    first_plan = _create_treatment_plan(client, patient["id"])
+
+    second_response = client.post(
+        f"/api/patients/{patient['id']}/treatment-plans",
+        json={"medications": {"sertraline_mg": 200}},
+        auth=_auth(),
+    )
+    assert second_response.status_code == 201
+    second_plan = second_response.json()
+
+    plans_response = client.get(f"/api/patients/{patient['id']}/treatment-plans", auth=_auth())
+    assert plans_response.status_code == 200
+    plans = {plan["id"]: plan for plan in plans_response.json()}
+
+    assert plans[first_plan["id"]]["end_date"] == second_plan["start_date"]
+    assert plans[second_plan["id"]]["end_date"] is None
+
+
+def test_treatment_plan_defaults_start_date_to_today(client: TestClient) -> None:
+    patient = _create_patient(client)
+    plan = _create_treatment_plan(client, patient["id"])
+
+    assert plan["start_date"] == date.today().isoformat()
+
+
+def test_demo_seed_plans_have_distinct_medications(client: TestClient) -> None:
+    plans_response = client.get(f"/api/patients/{DEMO_PATIENT_ID}/treatment-plans", auth=_auth())
+    assert plans_response.status_code == 200
+    medications = [
+        (plan["medications"]["sertraline_mg"], plan["medications"]["quetiapine_mg"], plan["medications"]["lithium_mg"])
+        for plan in plans_response.json()
+    ]
+
+    assert len(medications) == 3
+    assert len(set(medications)) == 3
+
+
 def test_age_is_derived_from_date_of_birth() -> None:
     assert age_on_date(date(2000, 9, 5), date(2026, 9, 4)) == 25
     assert age_on_date(date(2000, 9, 4), date(2026, 9, 4)) == 26

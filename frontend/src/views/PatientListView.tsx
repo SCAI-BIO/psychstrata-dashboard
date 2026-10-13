@@ -5,6 +5,20 @@ import { PSYCH_STRATA_LOGO_URL } from "../constants";
 import type { DashboardApi } from "../hooks/useDashboard";
 import { usePatients } from "../hooks/usePatients";
 import { useTreatmentPlans } from "../hooks/useTreatmentPlans";
+import { sortChronological, TreatmentTimeline } from "./TreatmentTimeline";
+
+const DAY_MS = 86_400_000;
+
+/** "ongoing · 284 days" (or "completed · …") for a plan, or null when undated. */
+function formatDuration(plan: TreatmentPlanRecord): string | null {
+  const start = plan.start_date ? parseIsoDate(plan.start_date) : null;
+  if (!start) return null;
+  const end = plan.end_date ? parseIsoDate(plan.end_date) : new Date();
+  if (!end) return null;
+  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / DAY_MS));
+  const label = plan.end_date ? "completed" : "ongoing";
+  return `${label} · ${days} ${days === 1 ? "day" : "days"}`;
+}
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -323,7 +337,8 @@ function PatientDetails({
   onOpenPlan: (plan: TreatmentPlanRecord) => void;
 }) {
   const { state, reload } = useTreatmentPlans(patient.id);
-  const plans = state.status === "ready" ? sortNewestFirst(state.plans) : [];
+  const plans = state.status === "ready" ? sortChronological(state.plans) : [];
+  const latestPlanId = plans.length > 0 ? plans[plans.length - 1].id : null;
 
   return (
     <div>
@@ -347,12 +362,14 @@ function PatientDetails({
           </p>
         ) : (
           <>
-            <ul className="divide-y divide-slate-200/70 dark:divide-slate-700/70">
+            <TreatmentTimeline plans={plans} latestPlanId={latestPlanId} onOpen={onOpenPlan} />
+            <ul className="divide-y divide-slate-200/70 dark:divide-slate-700/70 mt-4">
               {plans.map((plan, index) => (
                 <PlanRow
                   key={plan.id}
                   plan={plan}
-                  isLatest={index === 0}
+                  number={index + 1}
+                  isLatest={plan.id === latestPlanId}
                   isOpening={openingKey === plan.id}
                   onOpen={onOpenPlan}
                 />
@@ -369,17 +386,20 @@ function PatientDetails({
 
 function PlanRow({
   plan,
+  number,
   isLatest,
   isOpening,
   onOpen
 }: {
   plan: TreatmentPlanRecord;
+  number: number;
   isLatest: boolean;
   isOpening: boolean;
   onOpen: (plan: TreatmentPlanRecord) => void;
 }) {
   const start = plan.start_date ? formatDateOfBirth(plan.start_date) : "—";
   const end = plan.end_date ? formatDateOfBirth(plan.end_date) : "Ongoing";
+  const duration = formatDuration(plan);
   const meds = Object.entries(plan.medications)
     .filter(([, value]) => value > 0)
     .map(([id, value]) => `${id.replace("_mg", "")} ${value} mg`)
@@ -393,19 +413,36 @@ function PlanRow({
         disabled={isOpening}
         className="group flex w-full items-center justify-between gap-4 py-3 px-2 -mx-2 rounded-lg text-left text-sm hover:bg-white dark:hover:bg-slate-800/60 disabled:opacity-60 transition-colors"
       >
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">
-            {start} → {end}
-            {isLatest && (
-              <span className="ml-2 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5">
-                Latest
+        <div className="flex items-start gap-3">
+          <span
+            title={`Treatment plan ${number}`}
+            className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-semibold ${
+              isLatest
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+            }`}
+          >
+            {number}
+          </span>
+          <div>
+            <p className="font-medium text-slate-900 dark:text-slate-100">
+              {start} → {end}
+              {isLatest && (
+                <span className="ml-2 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5">
+                  Latest
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {meds || "No active medication"}
+              {plan.adherence.adherence_pct !== undefined && ` · adherence ${plan.adherence.adherence_pct}%`}
+            </p>
+            {duration && (
+              <span className="mt-1 inline-block rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium px-2 py-0.5">
+                {duration}
               </span>
             )}
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {meds || "No active medication"}
-            {plan.adherence.adherence_pct !== undefined && ` · adherence ${plan.adherence.adherence_pct}%`}
-          </p>
+          </div>
         </div>
         <span className="flex flex-none items-center gap-1 text-xs font-medium text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
           {isOpening ? "Opening…" : ""}

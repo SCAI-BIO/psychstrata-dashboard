@@ -76,6 +76,14 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
               >
                 {dashboard.isClinicianImpactSubmitting ? "Calculating…" : "Calculate"}
               </button>
+              <button
+                type="button"
+                onClick={() => void dashboard.saveCurrentRegimenAsPlan()}
+                disabled={dashboard.isPlanSaving || dashboard.currentPatientId === null}
+                className="border border-slate-300 text-slate-700 text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                {dashboard.isPlanSaving ? "Saving…" : "Save as new treatment plan"}
+              </button>
             </div>
           }
         >
@@ -95,6 +103,14 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 </select>
               </label>
               <PredictedImpact impactPct={dashboard.clinicianAppliedImpactPct} error={dashboard.clinicianApplyError} />
+              {dashboard.planSaveError && (
+                <p className="text-xs text-red-600 dark:text-red-400">{dashboard.planSaveError}</p>
+              )}
+              {!dashboard.planSaveError && dashboard.lastSavedPlan && (
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  Saved as a new treatment plan (starts today).
+                </p>
+              )}
             </div>
           </div>
         </Card>
