@@ -24,7 +24,18 @@
       "name": "Fröhlich, Holger",
       "orcid": "https://orcid.org/0000-0002-5328-1243",
       "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing",
-      "type": "Supervisor"
+      "type": "WorkPackageLeader"
+    },
+    {
+      "name": "Baune, Bernhard T",
+      "orcid": "https://orcid.org/0000-0001-6548-426X",
+      "affiliation": "University of Münster",
+      "type": "WorkPackageLeader"
+    },
+    {
+      "name": "Stonner, Inga",
+      "affiliation": "University Hospital Münster",
+      "type": "ProjectMember"
     }
   ],
   "grants": [

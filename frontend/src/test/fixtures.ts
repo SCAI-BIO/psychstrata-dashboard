@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import type {
   FeaturesResponse,
   PredictionResponse,
+  TreatmentPlanRecord,
   TsneResponse
 } from "../api";
 import type { PatientApi } from "../context/PatientContext";
@@ -73,6 +74,18 @@ export const predictionResponse: PredictionResponse = {
   },
   tsne: { selected: { x: 0.2, y: 0.3 } },
   disclaimer: "Synthetic data for demonstration only."
+};
+
+export const treatmentPlanRecord: TreatmentPlanRecord = {
+  id: "plan-1",
+  patient_id: "patient-1",
+  clinician_id: "clinician-1",
+  start_date: "2026-10-01",
+  end_date: null,
+  medications: { sertraline_mg: 100, lithium_mg: 0, quetiapine_mg: 0 },
+  adherence: { adherence_pct: 80 },
+  created_at: "2026-10-01T10:00:00Z",
+  updated_at: "2026-10-01T10:00:00Z"
 };
 
 export const explainResponse = {
@@ -169,6 +182,11 @@ export function makeDashboard(overrides: Partial<DashboardApi> = {}): DashboardA
     runScenarioImpact: vi.fn(async () => {}),
     applyScenario: vi.fn(async () => {}),
     openPatientResults: vi.fn(async () => {}),
+    currentPatientId: null,
+    isPlanSaving: false,
+    lastSavedPlan: null,
+    planSaveError: null,
+    saveCurrentRegimenAsPlan: vi.fn(async () => null),
     ...overrides,
     persistIntake: overrides.persistIntake ?? vi.fn(async () => null)
   };

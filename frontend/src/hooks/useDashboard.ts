@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, type PatientRead, type PatientRecord, type TreatmentPlanRecord } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, createTreatmentPlan, type PatientRead, type PatientRecord, type TreatmentPlanRecord } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -20,7 +20,7 @@ import {
   getStoredAuthHeader,
   persistAuthHeader,
 } from "../lib/auth";
-import { patientToCreatePayload, recordToPatient } from "../lib/patientPersistence";
+import { patientToCreatePayload, recordToPatient, treatmentPlanFromCurrentRegimen } from "../lib/patientPersistence";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
 
 /**
@@ -54,6 +54,14 @@ export function useDashboard() {
   const [isClinicianApplySubmitting, setIsClinicianApplySubmitting] = useState(false);
   const [clinicianApplyError, setClinicianApplyError] = useState<string | null>(null);
   const [clinicianAppliedImpactPct, setClinicianAppliedImpactPct] = useState(0);
+
+  // The persisted patient the dashboard is currently showing (set when an
+  // intake is saved or a saved patient is opened), so a new treatment plan can
+  // be attached to the right record.
+  const [currentPatientId, setCurrentPatientId] = useState<string | null>(null);
+  const [isPlanSaving, setIsPlanSaving] = useState(false);
+  const [lastSavedPlan, setLastSavedPlan] = useState<TreatmentPlanRecord | null>(null);
+  const [planSaveError, setPlanSaveError] = useState<string | null>(null);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -185,6 +193,9 @@ export function useDashboard() {
     setState({ status: "loading" });
     setPatient(createDefaultPatient());
     lastSavedRef.current = null;
+    setCurrentPatientId(null);
+    setLastSavedPlan(null);
+    setPlanSaveError(null);
     if (window.location.pathname !== ROUTE_TO_PATH.patients) window.history.pushState({}, "", ROUTE_TO_PATH.patients);
     setRoute("patients");
   }, []);
@@ -208,6 +219,9 @@ export function useDashboard() {
     const seed = current.status === "ready" ? Object.fromEntries(current.features.map((f) => [f.id, 0])) : {};
     setPatient(createDefaultPatient());
     lastSavedRef.current = null;
+    setCurrentPatientId(null);
+    setLastSavedPlan(null);
+    setPlanSaveError(null);
     // optional: clear the previous patient's results so nothing stale lingers
     setState((prev) => (prev.status === "ready" ? { ...prev, prediction: null, explanation: "" } : prev));
   }, []);
@@ -240,12 +254,16 @@ export function useDashboard() {
 
     const payload = patientToCreatePayload(patientRef.current, current.features);
     const fingerprint = JSON.stringify(payload);
-    if (lastSavedRef.current?.fingerprint === fingerprint) return lastSavedRef.current.record;
+    if (lastSavedRef.current?.fingerprint === fingerprint) {
+      setCurrentPatientId(lastSavedRef.current.record.id);
+      return lastSavedRef.current.record;
+    }
 
     setState((prev) => (prev.status === "ready" ? { ...prev, error: null } : prev));
     try {
       const record = await createPatient(payload);
       lastSavedRef.current = { fingerprint, record };
+      setCurrentPatientId(record.id);
       return record;
     } catch (error: unknown) {
       setState((prev) =>
@@ -271,6 +289,7 @@ export function useDashboard() {
       });
 
       setPatient(withClinicalMerged(loaded, prediction.features));
+      setCurrentPatientId(record.id);
       setState((prev) =>
         prev.status === "ready" ? { ...prev, prediction, explanation: "", error: null } : prev
       );
@@ -441,6 +460,27 @@ export function useDashboard() {
     }
   }, []);
 
+  // ── Persist the current regimen as a new treatment plan ────────────────────
+  const saveCurrentRegimenAsPlan = useCallback(async (): Promise<TreatmentPlanRecord | null> => {
+    const current = stateRef.current;
+    if (current.status !== "ready" || currentPatientId === null) return null;
+
+    setIsPlanSaving(true);
+    setPlanSaveError(null);
+    setLastSavedPlan(null);
+    try {
+      const payload = treatmentPlanFromCurrentRegimen(patientRef.current, current.features);
+      const plan = await createTreatmentPlan(currentPatientId, payload);
+      setLastSavedPlan(plan);
+      return plan;
+    } catch (error: unknown) {
+      setPlanSaveError(error instanceof Error ? error.message : "Saving the treatment plan failed.");
+      return null;
+    } finally {
+      setIsPlanSaving(false);
+    }
+  }, [currentPatientId]);
+
   return {
     authRequired,
     isAuthenticated,
@@ -471,7 +511,12 @@ export function useDashboard() {
     runClinicianImpactPrediction,
     applyClinicianSimulationToPage,
     runScenarioImpact,
-    applyScenario
+    applyScenario,
+    currentPatientId,
+    isPlanSaving,
+    lastSavedPlan,
+    planSaveError,
+    saveCurrentRegimenAsPlan
   };
 }
 

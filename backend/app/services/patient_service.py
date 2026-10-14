@@ -79,11 +79,19 @@ class PatientService:
             )
         except ValueError as exc:
             raise InvalidPatientDataError(str(exc)) from exc
+
+        start_date = payload.start_date or date.today()
+        self._repository.close_open_treatment_plans(
+            clinician_id=clinician_id,
+            patient_id=patient_id,
+            end_date=start_date,
+        )
         return self._repository.create_treatment_plan(
             clinician_id=clinician_id,
             patient=patient,
             plan_values={
                 **payload.model_dump(exclude={"medications", "adherence"}),
+                "start_date": start_date,
                 "medications": medications,
                 "adherence": adherence,
             },

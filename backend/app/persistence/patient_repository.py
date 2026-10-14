@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 from sqlalchemy import select
@@ -67,6 +68,23 @@ class PatientRepository:
         self._session.add(plan)
         self._session.commit()
         return plan
+
+    def close_open_treatment_plans(
+        self,
+        *,
+        clinician_id: str,
+        patient_id: str,
+        end_date: date,
+    ) -> None:
+        statement = select(TreatmentPlan).where(
+            TreatmentPlan.clinician_id == clinician_id,
+            TreatmentPlan.patient_id == patient_id,
+            TreatmentPlan.end_date.is_(None),
+        )
+        for plan in self._session.scalars(statement):
+            plan.end_date = end_date
+            plan.updated_at = utc_now()
+        self._session.commit()
 
     def list_treatment_plans(self, clinician_id: str, patient_id: str) -> list[TreatmentPlan]:
         statement = (
