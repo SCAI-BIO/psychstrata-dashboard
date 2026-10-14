@@ -96,6 +96,17 @@ function sortNewestFirst(plans: TreatmentPlanRecord[]): TreatmentPlanRecord[] {
   return [...plans].sort((a, b) => (b.start_date ?? "").localeCompare(a.start_date ?? ""));
 }
 
+/** Ascending by start date (falling back to created_at's date), then created_at, then id. */
+function sortChronological(plans: TreatmentPlanRecord[]): TreatmentPlanRecord[] {
+  return [...plans].sort((a, b) => {
+    const aDate = a.start_date ?? a.created_at.slice(0, 10);
+    const bDate = b.start_date ?? b.created_at.slice(0, 10);
+    if (aDate !== bDate) return aDate.localeCompare(bDate);
+    if (a.created_at !== b.created_at) return a.created_at.localeCompare(b.created_at);
+    return a.id.localeCompare(b.id);
+  });
+}
+
 function PatientsPanel({
   onOpenResults,
   onAddPatient
@@ -323,7 +334,8 @@ function PatientDetails({
   onOpenPlan: (plan: TreatmentPlanRecord) => void;
 }) {
   const { state, reload } = useTreatmentPlans(patient.id);
-  const plans = state.status === "ready" ? sortNewestFirst(state.plans) : [];
+  const plans = state.status === "ready" ? sortChronological(state.plans) : [];
+  const latestPlanId = plans.length > 0 ? plans[plans.length - 1].id : null;
 
   return (
     <div>
@@ -348,11 +360,11 @@ function PatientDetails({
         ) : (
           <>
             <ul className="divide-y divide-slate-200/70 dark:divide-slate-700/70">
-              {plans.map((plan, index) => (
+              {plans.map((plan) => (
                 <PlanRow
                   key={plan.id}
                   plan={plan}
-                  isLatest={index === 0}
+                  isLatest={plan.id === latestPlanId}
                   isOpening={openingKey === plan.id}
                   onOpen={onOpenPlan}
                 />

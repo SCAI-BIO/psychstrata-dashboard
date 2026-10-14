@@ -1,4 +1,10 @@
-import type { FeatureSchema, PatientCreatePayload, PatientRecord, TreatmentPlanRecord } from "../api";
+import type {
+  FeatureSchema,
+  PatientCreatePayload,
+  PatientRecord,
+  TreatmentPlanCreatePayload,
+  TreatmentPlanRecord
+} from "../api";
 import { createDefaultPatient, type Patient } from "../domain/patient";
 
 /** Ids the backend derives itself (age comes from date_of_birth) and rejects if sent. */
@@ -28,6 +34,27 @@ export function patientToCreatePayload(patient: Patient, features: FeatureSchema
       proteomics: { ...patient.proteomics }
     }
   };
+}
+
+/**
+ * Build a new treatment plan from the patient's current regimen: the
+ * medications + adherence values the model knows about. `start_date` is left
+ * out so the backend defaults it to today (closing the previous open plan).
+ */
+export function treatmentPlanFromCurrentRegimen(
+  patient: Patient,
+  features: FeatureSchema[]
+): TreatmentPlanCreatePayload {
+  const medications: Record<string, number> = {};
+  const adherence: Record<string, number> = {};
+  for (const feature of features) {
+    if (DERIVED_FEATURE_IDS.has(feature.id)) continue;
+    const value = patient.clinical[feature.id];
+    if (value === undefined) continue;
+    if (feature.category === "medications") medications[feature.id] = value;
+    else if (feature.category === "adherence") adherence[feature.id] = value;
+  }
+  return { medications, adherence };
 }
 
 const GENDER_BY_SEX_AT_BIRTH: Record<number, string> = { 0: "Male", 1: "Female", 2: "Other" };
