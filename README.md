@@ -2,6 +2,7 @@
 <a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI"></a>
 [![CI](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard/branch/main/graph/badge.svg)](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 
 
@@ -158,3 +159,15 @@ curl http://localhost:8000/api/tsne
 When auth is enabled, call protected endpoints with `-u <username>:<password>`.
 
 Patient and treatment-plan persistence uses plain SQLAlchemy 2.0. Configure `BACKEND_DATABASE_URL` to choose the database; if omitted, the backend uses `sqlite:///./db.sqlite3`. Configured clinical, medication, and treatment values are stored as validated JSON objects in their aggregate tables.
+
+## License & Citation
+
+This project is licensed under the [Apache License 2.0](LICENSE). Redistributions must preserve the
+attribution in [NOTICE](NOTICE), as required by the license.
+
+If you use this software in research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
+All versions are archived on Zenodo under the concept DOI
+[10.5281/zenodo.22922039](https://doi.org/10.5281/zenodo.22922039).
+
+Questions, feedback, and collaboration inquiries are welcome — reach out via the
+[Psych-STRATA project website](https://psych-strata.eu/contact-us/).

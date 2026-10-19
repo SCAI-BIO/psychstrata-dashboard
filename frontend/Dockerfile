@@ -32,4 +32,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
+LABEL org.opencontainers.image.title="Psych-STRATA Dashboard frontend" \
+      org.opencontainers.image.description="React frontend for the Psych-STRATA Dashboard (demo, synthetic data only)" \
+      org.opencontainers.image.source="https://github.com/SCAI-BIO/psychstrata-dashboard" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
 CMD ["nginx", "-g", "daemon off;"]
