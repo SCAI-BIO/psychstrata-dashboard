@@ -2,6 +2,7 @@
 <a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI"></a>
 [![CI](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard/branch/main/graph/badge.svg)](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 
 
@@ -73,18 +74,14 @@ docker compose up --build
 ```
 
 Access the frontend at `http://localhost:3000`. The backend is not published to
-the host; the frontend reaches it over the internal Docker network, and nginx
-proxies `/api` requests to the backend service.
+the host: nginx (production) or Vite (development) proxies `/api` requests to
+the backend service over the internal Docker network.
 
 Full stack, development with live reload:
 
 ```bash
 docker compose -f compose.yml -f compose.dev.yml up --build
 ```
-
-Access the frontend at `http://localhost:3000`. As above, the backend is not
-exposed on the host — Vite proxies `/api` requests to the backend service
-inside the Docker network.
 
 ## Tests
 
@@ -125,36 +122,21 @@ In CI (`.github/workflows/ci.yaml`) the system tests run in the same workflow
 as the unit tests, but only once both the backend and frontend unit-test
 suites are green — the job depends on them via `needs`.
 
-## REST API
+## API
 
-Base URL: `http://localhost:8000`
+The backend exposes a REST API under `/api` (health, auth, features, patients,
+treatment plans, prediction, explainability, t-SNE). See
+[backend/README.md](backend/README.md#rest-api) for endpoints, configuration,
+and database behavior.
 
-- `GET /api/health` — service health check
-- `GET /api/auth/status` — reports whether backend Basic Auth is enabled
-- `POST /api/auth/login` — validates provided Basic Auth credentials
-- `GET /api/features` — feature schema, defaults, and confidence-level bounds
-- `POST /api/patients` — create a patient for the current clinician
-- `GET /api/patients` — list patients for the current clinician
-- `GET /api/patients/{patient_id}` — read a patient
-- `PATCH /api/patients/{patient_id}` — update a patient
-- `DELETE /api/patients/{patient_id}` — delete a patient and cascade-delete treatment plans
-- `POST /api/patients/{patient_id}/treatment-plans` — create a treatment plan for a patient
-- `GET /api/patients/{patient_id}/treatment-plans` — list a patient's treatment plans
-- `GET /api/treatment-plans/{treatment_plan_id}` — read a treatment plan
-- `PATCH /api/treatment-plans/{treatment_plan_id}` — update a treatment plan
-- `DELETE /api/treatment-plans/{treatment_plan_id}` — delete a treatment plan
-- `POST /api/treatment-plans/{treatment_plan_id}/predict` — predict from persisted patient and treatment-plan data
-- `POST /api/predict` — prediction, SHAP values, top contributors, and selected t-SNE point
-- `POST /api/explain` — prediction context plus generated explanation text
-- `GET /api/tsne` — population t-SNE coordinates and class labels
+## License & Citation
 
-Examples:
+This project is licensed under the [Apache License 2.0](LICENSE). Redistributions must preserve the
+attribution in [NOTICE](NOTICE), as required by the license.
 
-```bash
-curl http://localhost:8000/api/features
-curl http://localhost:8000/api/tsne
-```
+If you use this software in research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
+All versions are archived on Zenodo under the concept DOI
+[10.5281/zenodo.22922039](https://doi.org/10.5281/zenodo.22922039).
 
-When auth is enabled, call protected endpoints with `-u <username>:<password>`.
-
-Patient and treatment-plan persistence uses plain SQLAlchemy 2.0. Configure `BACKEND_DATABASE_URL` to choose the database; if omitted, the backend uses `sqlite:///./db.sqlite3`. Configured clinical, medication, and treatment values are stored as validated JSON objects in their aggregate tables.
+Questions, feedback, and collaboration inquiries are welcome — reach out via the
+[Psych-STRATA project website](https://psych-strata.eu/contact-us/).

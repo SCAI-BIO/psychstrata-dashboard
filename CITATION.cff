@@ -43,8 +43,13 @@ contributors:
     family-names: Stonner
     affiliation: University Hospital Münster
 url: 'https://demo.psychstrata.bio.scai.fraunhofer.de/'
+repository-code: 'https://github.com/SCAI-BIO/psychstrata-dashboard'
 repository-artifact: >-
   https://github.com/orgs/SCAI-BIO/packages?repo_name=psychstrata-dashboard
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22922039
+    description: The concept DOI of the work.
 abstract: >-
   Interactive dashboard enabling shared decision making for
   treatment resistance in depression.

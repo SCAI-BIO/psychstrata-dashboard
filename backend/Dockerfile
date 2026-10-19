@@ -20,6 +20,11 @@ COPY app ./app
 
 EXPOSE 8000
 
+LABEL org.opencontainers.image.title="Psych-STRATA Dashboard backend" \
+      org.opencontainers.image.description="FastAPI backend for the Psych-STRATA Dashboard (demo, synthetic data only)" \
+      org.opencontainers.image.source="https://github.com/SCAI-BIO/psychstrata-dashboard" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 FROM base AS dev
