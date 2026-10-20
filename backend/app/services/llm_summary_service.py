@@ -94,7 +94,7 @@ def build_llm_prompt(
             "Use plain language and keep the explanation concise.",
             "Only mention features listed in the payload.",
             "Treat SHAP direction as the source of truth for whether a feature pushed the current prediction up or down.",
-            "Only cite PMIDs that appear in evidence_pmids for the same feature.",
+            "Cite supporting evidence inline as 'PMID: <id>' and only cite PMIDs that appear in evidence_pmids for the same feature.",
             "Do not invent papers, PMIDs, mechanisms, or unsupported clinical facts.",
             "If the evidence note says the evidence is weak, mixed, indirect, or treatment-focused rather than predictor-focused, say that clearly.",
             "If a feature has no PMIDs, say that no supporting PMID was provided and avoid a literature-backed claim.",
