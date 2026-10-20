@@ -134,9 +134,9 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 ## Model Configuration
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
-- `LLM_CLIENT_URL` (optional LLM endpoint URL; defaults to the OpenAI Responses API)
-- `LLM_CLIENT_MODEL` (optional model name; defaults to `gpt-4.1-mini`)
-- `LLM_CLIENT_SECRET` (optional client secret; used by hosted providers such as OpenAI)
+- `LLM_PROVIDER_URL` (optional LLM endpoint URL; defaults to FHGenie at `https://fhgenie.fraunhofer.de/v1`)
+- `LLM_PROVIDER_MODEL` (optional model name; defaults to `Qwen/Qwen3-Coder-Next-FP8`)
+- `LLM_PROVIDER_KEY` (optional provider API key; required for hosted providers such as FHGenie)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
 You can also set it in `BACKEND_CONFIG_FILE`.
@@ -145,10 +145,13 @@ The deployed release version is configured with `APP_VERSION`. Release Docker
 builds set it from the GitHub release tag; local runs use `development` when it
 is not set.
 
-LLM explanations select a client strategy from the configured URL. OpenAI URLs use the
-OpenAI Responses API client; localhost URLs use the Ollama client and default to `/api/chat`.
-The secret is optional for local Ollama use. `OPENAI_API_URL`, `OPENAI_MODEL`, and
-`OPENAI_API_KEY` remain supported as compatibility fallbacks.
+LLM explanations select a client strategy from the configured URL. FHGenie URLs
+use the FHGenie Chat Completions client; OpenAI URLs use the OpenAI Responses API
+client; localhost URLs use the Ollama client and default to `/api/chat`. The
+secret is optional for local Ollama use. `LLM_CLIENT_URL`, `LLM_CLIENT_MODEL`,
+`LLM_CLIENT_SECRET`, `OPENAI_API_URL`, `OPENAI_MODEL`, and `OPENAI_API_KEY`
+remain supported as compatibility fallbacks but are deprecated and will be
+removed in a future release.
 
 ## Feature Configuration
 

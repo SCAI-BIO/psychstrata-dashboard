@@ -17,6 +17,9 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
         "BACKEND_DATABASE_URL",
         "MODEL_ARTIFACT_PATH",
         "FEATURES_CONFIG_PATH",
+        "LLM_PROVIDER_URL",
+        "LLM_PROVIDER_MODEL",
+        "LLM_PROVIDER_KEY",
         "LLM_CLIENT_URL",
         "LLM_CLIENT_MODEL",
         "LLM_CLIENT_SECRET",
@@ -28,6 +31,45 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     settings._reset_backend_settings_for_tests()
     yield
     settings._reset_backend_settings_for_tests()
+
+
+def test_settings_default_to_fhgenie(monkeypatch: pytest.MonkeyPatch) -> None:
+    backend_settings = settings.get_backend_settings()
+
+    assert backend_settings.llm_client_url == "https://fhgenie.fraunhofer.de/v1"
+    assert backend_settings.llm_client_model == "Qwen/Qwen3-Coder-Next-FP8"
+    assert backend_settings.llm_client_secret is None
+
+
+def test_settings_prefer_llm_provider_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_PROVIDER_URL", "https://fhgenie.fraunhofer.de/v1")
+    monkeypatch.setenv("LLM_PROVIDER_MODEL", "Qwen/Qwen3-Coder-Next-FP8")
+    monkeypatch.setenv("LLM_PROVIDER_KEY", "provider-secret")
+    monkeypatch.setenv("LLM_CLIENT_URL", "http://localhost:11434")
+    monkeypatch.setenv("LLM_CLIENT_MODEL", "llama3")
+    monkeypatch.setenv("LLM_CLIENT_SECRET", "client-secret")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-4.1-mini")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-secret")
+
+    backend_settings = settings.get_backend_settings()
+
+    assert backend_settings.llm_client_url == "https://fhgenie.fraunhofer.de/v1"
+    assert backend_settings.llm_client_model == "Qwen/Qwen3-Coder-Next-FP8"
+    assert backend_settings.llm_client_secret == "provider-secret"
+
+
+def test_settings_fall_back_to_llm_client_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_CLIENT_URL", "http://localhost:11434")
+    monkeypatch.setenv("LLM_CLIENT_MODEL", "llama3")
+    monkeypatch.setenv("LLM_CLIENT_SECRET", "client-secret")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-4.1-mini")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-secret")
+
+    backend_settings = settings.get_backend_settings()
+
+    assert backend_settings.llm_client_url == "http://localhost:11434"
+    assert backend_settings.llm_client_model == "llama3"
+    assert backend_settings.llm_client_secret == "client-secret"
 
 
 def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
