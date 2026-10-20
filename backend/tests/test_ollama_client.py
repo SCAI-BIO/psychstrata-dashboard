@@ -80,7 +80,7 @@ def test_complete_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "server exploded" in str(excinfo.value)
 
 
-def test_complete_truncates_long_http_error_body(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_complete_includes_http_error_body(monkeypatch: pytest.MonkeyPatch) -> None:
     def _raise(_req):
         raise error.HTTPError(
             url="http://localhost:11434/api/chat",
@@ -95,8 +95,7 @@ def test_complete_truncates_long_http_error_body(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(LLMClientError) as excinfo:
         client.complete("prompt")
-    assert "x" * 800 in str(excinfo.value)
-    assert "x" * 801 not in str(excinfo.value)
+    assert "x" * 2000 in str(excinfo.value)
 
 
 def test_complete_raises_on_url_error(monkeypatch: pytest.MonkeyPatch) -> None:

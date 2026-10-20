@@ -17,7 +17,7 @@ class LLMClient(ABC):
     request_timeout = 20
     requires_secret = True
     temperature = 0.2
-    max_tokens = 350
+    max_tokens = 800
     system_prompt = (
         "You explain model predictions for a synthetic depression treatment-resistance demo. "
         "Base every statement only on the provided JSON payload. "
@@ -31,8 +31,7 @@ class LLMClient(ABC):
 
     @property
     def service_name(self) -> str:
-        name = type(self).__name__.removesuffix("Client")
-        return f"the {name} service" if name else "the language model service"
+        return type(self).__name__.removesuffix("Client") or "language model"
 
     def complete(self, prompt: str) -> str:
         """Return a model completion for the supplied prompt."""
@@ -54,26 +53,26 @@ class LLMClient(ABC):
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise LLMClientError(
-                f"Prediction explanation unavailable: {self.service_name} returned HTTP {exc.code}.\n\n"
-                f"```text\n{detail[:800]}\n```"
+                f"Prediction explanation unavailable: the {self.service_name} service returned HTTP {exc.code}.\n\n"
+                f"```text\n{detail}\n```"
             ) from exc
         except error.URLError as exc:
             raise LLMClientError(
-                f"Prediction explanation unavailable: {self.service_name} could not be reached ({exc.reason})."
+                f"Prediction explanation unavailable: the {self.service_name} service could not be reached ({exc.reason})."
             ) from exc
         except TimeoutError as exc:
             raise LLMClientError(
-                f"Prediction explanation unavailable: {self.service_name} timed out."
+                f"Prediction explanation unavailable: the {self.service_name} service timed out."
             ) from exc
         except json.JSONDecodeError as exc:
             raise LLMClientError(
-                f"Prediction explanation unavailable: {self.service_name} response could not be parsed."
+                f"Prediction explanation unavailable: the {self.service_name} service response could not be parsed."
             ) from exc
 
         text = self._extract_text(response_payload).strip()
         if not text:
             raise LLMClientError(
-                f"Prediction explanation unavailable: {self.service_name} returned an empty response."
+                f"Prediction explanation unavailable: the {self.service_name} service returned an empty response."
             )
         return text
 

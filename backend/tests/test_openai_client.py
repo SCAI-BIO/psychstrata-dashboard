@@ -59,7 +59,7 @@ def test_complete_uses_responses_api_payload(monkeypatch: pytest.MonkeyPatch) ->
     assert captured["authorization"] == "Bearer sk-secret"
     assert captured["data"]["model"] == "gpt-4.1-mini"
     assert captured["data"]["temperature"] == 0.2
-    assert captured["data"]["max_output_tokens"] == 350
+    assert captured["data"]["max_output_tokens"] == 800
     assert captured["data"]["input"][1]["content"][0] == {"type": "input_text", "text": "prompt"}
 
 

@@ -2,8 +2,6 @@ from .llm_client import LLMClient
 
 
 class FHGenieClient(LLMClient):
-    max_tokens = 800
-
     def _endpoint(self) -> str:
         endpoint = self.url.rstrip("/")
         if not endpoint.endswith("/chat/completions"):
