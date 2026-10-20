@@ -24,6 +24,67 @@ describe("renderInlineMarkdown", () => {
     expect(strongs[0]).toHaveTextContent("one");
     expect(strongs[1]).toHaveTextContent("two");
   });
+
+  it("renders a PMID as a numbered PubMed link", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("shown (PMID: 17685743)")}</p>);
+    const link = screen.getByTestId("out").querySelector("a");
+    expect(link).toHaveTextContent("[1]");
+    expect(link).toHaveAttribute("href", "https://pubmed.ncbi.nlm.nih.gov/17685743/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(screen.getByTestId("out")).toHaveTextContent("shown [1]");
+  });
+
+  it("drops the surrounding parentheses from a parenthesized citation", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("shown (PMID: 17685743)")}</p>);
+    expect(screen.getByTestId("out")).not.toHaveTextContent("(");
+    expect(screen.getByTestId("out")).not.toHaveTextContent(")");
+  });
+
+  it("renders 'PMID:' without a space and without parentheses", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("see PMID:17685743 here")}</p>);
+    const link = screen.getByTestId("out").querySelector("a");
+    expect(link).toHaveTextContent("[1]");
+    expect(screen.getByTestId("out")).toHaveTextContent("see [1] here");
+  });
+
+  it("renders a plural 'PMIDs:' list as multiple numbered links", () => {
+    render(
+      <p data-testid="out">
+        {renderInlineMarkdown("difficult-to-treat depression (PMIDs: 34986373, 35993319)")}
+      </p>
+    );
+    const links = screen.getByTestId("out").querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("[1]");
+    expect(links[0]).toHaveAttribute("href", "https://pubmed.ncbi.nlm.nih.gov/34986373/");
+    expect(links[1]).toHaveTextContent("[2]");
+    expect(links[1]).toHaveAttribute("href", "https://pubmed.ncbi.nlm.nih.gov/35993319/");
+    expect(screen.getByTestId("out")).toHaveTextContent("difficult-to-treat depression [1], [2]");
+  });
+
+  it("renders a plural PMID list separated by 'and'", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("(PMIDs: 34986373 and 35993319)")}</p>);
+    const links = screen.getByTestId("out").querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("[1]");
+    expect(links[1]).toHaveTextContent("[2]");
+  });
+
+  it("accepts PMID without a colon and reuses numbers for repeats", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("PMID 17685743 and PMID: 17685743")}</p>);
+    const links = screen.getByTestId("out").querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("[1]");
+    expect(links[1]).toHaveTextContent("[1]");
+  });
+
+  it("numbers distinct PMIDs by order of appearance", () => {
+    render(<p data-testid="out">{renderInlineMarkdown("PMID: 17444078 then PMID: 19192471")}</p>);
+    const links = screen.getByTestId("out").querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("[1]");
+    expect(links[1]).toHaveTextContent("[2]");
+  });
 });
 
 describe("renderSummaryMarkdown", () => {
@@ -66,6 +127,14 @@ describe("renderSummaryMarkdown", () => {
   it("separates blocks split by blank lines", () => {
     render(<div data-testid="out">{renderSummaryMarkdown("first\n\nsecond")}</div>);
     expect(screen.getByTestId("out").querySelectorAll("p")).toHaveLength(2);
+  });
+
+  it("numbers PMID citations continuously across blocks", () => {
+    render(<div data-testid="out">{renderSummaryMarkdown("**Summary**\n\n- PHQ-9 high (PMID: 17685743)\n- Duration long (PMID: 19192471)")}</div>);
+    const links = screen.getByTestId("out").querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("[1]");
+    expect(links[1]).toHaveTextContent("[2]");
   });
 
   it("ignores blank lines and surrounding whitespace", () => {
