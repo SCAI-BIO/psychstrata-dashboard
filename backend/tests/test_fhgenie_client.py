@@ -32,7 +32,7 @@ def _patch_urlopen(monkeypatch: pytest.MonkeyPatch, handler):
         captured["timeout"] = timeout
         return handler(req)
 
-    monkeypatch.setattr("app.clients.fhgenie_client.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("app.clients.llm_client.request.urlopen", _fake_urlopen)
     return captured
 
 
@@ -40,7 +40,7 @@ def test_complete_returns_not_configured_when_secret_missing(monkeypatch: pytest
     def _fail(_req):
         raise AssertionError("urlopen must not be called without a secret")
 
-    monkeypatch.setattr("app.clients.fhgenie_client.request.urlopen", _fail)
+    monkeypatch.setattr("app.clients.llm_client.request.urlopen", _fail)
     client = FHGenieClient(url="https://fhgenie.fraunhofer.de/v1", model="Qwen/Qwen3-Coder-Next-FP8", secret=None)
 
     text = client.complete("prompt")
@@ -59,7 +59,7 @@ def test_complete_posts_chat_completions_payload(monkeypatch: pytest.MonkeyPatch
     assert captured["authorization"] == "Bearer secret"
     assert captured["data"]["model"] == "Qwen/Qwen3-Coder-Next-FP8"
     assert captured["data"]["temperature"] == 0.2
-    assert captured["data"]["max_tokens"] == 350
+    assert captured["data"]["max_tokens"] == 800
     assert captured["data"]["messages"][1] == {"role": "user", "content": "prompt"}
     assert captured["data"]["messages"][0]["role"] == "system"
     assert captured["timeout"] == 20

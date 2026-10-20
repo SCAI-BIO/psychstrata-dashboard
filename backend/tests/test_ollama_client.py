@@ -32,7 +32,7 @@ def _patch_urlopen(monkeypatch: pytest.MonkeyPatch, handler):
         captured["timeout"] = timeout
         return handler(req)
 
-    monkeypatch.setattr("app.clients.ollama_client.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("app.clients.llm_client.request.urlopen", _fake_urlopen)
     return captured
 
 
