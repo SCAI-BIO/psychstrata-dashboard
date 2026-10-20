@@ -13,6 +13,7 @@ def _reset(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("BACKEND_BASIC_AUTH_USERNAME", raising=False)
     monkeypatch.delenv("BACKEND_BASIC_AUTH_PASSWORD", raising=False)
     monkeypatch.delenv("FEATURES_CONFIG_PATH", raising=False)
+    monkeypatch.delenv("LLM_PROVIDER_KEY", raising=False)
     monkeypatch.delenv("LLM_CLIENT_SECRET", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     feature_loader._reset_feature_loader_for_tests()

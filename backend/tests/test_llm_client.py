@@ -1,6 +1,7 @@
 import pytest
 
 from app.clients.client_factory import create_llm_client
+from app.clients.fhgenie_client import FHGenieClient
 from app.clients.ollama_client import OllamaClient
 from app.clients.openai_client import OpenAIClient
 
@@ -13,6 +14,16 @@ def test_llm_client_factory_uses_openai_for_default_url() -> None:
     )
 
     assert isinstance(client, OpenAIClient)
+
+
+def test_llm_client_factory_uses_fhgenie_for_fhgenie_url() -> None:
+    client = create_llm_client(
+        url="https://fhgenie.fraunhofer.de/v1",
+        model="Qwen/Qwen3-Coder-Next-FP8",
+        secret=None,
+    )
+
+    assert isinstance(client, FHGenieClient)
 
 
 @pytest.mark.parametrize("url", ["http://localhost:11434", "http://127.0.0.1:11434/api/chat"])
