@@ -203,6 +203,7 @@ node_modules/
 .pnpm-store/
 frontend/dist/
 frontend/coverage/
+frontend/package-lock.json
 *.tsbuildinfo
 
 # Playwright system tests
