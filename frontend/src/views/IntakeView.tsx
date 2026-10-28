@@ -5,7 +5,6 @@ import type { Patient, PatientDemographics } from "../domain/patient";
 import { isStepComplete } from "../domain/patient";
 import type { DashboardApi } from "../hooks/useDashboard";
 import { parseNumberValue } from "../lib/format";
-import { PSYCH_STRATA_LOGO_URL } from "../constants";
 
 const STEPS = ["Demographics", "Clinical Properties", "Genetics"] as const;
 const STEP_PROGRESS = [0, 33, 66];
@@ -69,24 +68,8 @@ function IntakeForm({
   
 
   return (
-    <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-900">
-        <div className="flex items-center">
-            <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">PsychStrata CDSS</span>
-        </div>
-        {dashboard.authRequired && (
-          <button
-            type="button"
-            onClick={dashboard.signOut}
-            className="text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-          >
-            Sign out
-          </button>
-        )}
-      </header>
-
-      <div className="max-w-3xl mx-auto px-6 py-10">
+    <>
+      <div className="max-w-3xl mx-auto py-4">
         <h1 className="text-3xl font-bold tracking-tight">New Patient</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Perform a high-precision clinical data entry to calibrate risk models.</p>
 
@@ -153,7 +136,7 @@ function IntakeForm({
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
 }
 
@@ -579,8 +562,8 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
 
 function CenteredMessage({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 flex items-center justify-center p-8">
+    <div className="flex items-center justify-center p-8 min-h-64">
       <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-md">{children}</p>
-    </main>
+    </div>
   );
 }
