@@ -127,27 +127,27 @@ function ContributorCard({
   items: Contributor[];
 }) {
   const isStrength = tone === "strength";
-  const headerClass = isStrength ? "bg-emerald-100 text-emerald-800" : "bg-red-300/70 text-red-900";
-  const chipClass = isStrength ? "bg-emerald-100 text-emerald-800" : "bg-red-300/70 text-red-900";
+  const headerClass = isStrength ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200" : "bg-red-300/70 dark:bg-red-900/50 text-red-900 dark:text-red-200";
+  const chipClass = isStrength ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200" : "bg-red-300/70 text-red-900 dark:bg-red-900/50 dark:text-red-200";
 
   const RowIcon = isStrength ? CheckCircle2 : AlertTriangle;
 
   return (
-    <article className="rounded-xl border border-slate-200/70 overflow-hidden">
+    <article className="rounded-xl border border-slate-200/70 dark:border-slate-700/70 overflow-hidden">
       <header className={`flex items-center justify-between px-6 py-3.5 ${headerClass}`}>
         <h2 className="text-base font-bold">{title}</h2>
         {icon}
       </header>
-      <div className="bg-white p-6 space-y-4">
-        {items.length === 0 && <p className="text-sm text-slate-400">No factors identified.</p>}
+      <div className="bg-white dark:bg-slate-800 p-6 space-y-4">
+        {items.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">No factors identified.</p>}
         {items.map((item) => (
           <div key={item.feature_id} className="flex items-start gap-3">
             <span className={`flex-none flex items-center justify-center w-8 h-8 rounded-lg ${chipClass}`}>
               <RowIcon size={16} />
             </span>
             <div className="leading-snug">
-              <p className="text-sm font-semibold text-slate-900">{item.feature_label}</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-300">{item.feature_label}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Recorded as {String(item.selected_value)}.{" "}
                 {isStrength
                   ? "This is associated with a better treatment response."

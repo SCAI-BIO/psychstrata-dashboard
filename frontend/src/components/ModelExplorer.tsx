@@ -83,7 +83,7 @@ export function ModelExplorer({
           type="button"
           onClick={reset}
           disabled={isSubmitting}
-          className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold uppercase tracking-wide px-3 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold uppercase tracking-wide px-3 py-2 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
         >
           <RotateCcw size={14} />
           Reset to patient

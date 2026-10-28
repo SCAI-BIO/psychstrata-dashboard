@@ -12,14 +12,14 @@ export interface StatItem {
 export function StatCards({ items }: { items: StatItem[] }) {
   return (
     <section className="grid grid-cols-4 gap-4">
-      {items.map((item) => (
-        <article key={item.label} className="bg-white rounded-xl border border-slate-200/70 px-4 py-3.5">
-          <p className="text-xs font-semibold text-slate-500 mb-1">{item.label}</p>
-          <p className="text-2xl font-bold text-slate-900 leading-tight">
-            {item.value}
-            {item.suffix && <span className="text-sm font-medium text-slate-500 ml-1">{item.suffix}</span>}
+      {items.map((item) => ( 
+        <article key={item.label} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 dark:px-4 dark:py-3.5">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{item.label}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
+            {item.value} 
+            {item.suffix && <span className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-1">{item.suffix}</span>}
           </p>
-          <p className="text-xs text-slate-400 mt-1">{item.caption}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{item.caption}</p>
         </article>
       ))}
     </section>

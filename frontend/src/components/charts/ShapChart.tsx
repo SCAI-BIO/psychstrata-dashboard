@@ -65,7 +65,7 @@ export function ShapChart({ shapValues }: { shapValues: ShapValues }) {
           <ShapRows rows={medication} maxAbs={maxAbs} />
         </div>
       )}
-      <p className="text-[11px] text-slate-400 leading-relaxed text-center pt-1">
+      <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed text-center pt-1">
         SHAP values indicate clinical and biological variables influencing resistance prediction. Bars to the left indicate a
         decrease in risk due to the factor, while bars to the right indicate an increase.
       </p>
@@ -92,11 +92,11 @@ function ShapBar({ row, maxAbs }: { row: ShapRow; maxAbs: number }) {
 
   return (
     <div className="grid grid-cols-[120px_1fr_44px] items-center gap-2">
-      <span className="text-xs text-slate-600 truncate" title={row.name}>
+      <span className="text-xs text-slate-600 dark:text-slate-300 truncate" title={row.name}>
         {row.name}
       </span>
       <div className="relative h-4">
-        <div className="absolute inset-y-0 left-1/2 w-px bg-slate-200" />
+        <div className="absolute inset-y-0 left-1/2 w-px bg-slate-200 dark:bg-slate-600" />
         <div
           className="absolute top-1/2 -translate-y-1/2 h-3 rounded-sm"
           style={{
@@ -107,7 +107,7 @@ function ShapBar({ row, maxAbs }: { row: ShapRow; maxAbs: number }) {
           }}
         />
       </div>
-      <span className={`text-xs font-medium text-right ${positive ? "text-rose-700" : "text-slate-500"}`}>
+      <span className={`text-xs font-medium text-right ${positive ? "text-rose-700 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}>
         {positive ? "+" : ""}
         {row.value.toFixed(2)}
       </span>

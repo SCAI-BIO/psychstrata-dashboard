@@ -20,7 +20,7 @@ export function FeatureField({ feature, value, onChange }: FeatureFieldProps) {
 
   return (
     <label className="flex flex-col gap-1.5" htmlFor={inputId}>
-      <span className="text-xs font-medium text-slate-600">{feature.label}</span>
+      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{feature.label}</span>
       {feature.dtype === "numeric" ? (
         <div className="flex items-center gap-3">
           <input
@@ -31,16 +31,16 @@ export function FeatureField({ feature, value, onChange }: FeatureFieldProps) {
             step={step}
             value={value ?? 0}
             onChange={(event) => onChange(feature.id, parseNumberValue(event.target.value))}
-            className="w-full accent-slate-900"
+            className="w-full accent-slate-900 dark:accent-slate-100"
           />
-          <output className="text-sm font-medium text-slate-800 min-w-10 text-right">{value}</output>
+          <output className="text-sm font-medium text-slate-800 dark:text-slate-200 min-w-10 text-right">{value}</output>
         </div>
       ) : (
         <select
           id={inputId}
           value={String(value) ?? ""}
           onChange={(event) => onChange(feature.id, parseNumberValue(event.target.value))}
-          className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {(feature.options ?? []).map((option) => (
             <option key={option.value} value={String(option.value)}>

@@ -15,8 +15,8 @@ export function DoseSlider({ label, value, min, max, step, onChange }: DoseSlide
   return (
     <label className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between">
-        <span className="text-xs text-slate-500">{label}</span>
-        <span className="text-base font-semibold text-slate-900">{value}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
+        <span className="text-base font-semibold text-slate-900 dark:text-slate-100">{value}</span>
       </div>
       <input
         type="range"
@@ -25,7 +25,7 @@ export function DoseSlider({ label, value, min, max, step, onChange }: DoseSlide
         step={step}
         value={value ?? 0}
         onChange={(event) => onChange(parseNumberValue(event.target.value))}
-        className="w-full accent-slate-900"
+        className="w-full accent-slate-900 dark:accent-slate-100"
       />
     </label>
   );
@@ -68,11 +68,11 @@ export function SimControls({ values, onChange, showAdherence = true }: SimContr
       />
       {showAdherence && (
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-slate-500">Therapeutic Adherence</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Therapeutic Adherence</span>
           <select
             value={String(adherenceCategoryValue(values.adherence_pct))}
             onChange={(event) => onChange({ adherence_pct: parseNumberValue(event.target.value) })}
-            className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
 >
             <option value="50">Low</option>
             <option value="75">Moderate</option>
@@ -96,13 +96,13 @@ export function PredictedImpact({ impactPct, error }: PredictedImpactProps) {
   const direction = impactPct > 0 ? "Reduction" : impactPct < 0 ? "Increase" : "Change";
 
   return (
-    <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-center">Predicted Impact</p>
-      <p className="text-sm font-medium text-slate-700 text-center mt-1">
+    <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-200 text-center">Predicted Impact</p>
+      <p className="text-sm font-medium text-slate-700 dark:text-slate-300 text-center mt-1">
         {sign}
         {magnitude}% Resistance Risk {direction}
       </p>
-      {error && <p className="text-[11px] text-red-600 mt-1 text-center">{error}</p>}
+      {error && <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 text-center">{error}</p>}
     </div>
   );
 }

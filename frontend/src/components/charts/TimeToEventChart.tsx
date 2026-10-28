@@ -45,10 +45,10 @@ export function TimeToEventChart({
   const reviewValue = reviewPoint ? (hasSimulated ? reviewPoint.simulated : reviewPoint.current) : null;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col text-slate-900 dark:text-slate-100">
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="4 4" stroke="#eef2f6" vertical={false} />
+          <CartesianGrid strokeDasharray="4 4" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
             dataKey="month"
             type="number"
@@ -56,7 +56,7 @@ export function TimeToEventChart({
             ticks={[0, 3, 6, 9, 12, 15]}
             tickFormatter={monthTick}
             tick={{ fontSize: 10, fill: AXIS_COLOR }}
-            axisLine={{ stroke: "#e2e8f0" }}
+            axisLine={{ stroke: "currentColor", strokeOpacity: 0.15 }}
             tickLine={false}
           />
           <YAxis
@@ -73,7 +73,7 @@ export function TimeToEventChart({
           <Line
             type="monotone"
             dataKey="current"
-            stroke={hasSimulated ? "#cbd5e1" : "#0f172a"}
+            stroke={hasSimulated ? "#cbd5e1" : "currentColor"}
             strokeWidth={hasSimulated ? 2 : 2.5}
             strokeDasharray={hasSimulated ? "6 5" : undefined}
             dot={false}
@@ -85,7 +85,7 @@ export function TimeToEventChart({
             <Line
               type="monotone"
               dataKey="simulated"
-              stroke="#0f172a"
+              stroke="currentColor"
               strokeWidth={2.5}
               dot={false}
               isAnimationActive={false}
@@ -98,7 +98,7 @@ export function TimeToEventChart({
               y={reviewValue}
               r={5}
               fill="#dc2626"
-              stroke="#fff"
+              stroke="currentColor"
               strokeWidth={1.5}
             />
           )}
@@ -106,8 +106,8 @@ export function TimeToEventChart({
       </ResponsiveContainer>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 mt-3 justify-center">
-        <LegendItem color={hasSimulated ? "#cbd5e1" : "#0f172a"} label={currentLabel} dashed={hasSimulated} />
-        {hasSimulated && <LegendItem color="#0f172a" label={simulatedLabel} />}
+        <LegendItem color={hasSimulated ? "#cbd5e1" : "currentColor"} label={currentLabel} dashed={hasSimulated} />
+        {hasSimulated && <LegendItem color="currentColor" label={simulatedLabel} />}
         <LegendItem color="#dc2626" label="Clinical Review Point" dot />
       </div>
     </div>
@@ -132,7 +132,7 @@ function LegendItem({ color, label, dashed, dot }: { color: string; label: strin
           />
         </svg>
       )}
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>
     </div>
   );
 }
