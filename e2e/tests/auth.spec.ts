@@ -16,6 +16,6 @@ test.describe("authentication", () => {
     await page.goto("/");
     await signIn(page);
 
-    await expect(page.getByRole("heading", { name: "Patients" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Patient Overview" })).toBeVisible();
   });
 });
