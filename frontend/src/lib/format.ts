@@ -46,10 +46,10 @@ export type ResponseBadgeSpec = { label: string; classes: string };
 /** Badge styling for the patient-facing "Estimated Treatment Response" figure. */
 export function responseBadgeSpec(responseProbability: number): ResponseBadgeSpec {
   if (responseProbability >= 0.7) {
-    return { label: "High Response", classes: "bg-emerald-100 text-emerald-800" };
+    return { label: "High Response", classes: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200" };
   }
   if (responseProbability >= 0.45) {
-    return { label: "Mixed Response", classes: "bg-amber-100 text-amber-800" };
+    return { label: "Mixed Response", classes: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" };
   }
-  return { label: "Low Response", classes: "bg-red-300/70 text-red-900" };
+  return { label: "Low Response", classes: "bg-red-300/70 text-red-900 dark:bg-red-900/50 dark:text-red-200" };
 }

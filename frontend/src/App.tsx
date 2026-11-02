@@ -28,18 +28,27 @@ function App() {
 
 function renderRoute(dashboard: ReturnType<typeof useDashboard>): ReactNode {
   const { authRequired, isAuthenticated, route, state } = dashboard;
+  const onLogout = authRequired ? dashboard.signOut : undefined;
 
   if (authRequired && !isAuthenticated) {
     return <LoginView dashboard={dashboard} />;
   }
 
   if (route === "intake") {
-    return <IntakeView dashboard={dashboard} />;
+    return (
+      <AppShell onNavigate={dashboard.navigate} onLogout={onLogout}>
+        <IntakeView dashboard={dashboard} />
+      </AppShell>
+    );
   }
 
   if (route === "patients") {
-    return <PatientListView dashboard={dashboard} />;
-}
+    return (
+      <AppShell onNavigate={dashboard.navigate} onLogout={onLogout}>
+        <PatientListView dashboard={dashboard} />
+      </AppShell>
+    );
+  }
 
   // ── Result routes: guard on the async data lifecycle ─────────────────────
   const role: ResultRoute = route === "patient" ? "patient" : route === "scientist" ? "scientist" : "clinician";

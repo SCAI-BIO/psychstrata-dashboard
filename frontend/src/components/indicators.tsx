@@ -35,8 +35,8 @@ export function RiskBadge({ isHighRisk }: { isHighRisk: boolean }) {
     <span
       className={
         isHighRisk
-          ? "bg-red-300/70 text-red-900 text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-md"
-          : "bg-emerald-200/70 text-emerald-900 text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-md"
+          ? "bg-red-300/70 dark:bg-red-900/50 text-red-900 dark:text-red-200 text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-md"
+          : "bg-emerald-200/70 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-200 text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-md"
       }
     >
       {isHighRisk ? "High Risk" : "Lower Risk"}

@@ -46,13 +46,13 @@ export function InsightsCard({ explanation, isRefreshing, onRefresh, error }: In
                 type="button"
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className="bg-slate-900 text-white text-xs font-medium px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
+                className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
               >
                 {isRefreshing ? "Generating…" : "Generate summary"}
               </button>
             </div>
           )}
-          {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400 mt-3">{error}</p>}
         </div>
       </div>
     </Card>

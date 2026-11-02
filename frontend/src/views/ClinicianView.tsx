@@ -72,7 +72,7 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 type="button"
                  onClick={() => void dashboard.applyScenario(draft)}
                 disabled={dashboard.isClinicianImpactSubmitting || dashboard.isClinicianApplySubmitting}
-                className="bg-slate-900 text-white text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
               >
                 {dashboard.isClinicianImpactSubmitting ? "Calculating…" : "Calculate"}
               </button>
@@ -80,7 +80,7 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 type="button"
                 onClick={() => void dashboard.saveCurrentRegimenAsPlan()}
                 disabled={dashboard.isPlanSaving || dashboard.currentPatientId === null}
-                className="border border-slate-300 text-slate-700 text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
               >
                 {dashboard.isPlanSaving ? "Saving…" : "Save as new treatment plan"}
               </button>
@@ -95,7 +95,7 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 <select
                   value={String(adherenceCategoryValue(simValues.adherence_pct))}
                   onChange={(e) => patchDraft({ adherence_pct: parseNumberValue(e.target.value) })}
-                  className="w-full h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="50">Low</option>
                   <option value="75">Moderate</option>

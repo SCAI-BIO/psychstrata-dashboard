@@ -93,7 +93,7 @@ export function renderSummaryMarkdown(summary: string): ReactNode {
   const flushList = () => {
     if (listItems.length > 0) {
       blocks.push(
-        <ul key={`list-${listKey}`} className="space-y-1.5 text-sm text-slate-700 list-none pl-0 mt-2">
+        <ul key={`list-${listKey}`} className="space-y-1.5 text-sm text-slate-700 dark:text-slate-400 list-none pl-0 mt-2">
           {listItems}
         </ul>
       );
@@ -118,7 +118,7 @@ export function renderSummaryMarkdown(summary: string): ReactNode {
     const headingMatch = line.match(/^\*\*(.+?)\*\*:?\s*$/);
     if (headingMatch) {
       blocks.push(
-        <h4 key={`heading-${index}`} className="text-sm font-semibold text-slate-900 mt-4 mb-1">
+        <h4 key={`heading-${index}`} className="text-sm font-semibold text-slate-900 dark:text-slate-400 mt-4 mb-1">
           {headingMatch[1]}
         </h4>
       );
@@ -133,5 +133,5 @@ export function renderSummaryMarkdown(summary: string): ReactNode {
   });
 
   flushList();
-  return <div className="text-sm text-slate-700 leading-relaxed space-y-2">{blocks}</div>;
+  return <div className="text-sm text-slate-700 dark:text-slate-400 leading-relaxed space-y-2">{blocks}</div>;
 }

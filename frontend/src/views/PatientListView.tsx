@@ -1,7 +1,6 @@
 import { ArrowRight, ChevronRight, LogOut, Plus, RefreshCw } from "lucide-react";
 import { Fragment,  useState, type ReactNode } from "react";
 import { fetchTreatmentPlans, type PatientRecord, type TreatmentPlanRecord } from "../api";
-import { PSYCH_STRATA_LOGO_URL } from "../constants";
 import type { DashboardApi } from "../hooks/useDashboard";
 import { usePatients } from "../hooks/usePatients";
 import { useTreatmentPlans } from "../hooks/useTreatmentPlans";
@@ -49,43 +48,16 @@ export function PatientListView({ dashboard }: { dashboard: DashboardApi }) {
   const { state } = dashboard;
 
   return (
-    <main className="min-h-screen bg-[#faf7f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-900">
-        <div className="flex items-center">
-          <img src={PSYCH_STRATA_LOGO_URL} alt="" className="h-7 w-7 object-contain" />
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">PsychStrata CDSS</span>
-        </div>
-        <div className="flex items-center gap-3">
-          
-          {dashboard.authRequired && (
-            <button
-              type="button"
-              onClick={dashboard.signOut}
-              className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <LogOut size={14} />
-              Sign out
-            </button>
-          )}
-        </div>
-      </header>
-
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        {state.status === "loading" && <Notice>Loading clinical model configuration…</Notice>}
-        {state.status === "error" && (
-          <Notice>
-            <span className="font-semibold text-slate-900 dark:text-slate-100">Backend unavailable.</span> {state.message}
-          </Notice>
-        )}
-        {/* Mounted only once the dashboard is ready so auth is settled before we fetch. */}
-        {state.status === "ready" && (
-          <PatientsPanel
-            onOpenResults={dashboard.openPatientResults}
-            onAddPatient={() => dashboard.navigate("intake")}
-          />
-        )}
-      </div>
-    </main>
+    <div className="max-w-5xl mx-auto py-4">
+      {state.status === "loading" && <Notice>Loading clinical model configuration…</Notice>}
+      {state.status === "error" && (
+        <Notice>
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Backend unavailable.</span> {state.message}
+        </Notice>
+      )}
+      {/* Mounted only once the dashboard is ready so auth is settled before we fetch. */}
+      {state.status === "ready" && <PatientsPanel onOpenResults={dashboard.openPatientResults} />}
+    </div>
   );
 }
 
@@ -108,11 +80,9 @@ function sortChronological(plans: TreatmentPlanRecord[]): TreatmentPlanRecord[] 
 }
 
 function PatientsPanel({
-  onOpenResults,
-  onAddPatient
+  onOpenResults
 }: {
   onOpenResults: OpenResults;
-  onAddPatient: () => void;
 }) {
   const { state, isRefreshing, reload } = usePatients();
   // undefined = the user hasn't touched the dropdowns yet, so default to the latest patient
@@ -143,7 +113,7 @@ function PatientsPanel({
     <>
       <div className="flex items-end justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Patient Overview</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {count === null ? "Current patients in the database." : `${count} ${count === 1 ? "patient" : "patients"} in the database.`}
           </p>
@@ -157,14 +127,6 @@ function PatientsPanel({
           >
             <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
             Refresh
-          </button>
-          <button
-            type="button"
-            onClick={onAddPatient}
-            className="flex items-center gap-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 transition-colors"
-          >
-            <Plus size={14} />
-            Add New Patient
           </button>
         </div>
       </div>

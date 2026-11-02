@@ -103,19 +103,7 @@ describe("PatientListView", () => {
     expect(screen.getByText(/connection refused/)).toBeInTheDocument();
   });
 
-  it("renders a sign-out button when auth is required", () => {
-    const signOut = vi.fn();
-    renderView(makeDashboard({ authRequired: true, signOut }));
-    fireEvent.click(screen.getByRole("button", { name: /Sign out/ }));
-    expect(signOut).toHaveBeenCalledTimes(1);
-  });
 
-  it("navigates to intake from Add New Patient", () => {
-    const navigate = vi.fn();
-    renderView(makeDashboard({ navigate }));
-    fireEvent.click(screen.getByRole("button", { name: /Add New Patient/ }));
-    expect(navigate).toHaveBeenCalledWith("intake");
-  });
 
   it("refreshes the patient list", () => {
     renderView();

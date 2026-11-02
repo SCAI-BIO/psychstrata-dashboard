@@ -45,14 +45,7 @@ describe("IntakeView", () => {
     expect(screen.getByRole("button", { name: /Next Step/ })).not.toBeDisabled();
   });
 
-  it("shows the sign-out control only when auth is required", () => {
-    const { unmount } = renderIntake(makeDashboard({ state: makeReadyState(), authRequired: false }));
-    expect(screen.queryByRole("button", { name: /Sign out/i })).not.toBeInTheDocument();
-    unmount();
-
-    renderIntake(makeDashboard({ state: makeReadyState(), authRequired: true }));
-    expect(screen.getByRole("button", { name: /Sign out/i })).toBeInTheDocument();
-  });
+  
 
   it("advances through the wizard and reports progress", () => {
     renderIntake(makeDashboard({ state: makeReadyState() }));

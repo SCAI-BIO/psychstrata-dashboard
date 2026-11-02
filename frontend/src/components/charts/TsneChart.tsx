@@ -51,7 +51,7 @@ export function TsneChart({ tsne, selected }: TsneChartProps) {
               y: [selected.y],
               mode: "markers",
               type: "scattergl",
-              marker: { color: PATIENT_COLOR, size: 13 },
+              marker: { color: PATIENT_COLOR, size: 13, line: { color: "#ffffff", width: 2 } },
               name: "Current Patient",
               showlegend: false
             }
@@ -64,13 +64,13 @@ export function TsneChart({ tsne, selected }: TsneChartProps) {
               zeroline: false,
               showgrid: false,
               tickfont: { size: 10, color: "#94a3b8" },
-              linecolor: "#e2e8f0"
+              linecolor: "rgba(148,163,184,0.4)"
             },
             yaxis: {
               zeroline: false,
               showgrid: false,
               tickfont: { size: 10, color: "#94a3b8" },
-              linecolor: "#e2e8f0"
+              linecolor: "rgba(148,163,184,0.4)"
             },
             autosize: true
           }}
@@ -85,7 +85,7 @@ export function TsneChart({ tsne, selected }: TsneChartProps) {
         <LegendDot color={RESPONSIVE_COLOR} label="Responsive Patient" />
         <LegendDot color={RESISTANT_COLOR} label="Resistant Patient" />
       </div>
-      <p className="text-[11px] text-slate-400 text-center mt-2">This map places similar patient profiles close together.</p>
+      <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center mt-2">This map places similar patient profiles close together.</p>
     </div>
   );
 }
@@ -93,8 +93,8 @@ export function TsneChart({ tsne, selected }: TsneChartProps) {
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="w-2.5 h-2.5 rounded-full ring-1 ring-slate-300 dark:ring-slate-300" style={{ backgroundColor: color }} />
+      <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>
     </div>
   );
 }

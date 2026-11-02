@@ -44,7 +44,7 @@ describe("AppShell", () => {
   it("navigates to the patient list and intake from the sidebar actions", () => {
     const onNavigate = vi.fn();
     renderShell({ onNavigate });
-    fireEvent.click(screen.getByRole("button", { name: /Patient list/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Patient Overview/ }));
     expect(onNavigate).toHaveBeenCalledWith("patients");
     fireEvent.click(screen.getByRole("button", { name: /Add New Patient/ }));
     expect(onNavigate).toHaveBeenCalledWith("intake");
@@ -68,5 +68,23 @@ describe("AppShell", () => {
     fireEvent.click(toggle);
     expect(screen.getByRole("button", { name: "Toggle dark mode" })).toHaveTextContent("Light mode");
     expect(document.documentElement).toHaveClass("dark");
+  });
+
+    it("renders the top bar actions with and without a sidebar", () => {
+    const { unmount } = renderShell();
+    expect(screen.getByRole("button", { name: /Patient Overview/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add New Patient/ })).toBeInTheDocument();
+    unmount();
+
+    renderShell({ role: undefined });
+    expect(screen.getByRole("button", { name: /Patient Overview/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add New Patient/ })).toBeInTheDocument();
+  });
+
+  it("hides the sidebar when no role is given", () => {
+    renderShell({ role: undefined });
+    expect(screen.getByText("Body content")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Medical View" })).not.toBeInTheDocument();
+    expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
   });
 });
