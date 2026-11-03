@@ -1,4 +1,4 @@
-import { BrainCircuit, LineChart as LineChartIcon } from "lucide-react";
+import { BrainCircuit, LineChart as LineChartIcon, RotateCcw, Save } from "lucide-react";
 import { useMemo } from "react";
 import type { PredictionResponse } from "../api";
 import { Card } from "../components/Card";
@@ -28,7 +28,7 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
   const knownIds = useMemo(() => new Set(ready.features.map((f) => f.id)), [ready.features]);
 
   // throwaway copy of the patient; sliders edit this, the real patient is untouched
-  const { draft, setFeature } = useScenario(dashboard.patient, knownIds);
+  const { draft, setFeature, reset } = useScenario(dashboard.patient, knownIds);
 
   // SimControls speaks SimValues, so project the four fields out of the draft…
   const simValues: SimValues = {
@@ -40,6 +40,12 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
   // …and translate its patches back into draft edits
   const patchDraft = (patch: Partial<SimValues>) =>
     (Object.entries(patch) as [keyof SimValues, number][]).forEach(([id, value]) => setFeature(id, value));
+
+  // The time-to-event chart contrasts the patient's original plan with the
+  // currently applied one, so the simulated line survives "Calculate" and
+  // disappears again once the simulation is reset.
+  const baselineRisk = dashboard.baselineRiskProbability ?? d.riskProbability;
+  const hasAppliedScenario = dashboard.isSimulationApplied;
 
   const statItems: StatItem[] = [
     { label: "PHQ-9 Score", value: d.phqScore, caption: phqSeverity(d.phqScore) },
@@ -80,9 +86,28 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
                 type="button"
                 onClick={() => void dashboard.saveCurrentRegimenAsPlan()}
                 disabled={dashboard.isPlanSaving || dashboard.currentPatientId === null}
-                className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                aria-label={dashboard.isPlanSaving ? "Saving…" : "Save as new treatment plan"}
+                title={dashboard.isPlanSaving ? "Saving…" : "Save as new treatment plan"}
+                className="flex items-center justify-center w-9 h-9 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
               >
-                {dashboard.isPlanSaving ? "Saving…" : "Save as new treatment plan"}
+                <Save size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dashboard.resetSimulation();
+                  reset();
+                }}
+                disabled={
+                  !dashboard.canResetSimulation ||
+                  dashboard.isClinicianApplySubmitting ||
+                  dashboard.isClinicianImpactSubmitting
+                }
+                aria-label="Reset to patient"
+                title="Reset to patient"
+                className="flex items-center justify-center w-9 h-9 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                <RotateCcw size={15} />
               </button>
             </div>
           }
@@ -129,8 +154,8 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
         </Card>
         <Card icon={LineChartIcon} title="Probability of Non-Response Over Time (Time-to-Event)">
           <TimeToEventChart
-            currentProbability={d.riskProbability}
-            simulatedProbability={dashboard.clinicianImpactPct !== 0 ? d.riskProbability - dashboard.clinicianImpactPct / 100 : null}
+            currentProbability={baselineRisk}
+            simulatedProbability={hasAppliedScenario ? d.riskProbability : null}
           />
         </Card>
       </section>

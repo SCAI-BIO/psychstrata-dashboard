@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RotateCcw, ShieldCheck } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import type { PredictionResponse } from "../api";
 import { usePatient } from "../context/PatientContext";
@@ -30,7 +30,7 @@ export function PatientView({ dashboard, ready, prediction }: PatientViewProps) 
   const knownIds = useMemo(() => new Set(ready.features.map((f) => f.id)), [ready.features]);
 
   // throwaway copy of the patient the simulator edits; the real patient is untouched
-  const { draft, setFeature } = useScenario(patient, knownIds);
+  const { draft, setFeature, reset } = useScenario(patient, knownIds);
 
   const simValues: SimValues = {
     sertraline_mg: draft.clinical.sertraline_mg ?? 0,
@@ -78,14 +78,28 @@ export function PatientView({ dashboard, ready, prediction }: PatientViewProps) 
               Adjust these clinical variables to see how they might influence the estimated treatment response over time.
             </p>
             <SimControls values={simValues} onChange={patchSim} />
-            <button
-              type="button"
-              onClick={() => void dashboard.runScenarioImpact(patientToFeatures(draft))}
-              disabled={dashboard.isClinicianImpactSubmitting}
-              className="mt-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
-            >
-              {dashboard.isClinicianImpactSubmitting ? "Calculating…" : "Calculate"}
-            </button>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void dashboard.runScenarioImpact(patientToFeatures(draft))}
+                disabled={dashboard.isClinicianImpactSubmitting}
+                className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-50 transition-colors"
+              >
+                {dashboard.isClinicianImpactSubmitting ? "Calculating…" : "Calculate"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dashboard.resetSimulation();
+                  reset();
+                }}
+                disabled={!dashboard.canResetSimulation || dashboard.isClinicianImpactSubmitting}
+                className="flex items-center gap-1.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                <RotateCcw size={15} />
+                Reset to patient
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-slate-50/60 dark:bg-slate-800/60 p-6 flex flex-col items-center text-center">

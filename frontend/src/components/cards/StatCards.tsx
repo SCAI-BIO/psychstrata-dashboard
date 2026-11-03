@@ -13,7 +13,7 @@ export function StatCards({ items }: { items: StatItem[] }) {
   return (
     <section className="grid grid-cols-4 gap-4">
       {items.map((item) => ( 
-        <article key={item.label} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 dark:px-4 dark:py-3.5">
+        <article key={item.label} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 px-4 py-3.5">
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{item.label}</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
             {item.value} 

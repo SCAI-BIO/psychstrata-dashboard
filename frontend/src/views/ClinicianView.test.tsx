@@ -22,8 +22,18 @@ vi.mock("../components/SimPanel", () => ({
 }));
 vi.mock("../components/charts/ShapChart", () => ({ ShapChart: () => <div data-testid="shap-chart" /> }));
 vi.mock("../components/charts/TimeToEventChart", () => ({
-  TimeToEventChart: ({ simulatedProbability }: { simulatedProbability?: number | null }) => (
-    <div data-testid="tte-chart" data-sim={simulatedProbability ?? "none"} />
+  TimeToEventChart: ({
+    currentProbability,
+    simulatedProbability
+  }: {
+    currentProbability?: number;
+    simulatedProbability?: number | null;
+  }) => (
+    <div
+      data-testid="tte-chart"
+      data-current={currentProbability ?? "none"}
+      data-sim={simulatedProbability ?? "none"}
+    />
   )
 }));
 vi.mock("../components/cards/InsightsCard", () => ({ InsightsCard: () => <div data-testid="insights-card" /> }));
@@ -68,14 +78,44 @@ describe("ClinicianView", () => {
     expect(impact).toHaveAttribute("data-error", "apply boom");
   });
 
-  it("passes a simulated probability to the time-to-event chart only when impact is non-zero", () => {
+  it("shows only the current curve before the scenario is applied", () => {
     renderClinicianView(makeDashboard({ clinicianImpactPct: 0 }));
-    expect(screen.getByTestId("tte-chart")).toHaveAttribute("data-sim", "none");
+    const chart = screen.getByTestId("tte-chart");
+    expect(chart).toHaveAttribute("data-current", "0.68");
+    expect(chart).toHaveAttribute("data-sim", "none");
   });
 
-  it("passes a reduced simulated probability when impact is non-zero", () => {
-    renderClinicianView(makeDashboard({ clinicianImpactPct: 10 }));
-    expect(screen.getByTestId("tte-chart").getAttribute("data-sim")).toMatch(/^0\.58/);
+  it("overlays the applied scenario against the baseline after Calculate", () => {
+    renderClinicianView(
+      makeDashboard({
+        baselineRiskProbability: 0.78,
+        isSimulationApplied: true,
+        clinicianAppliedImpactPct: 10
+      })
+    );
+    const chart = screen.getByTestId("tte-chart");
+    expect(chart).toHaveAttribute("data-current", "0.78");
+    expect(chart).toHaveAttribute("data-sim", "0.68");
+  });
+
+  it("calls resetSimulation and clears the scenario when Reset is clicked", () => {
+    const resetSimulation = vi.fn();
+    const dashboard = makeDashboard({ resetSimulation, canResetSimulation: true, isSimulationApplied: true });
+    renderClinicianView(dashboard);
+    fireEvent.click(screen.getByRole("button", { name: "Reset to patient" }));
+    expect(resetSimulation).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables Reset until there is a baseline", () => {
+    renderClinicianView(makeDashboard({ canResetSimulation: false }));
+    expect(screen.getByRole("button", { name: "Reset to patient" })).toBeDisabled();
+  });
+
+  it("disables Reset while the scenario is being applied", () => {
+    renderClinicianView(
+      makeDashboard({ canResetSimulation: true, isClinicianApplySubmitting: true })
+    );
+    expect(screen.getByRole("button", { name: "Reset to patient" })).toBeDisabled();
   });
 
   it("calls saveCurrentRegimenAsPlan when the save button is clicked", () => {
