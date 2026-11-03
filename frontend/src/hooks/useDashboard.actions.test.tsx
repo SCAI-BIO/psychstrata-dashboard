@@ -254,8 +254,59 @@ describe("useDashboard actions", () => {
     expect(result.current.state.status === "ready" && result.current.state.prediction).not.toBeNull();
   });
 
-  it("applies the raw clinician simulation to the page", async () => {
+  it("resets an applied scenario back to the patient baseline", async () => {
     const fetchMock = makeFetchMock();
+    const { result } = await readyDashboard(fetchMock);
+    await act(async () => {
+      await result.current.runPrediction("clinician");
+    });
+
+    const baselinePatient = result.current.patient;
+    const baselinePrediction = result.current.state.status === "ready" ? result.current.state.prediction : null;
+    expect(result.current.canResetSimulation).toBe(true);
+    expect(result.current.isSimulationApplied).toBe(false);
+
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.endsWith("/api/predict")) {
+        return json({
+          ...predictionResponse,
+          features: { ...predictionResponse.features, sertraline_mg: 200 },
+          prediction: { ...predictionResponse.prediction, probability_resistance: 0.42 }
+        });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const scenario = makeCompletePatient();
+    scenario.clinical.sertraline_mg = 200;
+    await act(async () => {
+      await result.current.applyScenario(scenario);
+    });
+    expect(result.current.patient.clinical.sertraline_mg).toBe(200);
+    expect(result.current.isSimulationApplied).toBe(true);
+    expect(result.current.baselineRiskProbability).toBeCloseTo(0.68, 5);
+
+    act(() => result.current.resetSimulation());
+
+    expect(result.current.patient).toEqual(baselinePatient);
+    expect(result.current.state.status === "ready" && result.current.state.prediction).toBe(baselinePrediction);
+    expect(result.current.clinicianAppliedImpactPct).toBe(0);
+    expect(result.current.clinicianImpactPct).toBe(0);
+    expect(result.current.clinicianSimValues.sertraline_mg).toBe(baselinePatient.clinical.sertraline_mg);
+    expect(result.current.isSimulationApplied).toBe(false);
+  });
+
+  it("does nothing when reset is requested without a baseline", async () => {
+    const fetchMock = makeFetchMock();
+    const { result } = await readyDashboard(fetchMock);
+    expect(result.current.canResetSimulation).toBe(false);
+
+    const patientBefore = result.current.patient;
+    act(() => result.current.resetSimulation());
+    expect(result.current.patient).toBe(patientBefore);
+  });
+
+  it("applies the raw clinician simulation to the page", async () => {    const fetchMock = makeFetchMock();
     const { result } = await readyDashboard(fetchMock);
     await act(async () => {
       await result.current.runPrediction("clinician");

@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { PatientProvider } from "../context/PatientContext";
 import { makeDashboard, makePatientApi, makeCompletePatient, makeReadyState, predictionResponse } from "../test/fixtures";
+import type { DashboardApi } from "../hooks/useDashboard";
 import { PatientView } from "./PatientView";
 
 // Isolate PatientView from the heavy chart + slider subtrees.
@@ -10,15 +11,16 @@ vi.mock("../components/SimPanel", () => ({ SimControls: () => <div data-testid="
 vi.mock("../components/charts/TimeToEventChart", () => ({ TimeToEventChart: () => <div data-testid="tte-chart" /> }));
 
 describe("PatientView", () => {
-  function renderPatientView() {
+  function renderPatientView(overrides: Partial<DashboardApi> = {}) {
     const patient = makeCompletePatient();
     const patientApi = makePatientApi(patient);
-    const dashboard = makeDashboard({ patient, patientApi });
+    const dashboard = makeDashboard({ patient, patientApi, ...overrides });
     render(
       <PatientProvider value={patientApi}>
         <PatientView dashboard={dashboard} ready={makeReadyState()} prediction={predictionResponse} />
       </PatientProvider>
     );
+    return dashboard;
   }
 
   it("greets the patient by first name", () => {
@@ -42,5 +44,22 @@ describe("PatientView", () => {
     renderPatientView();
     expect(screen.getByText("Your Strengths")).toBeInTheDocument();
     expect(screen.getByText("Action Items")).toBeInTheDocument();
+  });
+
+  it("calls resetSimulation when Reset is clicked", () => {
+    const resetSimulation = vi.fn();
+    renderPatientView({ resetSimulation, canResetSimulation: true });
+    fireEvent.click(screen.getByRole("button", { name: "Reset to patient" }));
+    expect(resetSimulation).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables Reset until a baseline exists", () => {
+    renderPatientView({ canResetSimulation: false });
+    expect(screen.getByRole("button", { name: "Reset to patient" })).toBeDisabled();
+  });
+
+  it("disables Reset while a scenario impact is being calculated", () => {
+    renderPatientView({ canResetSimulation: true, isClinicianImpactSubmitting: true });
+    expect(screen.getByRole("button", { name: "Reset to patient" })).toBeDisabled();
   });
 });

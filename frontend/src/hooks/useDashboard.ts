@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, createTreatmentPlan, type PatientRead, type PatientRecord, type TreatmentPlanRecord } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, createTreatmentPlan, type PatientRead, type PatientRecord, type PredictionResponse, type TreatmentPlanRecord } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
+  clonePatient,
   createDefaultPatient,
   patientToFeatures,
   withClinical,
@@ -22,6 +23,16 @@ import {
 } from "../lib/auth";
 import { patientToCreatePayload, recordToPatient, treatmentPlanFromCurrentRegimen } from "../lib/patientPersistence";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
+
+/** Project the four simulator fields out of a patient's clinical values. */
+function simValuesFromPatient(patient: Patient): SimValues {
+  return {
+    sertraline_mg: patient.clinical.sertraline_mg ?? 0,
+    lithium_mg: patient.clinical.lithium_mg ?? 0,
+    quetiapine_mg: patient.clinical.quetiapine_mg ?? 0,
+    adherence_pct: patient.clinical.adherence_pct ?? 75
+  };
+}
 
 /**
  * Container hook: owns dashboard state, the shared Patient model, and every
@@ -55,6 +66,13 @@ export function useDashboard() {
   const [clinicianApplyError, setClinicianApplyError] = useState<string | null>(null);
   const [clinicianAppliedImpactPct, setClinicianAppliedImpactPct] = useState(0);
 
+  // Snapshot of the real patient + prediction taken whenever a genuine baseline
+  // is established, so a simulated scenario can be reset back to it.
+  const [simulationBaseline, setSimulationBaseline] = useState<{
+    patient: Patient;
+    prediction: PredictionResponse;
+  } | null>(null);
+
   // The persisted patient the dashboard is currently showing (set when an
   // intake is saved or a saved patient is opened), so a new treatment plan can
   // be attached to the right record.
@@ -69,6 +87,8 @@ export function useDashboard() {
   patientRef.current = patient;
   const simRef = useRef(clinicianSimValues);
   simRef.current = clinicianSimValues;
+  const simulationBaselineRef = useRef(simulationBaseline);
+  simulationBaselineRef.current = simulationBaseline;
   // Last successfully saved intake, so re-clicking Calculate doesn't create duplicates.
   const lastSavedRef = useRef<{ fingerprint: string; record: PatientRead } | null>(null);
 
@@ -192,6 +212,7 @@ export function useDashboard() {
     setLoginError(null);
     setState({ status: "loading" });
     setPatient(createDefaultPatient());
+    setSimulationBaseline(null);
     lastSavedRef.current = null;
     setCurrentPatientId(null);
     setLastSavedPlan(null);
@@ -218,6 +239,7 @@ export function useDashboard() {
     const current = stateRef.current;
     const seed = current.status === "ready" ? Object.fromEntries(current.features.map((f) => [f.id, 0])) : {};
     setPatient(createDefaultPatient());
+    setSimulationBaseline(null);
     lastSavedRef.current = null;
     setCurrentPatientId(null);
     setLastSavedPlan(null);
@@ -288,7 +310,9 @@ export function useDashboard() {
         date_of_birth: loaded.demographics.dob
       });
 
-      setPatient(withClinicalMerged(loaded, prediction.features));
+      const loadedPatient = withClinicalMerged(loaded, prediction.features);
+      setPatient(loadedPatient);
+      setSimulationBaseline({ patient: loadedPatient, prediction });
       setCurrentPatientId(record.id);
       setState((prev) =>
         prev.status === "ready" ? { ...prev, prediction, explanation: "", error: null } : prev
@@ -315,7 +339,9 @@ export function useDashboard() {
           confidence_level: current.confidenceLevel,
           date_of_birth: patientRef.current.demographics.dob
         });
-        setPatient((prev) => withClinicalMerged(prev, prediction.features));
+        const mergedPatient = withClinicalMerged(patientRef.current, prediction.features);
+        setPatient(mergedPatient);
+        setSimulationBaseline({ patient: mergedPatient, prediction });
         setState((prev) => {
           if (prev.status !== "ready") return prev;
           return { ...prev, prediction, explanation: "", isSubmitting: false, isSummaryRefreshing: false };
@@ -460,6 +486,27 @@ export function useDashboard() {
     }
   }, []);
 
+  // ── Reset a simulated scenario back to the real patient baseline ────────────
+  const resetSimulation = useCallback(() => {
+    const baseline = simulationBaselineRef.current;
+    if (baseline === null) return;
+
+    const restored = clonePatient(baseline.patient);
+    setPatient(restored);
+    setState((prev) =>
+      prev.status === "ready"
+        ? { ...prev, prediction: baseline.prediction, explanation: "", error: null }
+        : prev
+    );
+    setClinicianSimValues(simValuesFromPatient(restored));
+    setClinicianImpactPct(0);
+    setClinicianAppliedImpactPct(0);
+    setClinicianImpactError(null);
+    setClinicianApplyError(null);
+    setPlanSaveError(null);
+    setLastSavedPlan(null);
+  }, []);
+
   // ── Persist the current regimen as a new treatment plan ────────────────────
   const saveCurrentRegimenAsPlan = useCallback(async (): Promise<TreatmentPlanRecord | null> => {
     const current = stateRef.current;
@@ -512,6 +559,14 @@ export function useDashboard() {
     applyClinicianSimulationToPage,
     runScenarioImpact,
     applyScenario,
+    resetSimulation,
+    canResetSimulation: simulationBaseline !== null,
+    isSimulationApplied:
+      simulationBaseline !== null &&
+      state.status === "ready" &&
+      state.prediction !== null &&
+      state.prediction !== simulationBaseline.prediction,
+    baselineRiskProbability: simulationBaseline?.prediction.prediction.probability_resistance ?? null,
     currentPatientId,
     isPlanSaving,
     lastSavedPlan,
