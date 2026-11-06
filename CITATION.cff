@@ -20,8 +20,8 @@ authors:
     email: Lara.Reimer@ukbonn.de
     orcid: 'https://orcid.org/0000-0002-6546-8531'
     affiliation: >-
-      University Hospital Bonn, Institute for Digital
-      Medicine
+      University Hospital Bonn, Institute for Digital Medicine;
+      Fraunhofer Institute for Algorithms and Scientific Computing SCAI
 contributors:
   - given-names: Kuranage Roche Raveen
     family-names: Ranasinghe
@@ -34,7 +34,9 @@ contributors:
     orcid: 'https://orcid.org/0000-0002-5328-1243'
     affiliation: >-
       Fraunhofer Institute for Algorithms and Scientific
-      Computing SCAI
+      Computing SCAI; University Hospital Bonn, Institute for
+      Digital Medicine; Bonn-Aachen International Center for
+      Information Technology (b-it)
   - given-names: Bernhard T
     family-names: Baune
     orcid: 'https://orcid.org/0000-0001-6548-426X'
