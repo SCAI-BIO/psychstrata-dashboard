@@ -6,7 +6,7 @@
     {
       "name": "Adams, Tim",
       "orcid": "https://orcid.org/0000-0002-2823-0102",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing"
+      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing SCAI"
     },
     {
       "name": "Reimer, Lara Marie",
@@ -17,13 +17,13 @@
   "contributors": [
     {
       "name": "Ranasinghe, Kuranage Roche Raveen",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing",
+      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing SCAI",
       "type": "Other"
     },
     {
       "name": "Fröhlich, Holger",
       "orcid": "https://orcid.org/0000-0002-5328-1243",
-      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing",
+      "affiliation": "Fraunhofer Institute for Algorithms and Scientific Computing SCAI",
       "type": "WorkPackageLeader"
     },
     {
