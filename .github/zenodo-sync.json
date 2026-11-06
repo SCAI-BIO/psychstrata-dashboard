@@ -122,7 +122,8 @@
     "additional_titles": [
       {
         "title": "Psych-STRATA Dashboard",
-        "type": "alternative-title"
+        "type": "alternative-title",
+        "lang": "eng"
       }
     ],
     "additional_descriptions": [
