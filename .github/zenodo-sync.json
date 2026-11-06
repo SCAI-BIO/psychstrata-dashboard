@@ -1,0 +1,188 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tiadams/zenodo-schema-sync/main/schema/zenodo-sync.schema.json",
+  "concept": "22922039",
+  "repository": "https://github.com/SCAI-BIO/psychstrata-dashboard",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false
+    }
+  },
+  "files": {
+    "enabled": true
+  },
+  "metadata": {
+    "resource_type": "software",
+    "title": "PsychStrata CDSS",
+    "description": "Interactive dashboard enabling shared decision making for treatment resistance in depression. Disclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
+    "creators": [
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Adams, Tim",
+          "given_name": "Tim",
+          "family_name": "Adams",
+          "identifiers": [
+            {
+              "identifier": "0000-0002-2823-0102",
+              "scheme": "orcid"
+            }
+          ]
+        },
+        "role": "researcher",
+        "affiliations": [
+          "Fraunhofer Institute for Algorithms and Scientific Computing SCAI"
+        ]
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Reimer, Lara Marie",
+          "given_name": "Lara Marie",
+          "family_name": "Reimer",
+          "identifiers": [
+            {
+              "identifier": "0000-0002-6546-8531",
+              "scheme": "orcid"
+            }
+          ]
+        },
+        "role": "projectmanager",
+        "affiliations": [
+          "University Hospital Bonn, Institute for Digital Medicine",
+          "Fraunhofer Institute for Algorithms and Scientific Computing SCAI"
+        ]
+      }
+    ],
+    "contributors": [
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Ranasinghe, Kuranage Roche Raveen",
+          "given_name": "Kuranage Roche Raveen",
+          "family_name": "Ranasinghe"
+        },
+        "role": "other",
+        "affiliations": [
+          "Fraunhofer Institute for Algorithms and Scientific Computing SCAI"
+        ]
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Fröhlich, Holger",
+          "given_name": "Holger",
+          "family_name": "Fröhlich",
+          "identifiers": [
+            {
+              "identifier": "0000-0002-5328-1243",
+              "scheme": "orcid"
+            }
+          ]
+        },
+        "role": "workpackageleader",
+        "affiliations": [
+          "Fraunhofer Institute for Algorithms and Scientific Computing SCAI",
+          "University Hospital Bonn, Institute for Digital Medicine",
+          "Bonn-Aachen International Center for Information Technology (b-it)"
+        ]
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Baune, Bernhard T",
+          "given_name": "Bernhard T",
+          "family_name": "Baune",
+          "identifiers": [
+            {
+              "identifier": "0000-0001-6548-426X",
+              "scheme": "orcid"
+            }
+          ]
+        },
+        "role": "workpackageleader",
+        "affiliations": [
+          "University of Münster"
+        ]
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Stonner, Inga",
+          "given_name": "Inga",
+          "family_name": "Stonner"
+        },
+        "role": "projectmember",
+        "affiliations": [
+          "University Hospital Münster"
+        ]
+      }
+    ],
+    "additional_titles": [
+      {
+        "title": "Psych-STRATA Dashboard",
+        "type": "alternative-title"
+      }
+    ],
+    "additional_descriptions": [
+      {
+        "description": "Disclaimer: This demo uses synthetic data for illustration purposes only. It is not a medical device and must not be used for clinical decisions.",
+        "type": "notes"
+      }
+    ],
+    "subjects": [
+      "dashboard",
+      "major depressive disorder",
+      "psychiatry",
+      "shared decision making",
+      "treatment resistance",
+      "treatment response"
+    ],
+    "languages": [
+      "eng"
+    ],
+    "rights": [
+      "apache-2.0"
+    ],
+    "copyright": "Copyright 2025 Fraunhofer SCAI",
+    "related_identifiers": [
+      {
+        "identifier": "https://psych-strata.eu/",
+        "scheme": "url",
+        "relation_type": "ispartof",
+        "resource_type": "other"
+      },
+      {
+        "identifier": "https://demo.psychstrata.bio.scai.fraunhofer.de/",
+        "scheme": "url",
+        "relation_type": "hasversion",
+        "resource_type": "software"
+      },
+      {
+        "identifier": "https://github.com/orgs/SCAI-BIO/packages?repo_name=psychstrata-dashboard",
+        "scheme": "url",
+        "relation_type": "issupplementedby",
+        "resource_type": "software"
+      }
+    ],
+    "funding": [
+      {
+        "funder": {
+          "id": "00k4n6c32"
+        },
+        "award": {
+          "id": "00k4n6c32::101057454"
+        }
+      }
+    ]
+  },
+  "custom_fields": {
+    "code:codeRepository": "https://github.com/SCAI-BIO/psychstrata-dashboard",
+    "code:programmingLanguage": [
+      "python",
+      "typescript"
+    ],
+    "code:developmentStatus": "active"
+  }
+}
