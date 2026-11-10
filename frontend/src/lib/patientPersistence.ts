@@ -5,7 +5,7 @@ import type {
   TreatmentPlanCreatePayload,
   TreatmentPlanRecord
 } from "../api";
-import { createDefaultPatient, type Patient } from "../domain/patient";
+import { createDefaultPatient, type Diplotype, type Patient, type PatientGenetics } from "../domain/patient";
 
 /** Ids the backend derives itself (age comes from date_of_birth) and rejects if sent. */
 const DERIVED_FEATURE_IDS = new Set(["age"]);
@@ -59,6 +59,25 @@ export function treatmentPlanFromCurrentRegimen(
 
 const GENDER_BY_SEX_AT_BIRTH: Record<number, string> = { 0: "Male", 1: "Female", 2: "Other" };
 
+function readDiplotype(value: unknown): Diplotype | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const { allele1, allele2 } = value as Record<string, unknown>;
+  if (typeof allele1 !== "string" || !allele1 || typeof allele2 !== "string" || !allele2) {
+    return undefined;
+  }
+  return { allele1, allele2 };
+}
+
+/** Restore saved genetics, keeping only well-formed diplotypes. */
+function geneticsFromRecord(raw: Record<string, unknown>): PatientGenetics {
+  const genetics: PatientGenetics = { available: Boolean(raw.available) };
+  const cyp2c19 = readDiplotype(raw.cyp2c19);
+  const cyp2d6 = readDiplotype(raw.cyp2d6);
+  if (cyp2c19) genetics.cyp2c19 = cyp2c19;
+  if (cyp2d6) genetics.cyp2d6 = cyp2d6;
+  return genetics;
+}
+
 /** Inverse of patientToCreatePayload: rebuild the dashboard Patient from saved records. */
 export function recordToPatient(
   record: PatientRecord,
@@ -89,7 +108,7 @@ export function recordToPatient(
     clinical,
     onMedication,
     episodeDurationMonths: clinical.duration_months ?? null,
-    genetics: { available: Boolean(data.genetics.available) },
+    genetics: geneticsFromRecord(data.genetics),
     proteomics: { available: Boolean(data.proteomics.available) }
   };
 }

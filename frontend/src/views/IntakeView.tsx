@@ -4,6 +4,7 @@ import { usePatient, type PatientApi } from "../context/PatientContext";
 import type { Patient, PatientDemographics } from "../domain/patient";
 import { isStepComplete } from "../domain/patient";
 import type { DashboardApi } from "../hooks/useDashboard";
+import { usePgxOptions } from "../hooks/usePgx";
 import { parseNumberValue } from "../lib/format";
 
 const STEPS = ["Demographics", "Clinical Properties", "Genetics"] as const;
@@ -294,7 +295,33 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
   );
 }
 
+const PGX_FALLBACK_ALLELES: Record<"cyp2c19" | "cyp2d6", string[]> = {
+  cyp2c19: ["*1", "*2", "*3", "*4", "*5", "*6", "*7", "*8", "*9", "*10", "*17"],
+  cyp2d6: ["*1", "*2", "*3", "*4", "*5", "*6", "*9", "*10", "*17", "*41", "*1x2", "*36+*10"]
+};
+
 function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
+  const { state: optionsState } = usePgxOptions();
+  const geneOptions =
+    optionsState.status === "ready"
+      ? Object.fromEntries(optionsState.options.genes.map((gene) => [gene.gene, gene.common_alleles]))
+      : {};
+
+  const alleleOptions = (gene: "cyp2c19" | "cyp2d6", current: string[]) => {
+    const base = geneOptions[gene.toUpperCase()] ?? PGX_FALLBACK_ALLELES[gene];
+    return Array.from(new Set([...base, ...current]));
+  };
+
+  const updateAllele = (gene: "cyp2c19" | "cyp2d6", index: "allele1" | "allele2", value: string) => {
+    const current = patient.genetics[gene] ?? { allele1: "*1", allele2: "*1" };
+    api.updateGenetics({ [gene]: { ...current, [index]: value } });
+  };
+
+  const genes: Array<{ key: "cyp2c19" | "cyp2d6"; label: string }> = [
+    { key: "cyp2c19", label: "CYP2C19" },
+    { key: "cyp2d6", label: "CYP2D6" }
+  ];
+
   return (
     <>
       <WizardCard
@@ -308,12 +335,31 @@ function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
         }
       >
         {patient.genetics.available && (
-          <div className="grid grid-cols-3 gap-4 text-sm text-slate-500 dark:text-slate-400">
-            <span>CYP2D6 Metabolizer Status</span>
-            <span>SLC6A4 Genotype</span>
-            <span>BDNF Val66Met</span>
+          <div className="grid grid-cols-2 gap-5">
+            {genes.map(({ key, label }) => {
+              const diplotype = patient.genetics[key] ?? { allele1: "*1", allele2: "*1" };
+              const options = alleleOptions(key, [diplotype.allele1, diplotype.allele2]);
+              return (
+                <div key={key} className="contents">
+                  <Field label={`${label} Allele 1`}>
+                    <SelectInput
+                      value={diplotype.allele1}
+                      options={options}
+                      onChange={(v) => updateAllele(key, "allele1", v)}
+                    />
+                  </Field>
+                  <Field label={`${label} Allele 2`}>
+                    <SelectInput
+                      value={diplotype.allele2}
+                      options={options}
+                      onChange={(v) => updateAllele(key, "allele2", v)}
+                    />
+                  </Field>
+                </div>
+              );
+            })}
           </div>
-        )} 
+        )}
       </WizardCard>
 
       <WizardCard

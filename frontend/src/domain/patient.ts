@@ -15,11 +15,15 @@ export interface PatientDemographics {
   diagnosis: string | null;
 }
 
+export interface Diplotype {
+  allele1: string;
+  allele2: string;
+}
+
 export interface PatientGenetics {
   available: boolean;
-  cyp2d6?: string;
-  slc6a4?: string;
-  bdnf?: string;
+  cyp2c19?: Diplotype;
+  cyp2d6?: Diplotype;
 }
 
 export interface PatientProteomics {
@@ -52,6 +56,11 @@ const DEFAULT_DEMOGRAPHICS: PatientDemographics = {
   diagnosis: null
 };
 
+/** Wild-type diplotype used as the synthetic demo default for both genes. */
+function defaultDiplotype(): Diplotype {
+  return { allele1: "*1", allele2: "*1" };
+}
+
 /** Build a fresh patient, seeding the feature vector with backend defaults. */
 export function createDefaultPatient(clinicalDefaults: Record<string, number> = {}): Patient {
   return {
@@ -62,7 +71,7 @@ export function createDefaultPatient(clinicalDefaults: Record<string, number> = 
     episodeDurationMonths: null,
     sleepDisturbance: null,
     substanceUse: null,
-    genetics: { available: true },
+    genetics: { available: true, cyp2c19: defaultDiplotype(), cyp2d6: defaultDiplotype() },
     proteomics: { available: true }
   };
 }
@@ -158,7 +167,11 @@ export function clonePatient(patient: Patient): Patient {
     demographics: { ...patient.demographics },
     clinical: { ...patient.clinical },
     extras: { ...patient.extras },
-    genetics: { ...patient.genetics },
+    genetics: {
+      ...patient.genetics,
+      cyp2c19: patient.genetics.cyp2c19 ? { ...patient.genetics.cyp2c19 } : undefined,
+      cyp2d6: patient.genetics.cyp2d6 ? { ...patient.genetics.cyp2d6 } : undefined
+    },
     proteomics: { ...patient.proteomics }
   };
 }
