@@ -37,7 +37,7 @@ def test_settings_default_to_fhgenie(monkeypatch: pytest.MonkeyPatch) -> None:
     backend_settings = settings.get_backend_settings()
 
     assert backend_settings.llm_client_url == "https://fhgenie.fraunhofer.de/v1"
-    assert backend_settings.llm_client_model == "Qwen/Qwen3-Coder-Next-FP8"
+    assert backend_settings.llm_client_model == "deepseek-ai/DeepSeek-V4.1-Flash"
     assert backend_settings.llm_client_secret is None
 
 
