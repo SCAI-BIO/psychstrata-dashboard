@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildBasicAuthHeader,
   fetchFeatures,
+  fetchPgxInterpretation,
+  fetchPgxOptions,
   fetchPredict,
   setBasicAuthHeader,
   verifyBasicAuth
 } from "./api";
-import { featuresPayload, predictionResponse } from "./test/fixtures";
+import { featuresPayload, pgxInterpretResponse, pgxOptionsResponse, predictionResponse } from "./test/fixtures";
 
 type FetchArgs = [string, RequestInit | undefined];
 
@@ -86,6 +88,26 @@ describe("auth header propagation", () => {
       confidence_level: 95,
       date_of_birth: "1980-01-01"
     });
+  });
+
+  it("fetchPgxOptions reads the pharmacogenetic catalogue", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(pgxOptionsResponse));
+    await expect(fetchPgxOptions()).resolves.toEqual(pgxOptionsResponse);
+    const [url, init] = fetchMock.mock.calls[0] as FetchArgs;
+    expect(url).toBe("/api/pgx/options");
+    expect(init?.method).toBeUndefined();
+    expect(authHeaderOf(init)).toBeNull();
+  });
+
+  it("fetchPgxInterpretation posts diplotypes as JSON", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(pgxInterpretResponse));
+    const payload = { cyp2c19: { allele1: "*1", allele2: "*2" } };
+    await expect(fetchPgxInterpretation(payload)).resolves.toEqual(pgxInterpretResponse);
+    const [url, init] = fetchMock.mock.calls[0] as FetchArgs;
+    expect(url).toBe("/api/pgx/interpret");
+    expect(init?.method).toBe("POST");
+    expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json");
+    expect(JSON.parse(init?.body as string)).toEqual(payload);
   });
 });
 

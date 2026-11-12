@@ -66,10 +66,10 @@ describe("patientToCreatePayload", () => {
 
   it("copies genetics and proteomics", () => {
     const patient = basePatient();
-    patient.genetics = { available: true, cyp2d6: "poor" };
+    patient.genetics = { available: true, cyp2d6: { allele1: "*4", allele2: "*4" } };
     patient.proteomics = { available: true, crp: 3.2 };
     const payload = patientToCreatePayload(patient, FEATURES);
-    expect(payload.clinical_data.genetics).toEqual({ available: true, cyp2d6: "poor" });
+    expect(payload.clinical_data.genetics).toEqual({ available: true, cyp2d6: { allele1: "*4", allele2: "*4" } });
     expect(payload.clinical_data.proteomics).toEqual({ available: true, crp: 3.2 });
   });
 });
@@ -111,6 +111,24 @@ describe("recordToPatient", () => {
     expect(patient.demographics.diagnosis).toBe("F33.1");
     expect(patient.genetics).toEqual({ available: true });
     expect(patient.proteomics).toEqual({ available: false });
+  });
+
+  it("restores well-formed diplotypes and drops malformed ones", () => {
+    const withGenetics = {
+      ...record,
+      clinical_data: {
+        ...record.clinical_data,
+        genetics: {
+          available: true,
+          cyp2c19: { allele1: "*1", allele2: "*2" },
+          cyp2d6: { allele1: "*4", allele2: null },
+          slc6a4: "short"
+        }
+      }
+    } as unknown as typeof record;
+
+    const patient = recordToPatient(withGenetics, null, FEATURES);
+    expect(patient.genetics).toEqual({ available: true, cyp2c19: { allele1: "*1", allele2: "*2" } });
   });
 
   it("merges defaults, saved features and plan medications/adherence", () => {

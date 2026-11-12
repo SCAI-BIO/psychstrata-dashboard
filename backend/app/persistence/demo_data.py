@@ -9,6 +9,11 @@ from ..settings import get_backend_settings
 from .database import get_session_factory
 
 DEMO_PATIENT_ID = "00000000-0000-4000-8000-000000000001"
+DEMO_GENETICS = {
+    "available": True,
+    "cyp2c19": {"allele1": "*1", "allele2": "*2"},
+    "cyp2d6": {"allele1": "*1", "allele2": "*1"},
+}
 DEMO_TREATMENT_PLANS = (
     (
         "00000000-0000-4000-8000-000000000101",
@@ -51,11 +56,14 @@ def seed_demo_data() -> None:
                     date_of_birth=date(1980, 5, 15),
                     diagnosis="F33.1",
                     clinical_features=clinical_features,
+                    genetics=DEMO_GENETICS,
                 ),
             )
             session.add(patient)
         else:
             patient.clinician_id = clinician_id
+            if patient.clinical_data is not None:
+                patient.clinical_data.genetics = DEMO_GENETICS
 
         existing_plans = {
             plan.id: plan

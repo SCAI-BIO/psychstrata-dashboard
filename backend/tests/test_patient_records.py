@@ -140,12 +140,18 @@ def test_startup_seeds_max_mustermann_with_three_treatment_plans_once(client: Te
     assert patient_response.status_code == 200
     assert patient_response.json()["first_name"] == "Max"
     assert patient_response.json()["last_name"] == "Mustermann"
+    genetics = patient_response.json()["clinical_data"]["genetics"]
+    assert genetics["available"] is True
+    assert genetics["cyp2c19"] == {"allele1": "*1", "allele2": "*2"}
+    assert genetics["cyp2d6"] == {"allele1": "*1", "allele2": "*1"}
 
     seed_demo_data()
     plans_response = client.get(f"/api/patients/{DEMO_PATIENT_ID}/treatment-plans", auth=_auth())
+    reseeded = client.get(f"/api/patients/{DEMO_PATIENT_ID}", auth=_auth())
 
     assert plans_response.status_code == 200
     assert len(plans_response.json()) == 3
+    assert reseeded.json()["clinical_data"]["genetics"] == genetics
 
 
 def test_treatment_plan_crud_and_persisted_prediction(client: TestClient) -> None:

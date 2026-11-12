@@ -14,6 +14,7 @@ from .routes.patients import router as patients_router
 from .routes.auth import router as auth_router
 from .routes.features import router as features_router
 from .routes.health import router as health_router
+from .routes.pgx import router as pgx_router
 from .routes.predict import router as predict_router
 from .routes.tsne import router as tsne_router
 from .routes.version import router as version_router
@@ -45,7 +46,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 def _service_validation_error_response(
     _request: Request,
-    exception: errors.InvalidPatientDataError | errors.MissingModelFeaturesError,
+    exception: errors.InvalidPatientDataError
+    | errors.MissingModelFeaturesError
+    | errors.InvalidGeneticsDataError,
 ) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exception)})
 
@@ -59,6 +62,7 @@ def _service_not_found_error_response(
 
 app.add_exception_handler(errors.InvalidPatientDataError, _service_validation_error_response)
 app.add_exception_handler(errors.MissingModelFeaturesError, _service_validation_error_response)
+app.add_exception_handler(errors.InvalidGeneticsDataError, _service_validation_error_response)
 app.add_exception_handler(errors.PatientNotFoundError, _service_not_found_error_response)
 app.add_exception_handler(errors.TreatmentPlanNotFoundError, _service_not_found_error_response)
 app.add_middleware(
@@ -101,5 +105,6 @@ app.include_router(auth_router)
 app.include_router(features_router)
 app.include_router(patients_router)
 app.include_router(predict_router)
+app.include_router(pgx_router)
 app.include_router(tsne_router)
 app.include_router(version_router)

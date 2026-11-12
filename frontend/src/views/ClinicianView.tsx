@@ -2,6 +2,7 @@ import { BrainCircuit, LineChart as LineChartIcon, RotateCcw, Save } from "lucid
 import { useMemo } from "react";
 import type { PredictionResponse } from "../api";
 import { Card } from "../components/Card";
+import { GeneticsCard } from "../components/cards/GeneticsCard";
 import { InsightsCard } from "../components/cards/InsightsCard";
 import { RiskCard } from "../components/cards/RiskCard";
 import { StatCards, type StatItem } from "../components/cards/StatCards";
@@ -147,6 +148,8 @@ export function ClinicianView({ dashboard, ready, prediction }: ClinicianViewPro
         onRefresh={() => void dashboard.refreshExplanation()}
         error={ready.error}
       />
+
+      <GeneticsCard patient={dashboard.patient} />
 
       <section className="grid grid-cols-2 gap-4">
         <Card icon={LineChartIcon} title="Risk Factor Analysis (SHAP)">
