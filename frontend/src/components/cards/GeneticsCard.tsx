@@ -107,7 +107,7 @@ export function GeneticsCard({ patient }: { patient: Patient }) {
     if (state.status === "idle") {
       return (
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Enter CYP2C19 and CYP2D6 diplotypes in the intake wizard to interpret the current regimen.
+          Enter diplotypes in the intake wizard to interpret the current regimen.
         </p>
       );
     }

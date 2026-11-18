@@ -1,0 +1,38 @@
+{
+  "genes": [
+    {
+      "id": "CYP2C19",
+      "label": "CYP2C19",
+      "common_alleles": ["*1", "*2", "*3", "*4", "*5", "*6", "*7", "*8", "*9", "*10", "*17"]
+    },
+    {
+      "id": "CYP2D6",
+      "label": "CYP2D6",
+      "common_alleles": [
+        "*1", "*2", "*3", "*4", "*5", "*6", "*7", "*8", "*9", "*10", "*11",
+        "*14", "*15", "*17", "*19", "*20", "*29", "*35", "*36", "*39", "*40",
+        "*41", "*43", "*45", "*46", "*56", "*61", "*63", "*64", "*68", "*69",
+        "*71", "*82", "*100", "*101", "*114",
+        "*1x2", "*2x2", "*4x2", "*10x2", "*36+*10"
+      ]
+    }
+  ],
+  "drugs": [
+    { "id": "escitalopram", "label": "Escitalopram" },
+    { "id": "citalopram", "label": "Citalopram" },
+    { "id": "sertraline", "label": "Sertraline" },
+    { "id": "fluvoxamine", "label": "Fluvoxamine" },
+    { "id": "paroxetine", "label": "Paroxetine" },
+    { "id": "amitriptyline", "label": "Amitriptyline" },
+    { "id": "clomipramine", "label": "Clomipramine" },
+    { "id": "doxepin", "label": "Doxepin" },
+    { "id": "imipramine", "label": "Imipramine" },
+    { "id": "trimipramine", "label": "Trimipramine" },
+    { "id": "desipramine", "label": "Desipramine" },
+    { "id": "nortriptyline", "label": "Nortriptyline" },
+    { "id": "atomoxetine", "label": "Atomoxetine" },
+    { "id": "codeine", "label": "Codeine" },
+    { "id": "tramadol", "label": "Tramadol" },
+    { "id": "ondansetron", "label": "Ondansetron" }
+  ]
+}

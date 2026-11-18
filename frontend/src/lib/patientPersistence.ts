@@ -30,7 +30,10 @@ export function patientToCreatePayload(patient: Patient, features: FeatureSchema
       date_of_birth: d.dob ?? "",
       diagnosis: (d.diagnosis ?? "").trim(),
       clinical_features: clinicalFeaturesFor(patient, features),
-      genetics: { ...patient.genetics },
+      genetics: {
+        available: patient.genetics.available,
+        genes: { ...patient.genetics.genes }
+      },
       proteomics: { ...patient.proteomics }
     }
   };
@@ -68,13 +71,28 @@ function readDiplotype(value: unknown): Diplotype | undefined {
   return { allele1, allele2 };
 }
 
+/** Gene ids used by records saved before genetics became configurable. */
+const LEGACY_GENE_IDS: Record<string, string> = {
+  cyp2c19: "CYP2C19",
+  cyp2d6: "CYP2D6"
+};
+
 /** Restore saved genetics, keeping only well-formed diplotypes. */
 function geneticsFromRecord(raw: Record<string, unknown>): PatientGenetics {
-  const genetics: PatientGenetics = { available: Boolean(raw.available) };
-  const cyp2c19 = readDiplotype(raw.cyp2c19);
-  const cyp2d6 = readDiplotype(raw.cyp2d6);
-  if (cyp2c19) genetics.cyp2c19 = cyp2c19;
-  if (cyp2d6) genetics.cyp2d6 = cyp2d6;
+  const genetics: PatientGenetics = { available: Boolean(raw.available), genes: {} };
+
+  if (typeof raw.genes === "object" && raw.genes !== null && !Array.isArray(raw.genes)) {
+    for (const [gene, value] of Object.entries(raw.genes as Record<string, unknown>)) {
+      const diplotype = readDiplotype(value);
+      if (gene.trim() && diplotype) genetics.genes[gene] = diplotype;
+    }
+  }
+
+  for (const [legacyKey, gene] of Object.entries(LEGACY_GENE_IDS)) {
+    const diplotype = readDiplotype(raw[legacyKey]);
+    if (diplotype && !genetics.genes[gene]) genetics.genes[gene] = diplotype;
+  }
+
   return genetics;
 }
 

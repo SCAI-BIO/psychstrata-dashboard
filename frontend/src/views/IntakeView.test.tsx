@@ -98,27 +98,59 @@ describe("IntakeView", () => {
     expect(dashboard.patientApi.writeFeature).toHaveBeenCalledWith("lithium_mg", 0);
   });
 
-  it("routes CYP allele selection through updateGenetics", () => {
+  it("seeds configured genes with wild-type diplotypes", () => {
     const dashboard = makeDashboard({ state: makeReadyState() });
+    renderIntake(dashboard);
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+
+    expect(dashboard.patientApi.updateGenetics).toHaveBeenCalledWith({
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*1" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
+    });
+  });
+
+  it("routes CYP allele selection through updateGenetics", () => {
+    const patient = makeCompletePatient({
+      genetics: {
+        available: true,
+        genes: {
+          CYP2C19: { allele1: "*1", allele2: "*1" },
+          CYP2D6: { allele1: "*1", allele2: "*1" }
+        }
+      }
+    });
+    const dashboard = makeDashboard({ state: makeReadyState(), patient });
     renderIntake(dashboard);
     fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
     fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
 
     fireEvent.change(screen.getByLabelText("CYP2C19 Allele 2"), { target: { value: "*2" } });
     expect(dashboard.patientApi.updateGenetics).toHaveBeenCalledWith({
-      cyp2c19: { allele1: "*1", allele2: "*2" }
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*2" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
     });
 
     fireEvent.change(screen.getByLabelText("CYP2D6 Allele 1"), { target: { value: "*4" } });
     expect(dashboard.patientApi.updateGenetics).toHaveBeenCalledWith({
-      cyp2d6: { allele1: "*4", allele2: "*1" }
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*1" },
+        CYP2D6: { allele1: "*4", allele2: "*1" }
+      }
     });
   });
 
   it("toggles genomics and proteomics availability on the last step", () => {
     const dashboard = makeDashboard({
       state: makeReadyState(),
-      patient: makeCompletePatient({ genetics: { available: false }, proteomics: { available: false } })
+      patient: makeCompletePatient({
+        genetics: { available: false, genes: {} },
+        proteomics: { available: false }
+      })
     });
     renderIntake(dashboard);
     fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));

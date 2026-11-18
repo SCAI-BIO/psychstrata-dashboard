@@ -52,7 +52,7 @@ describe("usePgxOptions", () => {
 describe("usePgxInterpretation", () => {
   afterEach(() => vi.clearAllMocks());
 
-  const wildType = { cyp2c19: { allele1: "*1", allele2: "*1" }, cyp2d6: { allele1: "*1", allele2: "*1" } };
+  const wildType = { genes: { CYP2C19: { allele1: "*1", allele2: "*1" }, CYP2D6: { allele1: "*1", allele2: "*1" } } };
 
   it("is idle when genetics is unavailable", () => {
     const { result } = renderHook(() => usePgxInterpretation({ available: false, ...wildType }));
@@ -61,7 +61,7 @@ describe("usePgxInterpretation", () => {
   });
 
   it("is idle when no diplotype is present", () => {
-    const { result } = renderHook(() => usePgxInterpretation({ available: true }));
+    const { result } = renderHook(() => usePgxInterpretation({ available: true, genes: {} }));
     expect(result.current).toEqual({ status: "idle" });
     expect(mockedFetchInterpretation).not.toHaveBeenCalled();
   });
@@ -73,18 +73,20 @@ describe("usePgxInterpretation", () => {
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(result.current).toEqual({ status: "ready", result: pgxInterpretResponse });
-    expect(mockedFetchInterpretation).toHaveBeenCalledWith(wildType);
+    expect(mockedFetchInterpretation).toHaveBeenCalledWith({ genes: wildType.genes });
   });
 
   it("sends only the genes that have a diplotype", async () => {
     mockedFetchInterpretation.mockResolvedValue(pgxInterpretResponse);
 
     const { result } = renderHook(() =>
-      usePgxInterpretation({ available: true, cyp2c19: { allele1: "*1", allele2: "*2" } })
+      usePgxInterpretation({ available: true, genes: { CYP2C19: { allele1: "*1", allele2: "*2" } } })
     );
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
-    expect(mockedFetchInterpretation).toHaveBeenCalledWith({ cyp2c19: { allele1: "*1", allele2: "*2" } });
+    expect(mockedFetchInterpretation).toHaveBeenCalledWith({
+      genes: { CYP2C19: { allele1: "*1", allele2: "*2" } }
+    });
   });
 
   it("refetches when an allele changes", async () => {
@@ -97,13 +99,18 @@ describe("usePgxInterpretation", () => {
     );
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
-    const changed = { available: true, ...wildType, cyp2c19: { allele1: "*1", allele2: "*2" } };
+    const changed = {
+      available: true,
+      genes: { ...wildType.genes, CYP2C19: { allele1: "*1", allele2: "*2" } }
+    };
     rerender({ genetics: changed });
 
     await waitFor(() => expect(mockedFetchInterpretation).toHaveBeenCalledTimes(2));
     expect(mockedFetchInterpretation).toHaveBeenLastCalledWith({
-      cyp2c19: { allele1: "*1", allele2: "*2" },
-      cyp2d6: { allele1: "*1", allele2: "*1" }
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*2" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
     });
   });
 

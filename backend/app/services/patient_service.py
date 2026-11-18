@@ -6,7 +6,9 @@ from ..persistence.patient_repository import PatientRepository
 from ..persistence.patient_record import Patient, TreatmentPlan
 from ..schemas.patient_schema import PatientCreate, PatientUpdate, TreatmentPlanCreate, TreatmentPlanUpdate
 from ..utils.datetime import age_on_date
+from . import pgx_service
 from .errors import (
+    InvalidGeneticsDataError,
     InvalidPatientDataError,
     MissingModelFeaturesError,
     PatientNotFoundError,
@@ -38,12 +40,17 @@ class PatientService:
             )
         except ValueError as exc:
             raise InvalidPatientDataError(str(exc)) from exc
+        try:
+            genetics = pgx_service.validate_genetics(clinical_data.genetics)
+        except InvalidGeneticsDataError as exc:
+            raise InvalidPatientDataError(str(exc)) from exc
         return self._repository.create_patient(
             clinician_id=clinician_id,
             patient_values=payload.model_dump(exclude={"clinical_data"}),
             clinical_values={
-                **clinical_data.model_dump(exclude={"clinical_features"}),
+                **clinical_data.model_dump(exclude={"clinical_features", "genetics"}),
                 "clinical_features": clinical_features,
+                "genetics": genetics,
             },
         )
 

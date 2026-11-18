@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronLeft, Database, FileText, Info, Microscope, Pill, type LucideIcon, ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePatient, type PatientApi } from "../context/PatientContext";
 import type { Patient, PatientDemographics } from "../domain/patient";
 import { isStepComplete } from "../domain/patient";
@@ -295,32 +295,23 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
   );
 }
 
-const PGX_FALLBACK_ALLELES: Record<"cyp2c19" | "cyp2d6", string[]> = {
-  cyp2c19: ["*1", "*2", "*3", "*4", "*5", "*6", "*7", "*8", "*9", "*10", "*17"],
-  cyp2d6: ["*1", "*2", "*3", "*4", "*5", "*6", "*9", "*10", "*17", "*41", "*1x2", "*36+*10"]
-};
-
 function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
   const { state: optionsState } = usePgxOptions();
-  const geneOptions =
-    optionsState.status === "ready"
-      ? Object.fromEntries(optionsState.options.genes.map((gene) => [gene.gene, gene.common_alleles]))
-      : {};
+  const configuredGenes = optionsState.status === "ready" ? optionsState.options.genes : [];
 
-  const alleleOptions = (gene: "cyp2c19" | "cyp2d6", current: string[]) => {
-    const base = geneOptions[gene.toUpperCase()] ?? PGX_FALLBACK_ALLELES[gene];
-    return Array.from(new Set([...base, ...current]));
+  useEffect(() => {
+    if (!patient.genetics.available || configuredGenes.length === 0) return;
+    const missing = configuredGenes.filter((gene) => !patient.genetics.genes[gene.gene]);
+    if (missing.length === 0) return;
+    const genes = { ...patient.genetics.genes };
+    for (const gene of missing) genes[gene.gene] = { allele1: "*1", allele2: "*1" };
+    api.updateGenetics({ genes });
+  }, [api, configuredGenes, patient.genetics.available, patient.genetics.genes]);
+
+  const updateAllele = (gene: string, index: "allele1" | "allele2", value: string) => {
+    const current = patient.genetics.genes[gene] ?? { allele1: "*1", allele2: "*1" };
+    api.updateGenetics({ genes: { ...patient.genetics.genes, [gene]: { ...current, [index]: value } } });
   };
-
-  const updateAllele = (gene: "cyp2c19" | "cyp2d6", index: "allele1" | "allele2", value: string) => {
-    const current = patient.genetics[gene] ?? { allele1: "*1", allele2: "*1" };
-    api.updateGenetics({ [gene]: { ...current, [index]: value } });
-  };
-
-  const genes: Array<{ key: "cyp2c19" | "cyp2d6"; label: string }> = [
-    { key: "cyp2c19", label: "CYP2C19" },
-    { key: "cyp2d6", label: "CYP2D6" }
-  ];
 
   return (
     <>
@@ -334,32 +325,41 @@ function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
           </div>
         }
       >
-        {patient.genetics.available && (
-          <div className="grid grid-cols-2 gap-5">
-            {genes.map(({ key, label }) => {
-              const diplotype = patient.genetics[key] ?? { allele1: "*1", allele2: "*1" };
-              const options = alleleOptions(key, [diplotype.allele1, diplotype.allele2]);
-              return (
-                <div key={key} className="contents">
-                  <Field label={`${label} Allele 1`}>
-                    <SelectInput
-                      value={diplotype.allele1}
-                      options={options}
-                      onChange={(v) => updateAllele(key, "allele1", v)}
-                    />
-                  </Field>
-                  <Field label={`${label} Allele 2`}>
-                    <SelectInput
-                      value={diplotype.allele2}
-                      options={options}
-                      onChange={(v) => updateAllele(key, "allele2", v)}
-                    />
-                  </Field>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {patient.genetics.available &&
+          (optionsState.status === "loading" ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading pharmacogenetic options…</p>
+          ) : optionsState.status === "error" ? (
+            <p className="text-xs text-red-600 dark:text-red-400">{optionsState.message}</p>
+          ) : configuredGenes.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">No pharmacogenes are configured.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-5">
+              {configuredGenes.map((gene) => {
+                const diplotype = patient.genetics.genes[gene.gene] ?? { allele1: "*1", allele2: "*1" };
+                const options = Array.from(
+                  new Set([...gene.common_alleles, diplotype.allele1, diplotype.allele2])
+                );
+                return (
+                  <div key={gene.gene} className="contents">
+                    <Field label={`${gene.label} Allele 1`}>
+                      <SelectInput
+                        value={diplotype.allele1}
+                        options={options}
+                        onChange={(v) => updateAllele(gene.gene, "allele1", v)}
+                      />
+                    </Field>
+                    <Field label={`${gene.label} Allele 2`}>
+                      <SelectInput
+                        value={diplotype.allele2}
+                        options={options}
+                        onChange={(v) => updateAllele(gene.gene, "allele2", v)}
+                      />
+                    </Field>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
       </WizardCard>
 
       <WizardCard

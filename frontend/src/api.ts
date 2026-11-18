@@ -197,6 +197,7 @@ export type PgxDiplotype = {
 
 export type PgxGeneOptions = {
   gene: string;
+  label: string;
   alleles: string[];
   common_alleles: string[];
   phenotypes: string[];
@@ -214,8 +215,7 @@ export type PgxOptionsResponse = {
 };
 
 export type PgxInterpretRequest = {
-  cyp2c19?: PgxDiplotype;
-  cyp2d6?: PgxDiplotype;
+  genes?: Record<string, PgxDiplotype>;
   drugs?: string[];
 };
 

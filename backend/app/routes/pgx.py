@@ -34,10 +34,9 @@ def pgx_options(request: Request) -> PgxOptionsResponse:
 )
 @limiter.limit("60/minute")
 def interpret_pgx(request: Request, payload: PgxInterpretRequest) -> PgxInterpretResponse:
-    diplotypes: dict[str, tuple[str, str]] = {}
-    if payload.cyp2c19 is not None:
-        diplotypes["CYP2C19"] = _diplotype(payload.cyp2c19)
-    if payload.cyp2d6 is not None:
-        diplotypes["CYP2D6"] = _diplotype(payload.cyp2d6)
+    diplotypes = {
+        gene: _diplotype(diplotype)
+        for gene, diplotype in payload.genes.items()
+    }
 
     return PgxInterpretResponse(**pgx_service.interpret(diplotypes, payload.drugs))

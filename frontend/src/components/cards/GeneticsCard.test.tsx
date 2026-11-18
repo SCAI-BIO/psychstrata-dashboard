@@ -25,14 +25,14 @@ describe("GeneticsCard", () => {
   });
 
   it("prompts for intake when genetics is unavailable", () => {
-    render(<GeneticsCard patient={makeCompletePatient({ genetics: { available: false } })} />);
+    render(<GeneticsCard patient={makeCompletePatient({ genetics: { available: false, genes: {} } })} />);
     expect(screen.getByText("Pharmacogenomic Profile (CPIC)")).toBeInTheDocument();
     expect(screen.getByText(/Genomic data is marked unavailable/)).toBeInTheDocument();
   });
 
   it("prompts to enter diplotypes while idle", () => {
     render(<GeneticsCard patient={makeCompletePatient()} />);
-    expect(screen.getByText(/Enter CYP2C19 and CYP2D6 diplotypes/)).toBeInTheDocument();
+    expect(screen.getByText(/Enter diplotypes/)).toBeInTheDocument();
   });
 
   it("shows a loading state", () => {

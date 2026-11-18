@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.persistence.database import _reset_database_for_tests
-from app.persistence.demo_data import DEMO_PATIENT_ID, seed_demo_data
+from app.persistence.demo_data import DEMO_PATIENT_ID, DEMO_SECOND_PATIENT_ID, seed_demo_data
 from app.io.feature_loader import _reset_feature_loader_for_tests, get_model_feature_order
 from app.main import app
 from app.settings import _reset_backend_settings_for_tests
@@ -92,11 +92,15 @@ def test_patient_aggregate_crud_and_config_defaults(client: TestClient) -> None:
 
     assert created["clinician_id"] == "clinician"
     assert created["clinical_data"]["clinical_features"]["sex_at_birth"] == 2
-    assert created["clinical_data"]["genetics"] == {"available": True}
+    assert created["clinical_data"]["genetics"] == {"available": True, "genes": {}}
 
     list_response = client.get("/api/patients", auth=_auth())
     assert list_response.status_code == 200
-    assert {patient["id"] for patient in list_response.json()} == {DEMO_PATIENT_ID, created["id"]}
+    assert {patient["id"] for patient in list_response.json()} == {
+        DEMO_PATIENT_ID,
+        DEMO_SECOND_PATIENT_ID,
+        created["id"],
+    }
 
     update_response = client.patch(
         f"/api/patients/{created['id']}",
@@ -142,8 +146,8 @@ def test_startup_seeds_max_mustermann_with_three_treatment_plans_once(client: Te
     assert patient_response.json()["last_name"] == "Mustermann"
     genetics = patient_response.json()["clinical_data"]["genetics"]
     assert genetics["available"] is True
-    assert genetics["cyp2c19"] == {"allele1": "*1", "allele2": "*2"}
-    assert genetics["cyp2d6"] == {"allele1": "*1", "allele2": "*1"}
+    assert genetics["genes"]["CYP2C19"] == {"allele1": "*1", "allele2": "*2"}
+    assert genetics["genes"]["CYP2D6"] == {"allele1": "*1", "allele2": "*1"}
 
     seed_demo_data()
     plans_response = client.get(f"/api/patients/{DEMO_PATIENT_ID}/treatment-plans", auth=_auth())
@@ -152,6 +156,56 @@ def test_startup_seeds_max_mustermann_with_three_treatment_plans_once(client: Te
     assert plans_response.status_code == 200
     assert len(plans_response.json()) == 3
     assert reseeded.json()["clinical_data"]["genetics"] == genetics
+
+
+def test_startup_seeds_second_demo_patient_with_distinct_genetics_and_plans(client: TestClient) -> None:
+    response = client.get(f"/api/patients/{DEMO_SECOND_PATIENT_ID}", auth=_auth())
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["first_name"], body["last_name"]) == ("Erika", "Mustermann")
+    genetics = body["clinical_data"]["genetics"]
+    assert genetics["genes"]["CYP2C19"] == {"allele1": "*2", "allele2": "*2"}
+    assert genetics["genes"]["CYP2D6"] == {"allele1": "*1", "allele2": "*4"}
+
+    plans_response = client.get(f"/api/patients/{DEMO_SECOND_PATIENT_ID}/treatment-plans", auth=_auth())
+    assert plans_response.status_code == 200
+    plans = plans_response.json()
+    assert len(plans) == 3
+    assert all(plan["medications"]["sertraline_mg"] > 0 for plan in plans)
+
+
+def test_demo_patients_receive_different_sertraline_guidance() -> None:
+    from app.persistence.demo_data import DEMO_GENETICS, SECOND_DEMO_GENETICS
+    from app.services import pgx_service
+
+    def sertraline_recommendation(genetics: dict) -> str | None:
+        cyp2c19 = genetics["genes"]["CYP2C19"]
+        result = pgx_service.interpret(
+            {"CYP2C19": (cyp2c19["allele1"], cyp2c19["allele2"])},
+            ["sertraline"],
+        )
+        return result["drug_recommendations"][0]["recommendation"]
+
+    max_recommendation = sertraline_recommendation(DEMO_GENETICS)
+    erika_recommendation = sertraline_recommendation(SECOND_DEMO_GENETICS)
+
+    assert max_recommendation == "Initiate therapy with recommended starting dose."
+    assert erika_recommendation is not None
+    assert "50% reduction" in erika_recommendation
+
+
+def test_patient_create_rejects_invalid_genetics(client: TestClient) -> None:
+    payload = _patient_payload()
+    payload["clinical_data"]["genetics"] = {
+        "available": True,
+        "genes": {"CYP2C19": {"allele1": "*1", "allele2": "*999"}},
+    }
+
+    response = client.post("/api/patients", json=payload, auth=_auth())
+
+    assert response.status_code == 422
+    assert "Unknown CYP2C19 allele" in response.json()["detail"]
 
 
 def test_treatment_plan_crud_and_persisted_prediction(client: TestClient) -> None:

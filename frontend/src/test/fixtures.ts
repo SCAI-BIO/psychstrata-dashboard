@@ -101,12 +101,14 @@ export const pgxOptionsResponse: PgxOptionsResponse = {
   genes: [
     {
       gene: "CYP2C19",
+      label: "CYP2C19",
       alleles: ["*1", "*2", "*3", "*17"],
       common_alleles: ["*1", "*2", "*3", "*17"],
       phenotypes: ["Normal Metabolizer", "Intermediate Metabolizer", "Poor Metabolizer", "Rapid Metabolizer", "Ultrarapid Metabolizer"]
     },
     {
       gene: "CYP2D6",
+      label: "CYP2D6",
       alleles: ["*1", "*2", "*4", "*5", "*10"],
       common_alleles: ["*1", "*2", "*4", "*5", "*10"],
       phenotypes: ["Normal Metabolizer", "Intermediate Metabolizer", "Poor Metabolizer", "Ultrarapid Metabolizer"]

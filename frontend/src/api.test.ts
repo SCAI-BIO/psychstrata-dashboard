@@ -101,7 +101,7 @@ describe("auth header propagation", () => {
 
   it("fetchPgxInterpretation posts diplotypes as JSON", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(pgxInterpretResponse));
-    const payload = { cyp2c19: { allele1: "*1", allele2: "*2" } };
+    const payload = { genes: { CYP2C19: { allele1: "*1", allele2: "*2" } } };
     await expect(fetchPgxInterpretation(payload)).resolves.toEqual(pgxInterpretResponse);
     const [url, init] = fetchMock.mock.calls[0] as FetchArgs;
     expect(url).toBe("/api/pgx/interpret");

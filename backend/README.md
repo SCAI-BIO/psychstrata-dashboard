@@ -127,7 +127,7 @@ Configured clinical, medication, and adherence values are stored as JSON objects
 
 The current version supports one clinician. When Basic Auth is enabled, the configured username is stored as `clinician_id`; when auth is disabled for local development, records use `default-clinician`. Patient deletion cascades through clinical data and treatment plans.
 
-At startup, the backend idempotently creates the demo patient `Max Mustermann` with three treatment plans for the configured clinician. Stable IDs prevent duplicate demo records across restarts.
+At startup, the backend idempotently creates two demo patients for the configured clinician, each with three treatment plans: `Max Mustermann` (CYP2C19 `*1/*2`, CYP2D6 `*1/*1`) and `Erika Mustermann` (CYP2C19 `*2/*2`, CYP2D6 `*1/*4`, which yields a reduced-dose sertraline recommendation). Stable IDs prevent duplicate demo records across restarts.
 
 This development-stage schema does not include migrations. If a local `db.sqlite3` was created by the previous SQLModel implementation, recreate that database before starting this version.
 
@@ -161,6 +161,26 @@ If `FEATURES_CONFIG_PATH` is not set, the backend uses the built-in feature defi
 You can also set it in `BACKEND_CONFIG_FILE`.
 
 The configuration contains `clinical`, `medications`, `adherence`, and an explicit `model_feature_order`. Each feature uses `dtype` to distinguish numeric and categorical values. The merged feature API remains available to the frontend, while `feature_groups` exposes the domain grouping. The default `sex_at_birth` feature supports Male, Female, and Other; synthetic data uses a 49%/49%/2% distribution.
+
+## Genetics Configuration
+
+- `GENETICS_CONFIG_PATH` (optional path to a genetics JSON file)
+
+If `GENETICS_CONFIG_PATH` is not set, the backend uses the built-in gene and drug definitions from `app/defaults/genetics_definitions.json`.
+You can also set it in `BACKEND_CONFIG_FILE`.
+
+```json
+{
+  "genes": [
+    { "id": "CYP2C19", "label": "CYP2C19", "common_alleles": ["*1", "*2", "*3"] }
+  ],
+  "drugs": [
+    { "id": "sertraline", "label": "Sertraline" }
+  ]
+}
+```
+
+Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; configured drugs must have CPIC recommendations. The configuration is validated lazily on the first genetics request, so invalid entries fail startup-independent requests with a clear error.
 
 ## Tests
 

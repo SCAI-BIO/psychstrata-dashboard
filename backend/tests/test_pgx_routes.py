@@ -1,10 +1,13 @@
 from collections.abc import Iterator
+import json
 
 from fastapi.testclient import TestClient
 import pytest
 
+from app.io.genetics_loader import _reset_genetics_loader_for_tests
 from app.main import app
 from app.security.rate_limit import limiter
+from app.services import pgx_service
 from app.settings import _reset_backend_settings_for_tests
 
 
@@ -14,11 +17,17 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("BACKEND_BASIC_AUTH_PASSWORD", "password")
     monkeypatch.setenv("RATE_LIMIT_STORAGE_URI", "memory://")
     _reset_backend_settings_for_tests()
+    _reset_genetics_loader_for_tests()
+    pgx_service.build_options.cache_clear()
+    pgx_service.interpret_gene.cache_clear()
     limiter.reset()
     with TestClient(app) as test_client:
         yield test_client
     limiter.reset()
     _reset_backend_settings_for_tests()
+    _reset_genetics_loader_for_tests()
+    pgx_service.build_options.cache_clear()
+    pgx_service.interpret_gene.cache_clear()
 
 
 def _auth() -> tuple[str, str]:
@@ -43,20 +52,62 @@ def test_options_expose_genes_alleles_and_drugs(client: TestClient) -> None:
     body = response.json()
     genes = {gene["gene"]: gene for gene in body["genes"]}
     assert set(genes) == {"CYP2C19", "CYP2D6"}
+    assert genes["CYP2C19"]["label"] == "CYP2C19"
+    assert genes["CYP2D6"]["label"] == "CYP2D6"
     assert "*17" in genes["CYP2C19"]["alleles"]
     assert "*1x2" in genes["CYP2D6"]["common_alleles"]
     assert genes["CYP2D6"]["phenotypes"]
     drugs = {drug["drug"]: drug for drug in body["drugs"]}
     assert drugs["amitriptyline"]["genes"] == ["CYP2C19", "CYP2D6"]
     assert drugs["sertraline"]["genes"] == ["CYP2C19"]
+    assert drugs["sertraline"]["label"] == "Sertraline"
+
+
+def test_options_reflect_configured_genetics(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, client: TestClient
+) -> None:
+    config_path = tmp_path / "genetics.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "genes": [
+                    {"id": "CYP2C19", "label": "CYP2C19 (custom)", "common_alleles": ["*1", "*2"]}
+                ],
+                "drugs": [{"id": "sertraline", "label": "Sertraline (custom)"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GENETICS_CONFIG_PATH", str(config_path))
+    _reset_backend_settings_for_tests()
+    _reset_genetics_loader_for_tests()
+    pgx_service.build_options.cache_clear()
+    pgx_service.interpret_gene.cache_clear()
+
+    options = client.get("/api/pgx/options", auth=_auth())
+    assert options.status_code == 200
+    body = options.json()
+    assert [gene["gene"] for gene in body["genes"]] == ["CYP2C19"]
+    assert body["genes"][0]["label"] == "CYP2C19 (custom)"
+    assert [drug["drug"] for drug in body["drugs"]] == ["sertraline"]
+    assert body["drugs"][0]["label"] == "Sertraline (custom)"
+
+    body = _interpret(
+        client,
+        {"genes": {"CYP2C19": {"allele1": "*1", "allele2": "*1"}}},
+    )
+    assert [gene["gene"] for gene in body["genes"]] == ["CYP2C19"]
+    assert [drug["drug"] for drug in body["drug_recommendations"]] == ["Sertraline (custom)"]
 
 
 def test_interpret_returns_phenotypes_and_recommendations(client: TestClient) -> None:
     body = _interpret(
         client,
         {
-            "cyp2c19": {"allele1": "*1", "allele2": "*2"},
-            "cyp2d6": {"allele1": "*4", "allele2": "*4"},
+            "genes": {
+                "CYP2C19": {"allele1": "*1", "allele2": "*2"},
+                "CYP2D6": {"allele1": "*4", "allele2": "*4"},
+            },
             "drugs": ["amitriptyline", "sertraline"],
         },
     )
@@ -84,7 +135,7 @@ def test_interpret_returns_phenotypes_and_recommendations(client: TestClient) ->
 def test_interpret_flags_missing_second_gene(client: TestClient) -> None:
     body = _interpret(
         client,
-        {"cyp2c19": {"allele1": "*1", "allele2": "*1"}, "drugs": ["amitriptyline"]},
+        {"genes": {"CYP2C19": {"allele1": "*1", "allele2": "*1"}}, "drugs": ["amitriptyline"]},
     )
 
     recommendation = body["drug_recommendations"][0]
@@ -97,7 +148,7 @@ def test_interpret_flags_missing_second_gene(client: TestClient) -> None:
 def test_interpret_handles_indeterminate_phenotype(client: TestClient) -> None:
     body = _interpret(
         client,
-        {"cyp2d6": {"allele1": "*1", "allele2": "*22"}, "drugs": ["atomoxetine"]},
+        {"genes": {"CYP2D6": {"allele1": "*1", "allele2": "*22"}}, "drugs": ["atomoxetine"]},
     )
 
     gene = body["genes"][0]
@@ -112,7 +163,7 @@ def test_interpret_handles_indeterminate_phenotype(client: TestClient) -> None:
 def test_interpret_supports_structural_variants(client: TestClient) -> None:
     body = _interpret(
         client,
-        {"cyp2d6": {"allele1": "*1x2", "allele2": "*4"}, "drugs": ["atomoxetine"]},
+        {"genes": {"CYP2D6": {"allele1": "*1x2", "allele2": "*4"}}, "drugs": ["atomoxetine"]},
     )
 
     gene = body["genes"][0]
@@ -124,7 +175,7 @@ def test_interpret_supports_structural_variants(client: TestClient) -> None:
 def test_interpret_rejects_unknown_allele(client: TestClient) -> None:
     response = client.post(
         "/api/pgx/interpret",
-        json={"cyp2c19": {"allele1": "*1", "allele2": "*999"}},
+        json={"genes": {"CYP2C19": {"allele1": "*1", "allele2": "*999"}}},
         auth=_auth(),
     )
 
@@ -139,7 +190,7 @@ def test_interpret_rejects_unknown_gene_and_drug(client: TestClient) -> None:
 
     bad_drug = client.post(
         "/api/pgx/interpret",
-        json={"cyp2d6": {"allele1": "*1", "allele2": "*1"}, "drugs": ["lithium"]},
+        json={"genes": {"CYP2D6": {"allele1": "*1", "allele2": "*1"}}, "drugs": ["lithium"]},
         auth=_auth(),
     )
     assert bad_drug.status_code == 422
@@ -149,7 +200,7 @@ def test_interpret_rejects_unknown_gene_and_drug(client: TestClient) -> None:
 def test_interpret_rejects_unexpected_fields(client: TestClient) -> None:
     response = client.post(
         "/api/pgx/interpret",
-        json={"cyp2d6": {"allele1": "*1", "allele2": "*1", "allele3": "*4"}},
+        json={"genes": {"CYP2D6": {"allele1": "*1", "allele2": "*1", "allele3": "*4"}}},
         auth=_auth(),
     )
 

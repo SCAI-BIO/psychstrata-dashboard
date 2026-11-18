@@ -56,10 +56,10 @@ export type PgxInterpretationState =
  * or no diplotype has been entered; refetches only when an allele changes.
  */
 export function usePgxInterpretation(genetics: PatientGenetics): PgxInterpretationState {
-  const { available, cyp2c19, cyp2d6 } = genetics;
-  const hasDiplotype = available && Boolean(cyp2c19 || cyp2d6);
+  const entries = Object.entries(genetics.genes).sort(([left], [right]) => left.localeCompare(right));
+  const hasDiplotype = genetics.available && entries.length > 0;
   const alleleKey = hasDiplotype
-    ? [cyp2c19?.allele1, cyp2c19?.allele2, cyp2d6?.allele1, cyp2d6?.allele2].join("|")
+    ? entries.map(([gene, diplotype]) => `${gene}:${diplotype.allele1}/${diplotype.allele2}`).join("|")
     : "";
 
   const [state, setState] = useState<PgxInterpretationState>({ status: "idle" });
@@ -73,9 +73,7 @@ export function usePgxInterpretation(genetics: PatientGenetics): PgxInterpretati
     let isActive = true;
     setState({ status: "loading" });
 
-    const payload: PgxInterpretRequest = {};
-    if (cyp2c19) payload.cyp2c19 = cyp2c19;
-    if (cyp2d6) payload.cyp2d6 = cyp2d6;
+    const payload: PgxInterpretRequest = { genes: Object.fromEntries(entries) };
 
     fetchPgxInterpretation(payload)
       .then((result) => {

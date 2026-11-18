@@ -13,8 +13,7 @@ class DiplotypeInput(BaseModel):
 class PgxInterpretRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    cyp2c19: DiplotypeInput | None = None
-    cyp2d6: DiplotypeInput | None = None
+    genes: dict[str, DiplotypeInput] = Field(default_factory=dict)
     drugs: list[str] | None = None
 
 
@@ -52,6 +51,7 @@ class PgxInterpretResponse(BaseModel):
 
 class GeneOptions(BaseModel):
     gene: str
+    label: str
     alleles: list[str]
     common_alleles: list[str]
     phenotypes: list[str]

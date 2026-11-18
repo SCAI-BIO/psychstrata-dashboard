@@ -17,6 +17,7 @@ def _reset_settings(monkeypatch: pytest.MonkeyPatch) -> None:
         "BACKEND_DATABASE_URL",
         "MODEL_ARTIFACT_PATH",
         "FEATURES_CONFIG_PATH",
+        "GENETICS_CONFIG_PATH",
         "LLM_PROVIDER_URL",
         "LLM_PROVIDER_MODEL",
         "LLM_PROVIDER_KEY",
@@ -81,6 +82,7 @@ def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BACKEND_DATABASE_URL", "sqlite:///./env.sqlite3")
     monkeypatch.setenv("MODEL_ARTIFACT_PATH", "/models/model.pkl")
     monkeypatch.setenv("FEATURES_CONFIG_PATH", "/configs/features.json")
+    monkeypatch.setenv("GENETICS_CONFIG_PATH", "/configs/genetics.json")
     monkeypatch.setenv("LLM_CLIENT_URL", "http://localhost:11434")
     monkeypatch.setenv("LLM_CLIENT_MODEL", "llama3")
     monkeypatch.setenv("LLM_CLIENT_SECRET", "local-secret")
@@ -95,6 +97,7 @@ def test_settings_use_environment_only(monkeypatch: pytest.MonkeyPatch) -> None:
     assert backend_settings.backend_database_url == "sqlite:///./env.sqlite3"
     assert backend_settings.model_artifact_path == "/models/model.pkl"
     assert backend_settings.features_config_path == "/configs/features.json"
+    assert backend_settings.genetics_config_path == "/configs/genetics.json"
     assert backend_settings.llm_client_url == "http://localhost:11434"
     assert backend_settings.llm_client_model == "llama3"
     assert backend_settings.llm_client_secret == "local-secret"
@@ -112,6 +115,7 @@ def test_settings_load_values_from_toml_file(tmp_path: Path, monkeypatch: pytest
                 'backend_database_url = "sqlite:///./file.sqlite3"',
                 'model_artifact_path = "/file/model.pkl"',
                 'features_config_path = "/file/features.json"',
+                'genetics_config_path = "/file/genetics.json"',
             ]
         ),
         encoding="utf-8",
@@ -127,6 +131,7 @@ def test_settings_load_values_from_toml_file(tmp_path: Path, monkeypatch: pytest
     assert backend_settings.backend_database_url == "sqlite:///./file.sqlite3"
     assert backend_settings.model_artifact_path == "/file/model.pkl"
     assert backend_settings.features_config_path == "/file/features.json"
+    assert backend_settings.genetics_config_path == "/file/genetics.json"
 
 
 def test_settings_env_overrides_file_values(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -141,6 +146,7 @@ def test_settings_env_overrides_file_values(tmp_path: Path, monkeypatch: pytest.
                 'backend_database_url = "sqlite:///./file.sqlite3"',
                 'model_artifact_path = "/file/model.pkl"',
                 'features_config_path = "/file/features.json"',
+                'genetics_config_path = "/file/genetics.json"',
             ]
         ),
         encoding="utf-8",
