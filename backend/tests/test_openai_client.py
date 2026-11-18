@@ -59,7 +59,7 @@ def test_complete_uses_responses_api_payload(monkeypatch: pytest.MonkeyPatch) ->
     assert captured["authorization"] == "Bearer sk-secret"
     assert captured["data"]["model"] == "gpt-4.1-mini"
     assert captured["data"]["temperature"] == 0.2
-    assert captured["data"]["max_output_tokens"] == 800
+    assert captured["data"]["max_output_tokens"] == 1600
     assert captured["data"]["input"][1]["content"][0] == {"type": "input_text", "text": "prompt"}
 
 
@@ -134,4 +134,19 @@ def test_complete_raises_on_invalid_json(monkeypatch: pytest.MonkeyPatch) -> Non
     client = OpenAIClient(url="https://api.openai.com/v1/responses", model="gpt-4.1-mini", secret="sk-secret")
 
     with pytest.raises(LLMClientError, match="could not be parsed"):
+        client.complete("prompt")
+
+
+def test_complete_raises_when_output_hits_token_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = json.dumps(
+        {
+            "status": "incomplete",
+            "incomplete_details": {"reason": "max_output_tokens"},
+            "output": [{"content": [{"type": "output_text", "text": "truncated"}]}],
+        }
+    ).encode("utf-8")
+    _patch_urlopen(monkeypatch, lambda _req: _FakeResponse(body))
+    client = OpenAIClient(url="https://api.openai.com/v1/responses", model="gpt-4.1-mini", secret="sk-secret")
+
+    with pytest.raises(LLMClientError, match="cut off.*1600-token limit"):
         client.complete("prompt")

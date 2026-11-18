@@ -1,4 +1,5 @@
 import json
+import ssl
 from abc import ABC, abstractmethod
 from urllib import error, request
 
@@ -14,10 +15,10 @@ class LLMClient(ABC):
     parsed; transport, auth, and error handling are shared here.
     """
 
-    request_timeout = 20
+    request_timeout = 60
     requires_secret = True
     temperature = 0.2
-    max_tokens = 800
+    max_tokens = 1600
     system_prompt = (
         "You explain model predictions for a synthetic depression treatment-resistance demo. "
         "Base every statement only on the provided JSON payload. "
@@ -57,6 +58,11 @@ class LLMClient(ABC):
                 f"```text\n{detail}\n```"
             ) from exc
         except error.URLError as exc:
+            if isinstance(exc.reason, ssl.SSLError):
+                raise LLMClientError(
+                    f"Prediction explanation unavailable: TLS setup for the {self.service_name} service failed "
+                    f"({getattr(exc.reason, 'reason', None) or exc.reason})."
+                ) from exc
             raise LLMClientError(
                 f"Prediction explanation unavailable: the {self.service_name} service could not be reached ({exc.reason})."
             ) from exc
@@ -64,12 +70,27 @@ class LLMClient(ABC):
             raise LLMClientError(
                 f"Prediction explanation unavailable: the {self.service_name} service timed out."
             ) from exc
+        except ssl.SSLError as exc:
+            raise LLMClientError(
+                f"Prediction explanation unavailable: TLS setup for the {self.service_name} service failed "
+                f"({getattr(exc, 'reason', None) or exc})."
+            ) from exc
+        except OSError as exc:
+            raise LLMClientError(
+                f"Prediction explanation unavailable: the {self.service_name} service request failed ({exc})."
+            ) from exc
         except json.JSONDecodeError as exc:
             raise LLMClientError(
                 f"Prediction explanation unavailable: the {self.service_name} service response could not be parsed."
             ) from exc
 
         text = self._extract_text(response_payload).strip()
+        truncation = self._truncation_detail(response_payload)
+        if truncation:
+            raise LLMClientError(
+                f"Prediction explanation unavailable: the {self.service_name} service response was cut off "
+                f"({truncation})."
+            )
         if not text:
             raise LLMClientError(
                 f"Prediction explanation unavailable: the {self.service_name} service returned an empty response."
@@ -78,6 +99,10 @@ class LLMClient(ABC):
 
     def _endpoint(self) -> str:
         return self.url
+
+    def _truncation_detail(self, response_payload: dict) -> str | None:
+        """Return a reason if the provider reported a truncated completion."""
+        return None
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}

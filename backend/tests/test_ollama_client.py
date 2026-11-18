@@ -49,7 +49,7 @@ def test_complete_returns_stripped_message_content(monkeypatch: pytest.MonkeyPat
         "messages": [{"role": "user", "content": "prompt"}],
         "stream": False,
     }
-    assert captured["timeout"] == 20
+    assert captured["timeout"] == 60
 
 
 def test_complete_does_not_duplicate_api_chat_suffix(monkeypatch: pytest.MonkeyPatch) -> None:

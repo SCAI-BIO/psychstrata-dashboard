@@ -1,5 +1,6 @@
 import io
 import json
+import ssl
 from urllib import error
 
 import pytest
@@ -59,10 +60,10 @@ def test_complete_posts_chat_completions_payload(monkeypatch: pytest.MonkeyPatch
     assert captured["authorization"] == "Bearer secret"
     assert captured["data"]["model"] == "Qwen/Qwen3-Coder-Next-FP8"
     assert captured["data"]["temperature"] == 0.2
-    assert captured["data"]["max_tokens"] == 800
+    assert captured["data"]["max_tokens"] == 1600
     assert captured["data"]["messages"][1] == {"role": "user", "content": "prompt"}
     assert captured["data"]["messages"][0]["role"] == "system"
-    assert captured["timeout"] == 20
+    assert captured["timeout"] == 60
 
 
 def test_complete_does_not_duplicate_chat_completions_suffix(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -131,3 +132,47 @@ def test_complete_raises_on_invalid_json(monkeypatch: pytest.MonkeyPatch) -> Non
 
     with pytest.raises(LLMClientError, match="could not be parsed"):
         client.complete("prompt")
+
+
+def test_complete_raises_on_tls_setup_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(_req):
+        raise ssl.SSLError(1, "module initialization error")
+
+    _patch_urlopen(monkeypatch, _raise)
+    client = FHGenieClient(url="https://fhgenie.fraunhofer.de/v1", model="m", secret="secret")
+
+    with pytest.raises(LLMClientError, match="TLS setup.*failed.*module initialization error"):
+        client.complete("prompt")
+
+
+def test_complete_raises_on_connection_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(_req):
+        raise ConnectionResetError("connection reset by peer")
+
+    _patch_urlopen(monkeypatch, _raise)
+    client = FHGenieClient(url="https://fhgenie.fraunhofer.de/v1", model="m", secret="secret")
+
+    with pytest.raises(LLMClientError, match="request failed.*connection reset by peer"):
+        client.complete("prompt")
+
+
+def test_complete_raises_when_output_hits_token_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = json.dumps(
+        {
+            "choices": [{"message": {"content": "truncated expl"}, "finish_reason": "length"}],
+            "usage": {"completion_tokens_details": {"reasoning_tokens": 701}},
+        }
+    ).encode("utf-8")
+    _patch_urlopen(monkeypatch, lambda _req: _FakeResponse(body))
+    client = FHGenieClient(url="https://fhgenie.fraunhofer.de/v1", model="m", secret="secret")
+
+    with pytest.raises(LLMClientError, match="cut off.*1600-token limit.*701 reasoning tokens"):
+        client.complete("prompt")
+
+
+def test_complete_accepts_stopped_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = json.dumps({"choices": [{"message": {"content": "full"}, "finish_reason": "stop"}]}).encode("utf-8")
+    _patch_urlopen(monkeypatch, lambda _req: _FakeResponse(body))
+    client = FHGenieClient(url="https://fhgenie.fraunhofer.de/v1", model="m", secret="secret")
+
+    assert client.complete("prompt") == "full"

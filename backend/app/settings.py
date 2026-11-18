@@ -23,7 +23,7 @@ class BackendSettings(BaseModel):
     features_config_path: str | None = None
     genetics_config_path: str | None = None
     llm_client_url: str = "https://fhgenie.fraunhofer.de/v1"
-    llm_client_model: str = "Qwen/Qwen3-Coder-Next-FP8"
+    llm_client_model: str = "deepseek-ai/DeepSeek-V4.1-Flash"
     llm_client_secret: str | None = None
 
     @field_validator(

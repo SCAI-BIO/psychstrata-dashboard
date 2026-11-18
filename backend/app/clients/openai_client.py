@@ -25,3 +25,11 @@ class OpenAIClient(LLMClient):
             for content in output.get("content", [])
             if content.get("text")
         )
+
+    def _truncation_detail(self, response_payload: dict) -> str | None:
+        if response_payload.get("status") != "incomplete":
+            return None
+        reason = (response_payload.get("incomplete_details") or {}).get("reason")
+        if reason == "max_output_tokens":
+            return f"hit the {self.max_tokens}-token limit"
+        return reason or "response marked incomplete"

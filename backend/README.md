@@ -135,7 +135,7 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
 - `LLM_PROVIDER_URL` (optional LLM endpoint URL; defaults to FHGenie at `https://fhgenie.fraunhofer.de/v1`)
-- `LLM_PROVIDER_MODEL` (optional model name; defaults to `Qwen/Qwen3-Coder-Next-FP8`)
+- `LLM_PROVIDER_MODEL` (optional model name; defaults to `deepseek-ai/DeepSeek-V4.1-Flash`)
 - `LLM_PROVIDER_KEY` (optional provider API key; required for hosted providers such as FHGenie)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
