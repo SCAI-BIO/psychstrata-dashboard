@@ -5,12 +5,31 @@ import { usePgxInterpretation } from "../../hooks/usePgx";
 import { Card, SectionLabel } from "../Card";
 
 const NEUTRAL_BADGE = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300";
+const AVOID_BADGE = "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200";
 const CAUTION_BADGE = "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
 const NORMAL_BADGE = "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200";
 
 function geneBadge(gene: PgxGeneInterpretation): string {
   if (gene.is_indeterminate || !gene.priority) return NEUTRAL_BADGE;
   return gene.priority.toLowerCase().includes("high") ? CAUTION_BADGE : NORMAL_BADGE;
+}
+
+function drugBadge(recommendation: PgxDrugRecommendation): { label: string; className: string } {
+  if (recommendation.status !== "available") {
+    return { label: "Unavailable", className: NEUTRAL_BADGE };
+  }
+  const text = recommendation.recommendation?.toLowerCase() ?? "";
+  if (text.includes("avoid") || text.includes("contraindicated") || text.includes("do not use")) {
+    return { label: "Avoid", className: AVOID_BADGE };
+  }
+  if (
+    ["reduce", "lower", "decrease", "increase", "adjust", "alternative", "monitor", "caution"].some((term) =>
+      text.includes(term)
+    )
+  ) {
+    return { label: "Caution", className: CAUTION_BADGE };
+  }
+  return { label: "Standard", className: NORMAL_BADGE };
 }
 
 /** Active agents inferred from the `<drug>_mg` clinical values. */
@@ -33,15 +52,12 @@ function GeneTile({ gene }: { gene: PgxGeneInterpretation }) {
         {gene.diplotype}
         {gene.activity_score !== null && ` · Activity score ${gene.activity_score}`}
       </p>
-      {gene.priority && (
-        <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">{gene.priority}</p>
-      )}
     </div>
   );
 }
 
 function DrugRow({ recommendation }: { recommendation: PgxDrugRecommendation }) {
-  const isAvailable = recommendation.status === "available";
+  const badge = drugBadge(recommendation);
   return (
     <li className="py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
       <div className="flex items-start justify-between gap-3">
@@ -80,8 +96,8 @@ function DrugRow({ recommendation }: { recommendation: PgxDrugRecommendation }) 
             ))}
           </div>
         </div>
-        <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md ${isAvailable ? NORMAL_BADGE : NEUTRAL_BADGE}`}>
-          {isAvailable ? "Guidance" : "Unavailable"}
+        <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md ${badge.className}`}>
+          {badge.label}
         </span>
       </div>
     </li>
@@ -119,12 +135,17 @@ export function GeneticsCard({ patient }: { patient: Patient }) {
     }
 
     const { genes, drug_recommendations } = state.result;
-    const byDrug = new Map(drug_recommendations.map((rec) => [rec.drug.toLowerCase(), rec]));
+    const byDrug = new Map(
+      drug_recommendations.map((rec) => [(rec.drug_id ?? rec.drug).toLowerCase(), rec])
+    );
     const matching = regimen.flatMap((drug) => {
       const rec = byDrug.get(drug);
       return rec ? [rec] : [];
     });
     const uncovered = regimen.filter((drug) => !byDrug.has(drug));
+    const alternatives = drug_recommendations.filter(
+      (rec) => rec.status === "available" && !regimen.includes((rec.drug_id ?? rec.drug).toLowerCase())
+    );
 
     return (
       <div className="space-y-5">
@@ -138,11 +159,19 @@ export function GeneticsCard({ patient }: { patient: Patient }) {
         </div>
 
         <div>
-          <SectionLabel>Current Regimen Guidance</SectionLabel>
+          <SectionLabel>CPIC Starting-Dose Guidance</SectionLabel>
+          <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+            CPIC guidance describes recommended starting doses for therapy initiation. It is not advice to adjust a
+            patient&apos;s current dose.
+          </p>
           {matching.length > 0 ? (
-            <ul>{matching.map((rec) => <DrugRow key={rec.drug} recommendation={rec} />)}</ul>
-          ) : (
+            <ul>{matching.map((rec) => <DrugRow key={rec.drug_id ?? rec.drug} recommendation={rec} />)}</ul>
+          ) : regimen.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">No active medications on the current regimen.</p>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              None of the current medications are in the configured pharmacogenetic catalogue.
+            </p>
           )}
           {uncovered.length > 0 && (
             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
@@ -150,6 +179,19 @@ export function GeneticsCard({ patient }: { patient: Patient }) {
             </p>
           )}
         </div>
+
+        {alternatives.length > 0 && (
+          <details>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Other configured medications with CPIC guidance
+            </summary>
+            <ul className="mt-2">
+              {alternatives.map((rec) => (
+                <DrugRow key={rec.drug_id ?? rec.drug} recommendation={rec} />
+              ))}
+            </ul>
+          </details>
+        )}
 
         <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">{state.result.disclaimer}</p>
       </div>

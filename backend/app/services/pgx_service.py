@@ -140,18 +140,16 @@ def _recommend(
     return None if not text or text == "None" else text
 
 
-def _interpret_drug(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+def _interpret_drug(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, Any]:
     required = _drug_genes(drug)
     provided = [gene for gene in required if gene in genes]
-    if not provided:
-        return None
 
     recommendation: str | None
     unavailable_reason: str | None = None
     if len(provided) < len(required):
         missing = [gene for gene in required if gene not in genes]
         recommendation = None
-        unavailable_reason = f"Missing {' and '.join(missing)} genotype"
+        unavailable_reason = f"{' and '.join(missing)} genotype not entered"
     else:
         if len(required) > 1:
             recommendation = _recommend(
@@ -168,6 +166,7 @@ def _interpret_drug(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, An
 
     metadata = _cpic_metadata(drug, required)
     return {
+        "drug_id": drug,
         "drug": _drug_label(drug),
         "required_genes": list(required),
         "provided_genes": provided,
@@ -215,11 +214,7 @@ def interpret(
             if key not in selected:
                 selected.append(key)
 
-    recommendations = [
-        result
-        for drug in selected
-        if (result := _interpret_drug(drug, genes_by_name)) is not None
-    ]
+    recommendations = [_interpret_drug(drug, genes_by_name) for drug in selected]
 
     return {
         "genes": gene_results,
@@ -276,6 +271,11 @@ def validate_genetics(values: dict[str, Any]) -> dict[str, Any]:
             diplotype[field] = allele
         genes[gene] = diplotype
 
+    if available and not genes:
+        raise InvalidGeneticsDataError(
+            "Genetics data is marked available but no gene diplotypes were provided."
+        )
+
     return {"available": available, "genes": genes}
 
 
@@ -315,3 +315,14 @@ def build_options() -> dict[str, Any]:
         "genes": [_gene_options(definition) for definition in get_configured_genes()],
         "drugs": [_drug_options(definition) for definition in get_configured_drugs()],
     }
+
+
+def clear_caches() -> None:
+    """Clear caches derived from the active genetics configuration."""
+    build_options.cache_clear()
+    interpret_gene.cache_clear()
+    _allele_set.cache_clear()
+    _drug_genes.cache_clear()
+    _cpic_metadata.cache_clear()
+    _recommend.cache_clear()
+    _sorted_alleles.cache_clear()

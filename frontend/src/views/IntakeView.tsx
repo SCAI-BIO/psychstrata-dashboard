@@ -1,10 +1,10 @@
 import { ArrowRight, ChevronLeft, Database, FileText, Info, Microscope, Pill, type LucideIcon, ChevronDown } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { usePatient, type PatientApi } from "../context/PatientContext";
 import type { Patient, PatientDemographics } from "../domain/patient";
 import { isStepComplete } from "../domain/patient";
 import type { DashboardApi } from "../hooks/useDashboard";
-import { usePgxOptions } from "../hooks/usePgx";
+import { usePgxOptions, type PgxOptionsState } from "../hooks/usePgx";
 import { parseNumberValue } from "../lib/format";
 
 const STEPS = ["Demographics", "Clinical Properties", "Genetics"] as const;
@@ -57,7 +57,12 @@ function IntakeForm({
   const patientApi = usePatient();
   const { patient } = patientApi;
   const isLast = step === STEPS.length - 1;
-  const canProceed = isStepComplete(step, patient);
+  const pgxOptions = usePgxOptions();
+  const configuredGenes =
+    pgxOptions.state.status === "ready" ? pgxOptions.state.options.genes.map((gene) => gene.gene) : [];
+  const canProceed =
+    isStepComplete(step, patient, configuredGenes) &&
+    (step !== 2 || !patient.genetics.available || pgxOptions.state.status === "ready");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleCalculate = async () => {
@@ -96,7 +101,7 @@ function IntakeForm({
         <div className="mt-6 space-y-6">
           {step === 0 && <DemographicsStep demographics={patient.demographics} onChange={patientApi.updateDemographics} />}
           {step === 1 && <ClinicalStep patient={patient} api={patientApi} />}
-          {step === 2 && <GeneticsStep patient={patient} api={patientApi} />}
+          {step === 2 && <GeneticsStep patient={patient} api={patientApi} optionsState={pgxOptions.state} />}
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-400 mt-4">{error}</p>}
@@ -295,21 +300,19 @@ function ClinicalStep({ patient, api }: { patient: Patient; api: PatientApi }) {
   );
 }
 
-function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
-  const { state: optionsState } = usePgxOptions();
+function GeneticsStep({
+  patient,
+  api,
+  optionsState
+}: {
+  patient: Patient;
+  api: PatientApi;
+  optionsState: PgxOptionsState;
+}) {
   const configuredGenes = optionsState.status === "ready" ? optionsState.options.genes : [];
 
-  useEffect(() => {
-    if (!patient.genetics.available || configuredGenes.length === 0) return;
-    const missing = configuredGenes.filter((gene) => !patient.genetics.genes[gene.gene]);
-    if (missing.length === 0) return;
-    const genes = { ...patient.genetics.genes };
-    for (const gene of missing) genes[gene.gene] = { allele1: "*1", allele2: "*1" };
-    api.updateGenetics({ genes });
-  }, [api, configuredGenes, patient.genetics.available, patient.genetics.genes]);
-
   const updateAllele = (gene: string, index: "allele1" | "allele2", value: string) => {
-    const current = patient.genetics.genes[gene] ?? { allele1: "*1", allele2: "*1" };
+    const current = patient.genetics.genes[gene] ?? { allele1: "", allele2: "" };
     api.updateGenetics({ genes: { ...patient.genetics.genes, [gene]: { ...current, [index]: value } } });
   };
 
@@ -333,32 +336,39 @@ function GeneticsStep({ patient, api }: { patient: Patient; api: PatientApi }) {
           ) : configuredGenes.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">No pharmacogenes are configured.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-5">
-              {configuredGenes.map((gene) => {
-                const diplotype = patient.genetics.genes[gene.gene] ?? { allele1: "*1", allele2: "*1" };
-                const options = Array.from(
-                  new Set([...gene.common_alleles, diplotype.allele1, diplotype.allele2])
-                );
-                return (
-                  <div key={gene.gene} className="contents">
-                    <Field label={`${gene.label} Allele 1`}>
-                      <SelectInput
-                        value={diplotype.allele1}
-                        options={options}
-                        onChange={(v) => updateAllele(gene.gene, "allele1", v)}
-                      />
-                    </Field>
-                    <Field label={`${gene.label} Allele 2`}>
-                      <SelectInput
-                        value={diplotype.allele2}
-                        options={options}
-                        onChange={(v) => updateAllele(gene.gene, "allele2", v)}
-                      />
-                    </Field>
-                  </div>
-                );
-              })}
-            </div>
+            <>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Leave a gene blank to record it as not tested. Both alleles are required for any gene you enter.
+              </p>
+              <div className="grid grid-cols-2 gap-5">
+                {configuredGenes.map((gene) => {
+                  const diplotype = patient.genetics.genes[gene.gene] ?? { allele1: "", allele2: "" };
+                  const options = Array.from(
+                    new Set([...gene.common_alleles, diplotype.allele1, diplotype.allele2].filter(Boolean))
+                  );
+                  return (
+                    <div key={gene.gene} className="contents">
+                      <Field label={`${gene.label} Allele 1`}>
+                        <SelectInput
+                          value={diplotype.allele1}
+                          options={options}
+                          placeholder="Select allele"
+                          onChange={(v) => updateAllele(gene.gene, "allele1", v)}
+                        />
+                      </Field>
+                      <Field label={`${gene.label} Allele 2`}>
+                        <SelectInput
+                          value={diplotype.allele2}
+                          options={options}
+                          placeholder="Select allele"
+                          onChange={(v) => updateAllele(gene.gene, "allele2", v)}
+                        />
+                      </Field>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           ))}
       </WizardCard>
 

@@ -66,7 +66,7 @@ export function createDefaultPatient(clinicalDefaults: Record<string, number> = 
     episodeDurationMonths: null,
     sleepDisturbance: null,
     substanceUse: null,
-    genetics: { available: true, genes: {} },
+    genetics: { available: false, genes: {} },
     proteomics: { available: true }
   };
 }
@@ -143,7 +143,15 @@ function featureValue(patient: Patient, id: string): number | undefined {
   return patient.clinical[id] ?? patient.extras[id];
 }
 
-export function isStepComplete(step: number, patient: Patient): boolean {
+export function isDiplotypeComplete(diplotype: Diplotype | undefined): boolean {
+  return Boolean(diplotype?.allele1.trim() && diplotype?.allele2.trim());
+}
+
+export function isStepComplete(
+  step: number,
+  patient: Patient,
+  configuredGenes: string[] = []
+): boolean {
   switch (step) {
     case 0: {
       const d = patient.demographics;
@@ -151,6 +159,11 @@ export function isStepComplete(step: number, patient: Patient): boolean {
     }
     case 1:
       return ["phq9", "sertraline_mg", "adherence_pct"].every((id) => Number.isFinite(featureValue(patient, id)));
+    case 2: {
+      if (!patient.genetics.available) return true;
+      const genes = configuredGenes.length > 0 ? configuredGenes : Object.keys(patient.genetics.genes);
+      return genes.length > 0 && genes.every((gene) => isDiplotypeComplete(patient.genetics.genes[gene]));
+    }
     default:
       return true;
   }

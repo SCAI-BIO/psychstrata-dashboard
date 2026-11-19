@@ -47,7 +47,13 @@ def _patient_payload(sex_at_birth: int = 2) -> dict:
                 "substance_use": 0,
                 "comorbid_anxiety": 1,
             },
-            "genetics": {"available": True},
+            "genetics": {
+                "available": True,
+                "genes": {
+                    "CYP2C19": {"allele1": "*1", "allele2": "*1"},
+                    "CYP2D6": {"allele1": "*1", "allele2": "*1"},
+                },
+            },
             "proteomics": {"available": False},
         },
     }
@@ -92,7 +98,13 @@ def test_patient_aggregate_crud_and_config_defaults(client: TestClient) -> None:
 
     assert created["clinician_id"] == "clinician"
     assert created["clinical_data"]["clinical_features"]["sex_at_birth"] == 2
-    assert created["clinical_data"]["genetics"] == {"available": True, "genes": {}}
+    assert created["clinical_data"]["genetics"] == {
+        "available": True,
+        "genes": {
+            "CYP2C19": {"allele1": "*1", "allele2": "*1"},
+            "CYP2D6": {"allele1": "*1", "allele2": "*1"},
+        },
+    }
 
     list_response = client.get("/api/patients", auth=_auth())
     assert list_response.status_code == 200
@@ -206,6 +218,54 @@ def test_patient_create_rejects_invalid_genetics(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert "Unknown CYP2C19 allele" in response.json()["detail"]
+
+
+def test_patch_genetics_replaces_diplotypes_and_persists(client: TestClient) -> None:
+    patient = _create_patient(client)
+
+    response = client.patch(
+        f"/api/patients/{patient['id']}/genetics",
+        json={
+            "available": True,
+            "genes": {"CYP2C19": {"allele1": "*1", "allele2": "*2"}},
+        },
+        auth=_auth(),
+    )
+
+    assert response.status_code == 200
+    expected = {
+        "available": True,
+        "genes": {"CYP2C19": {"allele1": "*1", "allele2": "*2"}},
+    }
+    assert response.json()["clinical_data"]["genetics"] == expected
+    persisted = client.get(f"/api/patients/{patient['id']}", auth=_auth())
+    assert persisted.json()["clinical_data"]["genetics"] == expected
+
+
+def test_patch_genetics_rejects_available_without_genes(client: TestClient) -> None:
+    patient = _create_patient(client)
+
+    response = client.patch(
+        f"/api/patients/{patient['id']}/genetics",
+        json={"available": True, "genes": {}},
+        auth=_auth(),
+    )
+
+    assert response.status_code == 422
+    assert "no gene diplotypes" in response.json()["detail"]
+
+
+def test_patch_genetics_rejects_unknown_diplotype_fields(client: TestClient) -> None:
+    patient = _create_patient(client)
+
+    response = client.patch(
+        f"/api/patients/{patient['id']}/genetics",
+        json={"available": True, "genes": {"CYP2C19": {"allele1": "*1", "allele2": "*1", "extra": "*1"}}},
+        auth=_auth(),
+    )
+
+    assert response.status_code == 422
+    assert "Unknown CYP2C19 diplotype fields" in response.json()["detail"]
 
 
 def test_treatment_plan_crud_and_persisted_prediction(client: TestClient) -> None:

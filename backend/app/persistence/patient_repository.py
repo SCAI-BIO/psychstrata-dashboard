@@ -53,6 +53,12 @@ class PatientRepository:
         self._session.commit()
         return patient
 
+    def update_patient_genetics(self, patient: Patient, genetics: dict[str, Any]) -> Patient:
+        patient.clinical_data.genetics = genetics
+        patient.updated_at = utc_now()
+        self._session.commit()
+        return patient
+
     def delete_patient(self, patient: Patient) -> None:
         self._session.delete(patient)
         self._session.commit()

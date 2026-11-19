@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
+from .io.genetics_loader import genetics_source
 from .persistence.database import init_db
 from .persistence.demo_data import seed_demo_data
 from .routes.patients import router as patients_router
@@ -19,7 +20,7 @@ from .routes.predict import router as predict_router
 from .routes.tsne import router as tsne_router
 from .routes.version import router as version_router
 from .security.rate_limit import get_client_ip, limiter
-from .services import errors
+from .services import errors, pgx_service
 from .settings import get_backend_settings
 
 _settings = get_backend_settings()
@@ -35,6 +36,8 @@ logger = logging.getLogger("psychstrata.api")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    pgx_service.build_options()
+    logger.info("Loaded genetics definitions from %s.", genetics_source())
     seed_demo_data()
     yield
 

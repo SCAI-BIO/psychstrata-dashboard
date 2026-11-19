@@ -75,6 +75,27 @@ describe("patientToCreatePayload", () => {
     });
     expect(payload.clinical_data.proteomics).toEqual({ available: true, crp: 3.2 });
   });
+
+  it("drops incomplete diplotypes and marks genetics unavailable when none remain", () => {
+    const patient = basePatient();
+    patient.genetics = {
+      available: true,
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "" },
+        CYP2D6: { allele1: "*4", allele2: "*4" }
+      }
+    };
+    expect(patientToCreatePayload(patient, FEATURES).clinical_data.genetics).toEqual({
+      available: true,
+      genes: { CYP2D6: { allele1: "*4", allele2: "*4" } }
+    });
+
+    patient.genetics = { available: true, genes: {} };
+    expect(patientToCreatePayload(patient, FEATURES).clinical_data.genetics).toEqual({
+      available: false,
+      genes: {}
+    });
+  });
 });
 
 describe("treatmentPlanFromCurrentRegimen", () => {
@@ -112,7 +133,7 @@ describe("recordToPatient", () => {
     expect(patient.demographics.dob).toBe("1980-01-01");
     expect(patient.demographics.gender).toBe("Female");
     expect(patient.demographics.diagnosis).toBe("F33.1");
-    expect(patient.genetics).toEqual({ available: true, genes: {} });
+    expect(patient.genetics).toEqual({ available: false, genes: {} });
     expect(patient.proteomics).toEqual({ available: false });
   });
 

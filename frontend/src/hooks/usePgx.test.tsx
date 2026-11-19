@@ -76,17 +76,31 @@ describe("usePgxInterpretation", () => {
     expect(mockedFetchInterpretation).toHaveBeenCalledWith({ genes: wildType.genes });
   });
 
-  it("sends only the genes that have a diplotype", async () => {
+  it("sends only complete diplotypes", async () => {
     mockedFetchInterpretation.mockResolvedValue(pgxInterpretResponse);
 
     const { result } = renderHook(() =>
-      usePgxInterpretation({ available: true, genes: { CYP2C19: { allele1: "*1", allele2: "*2" } } })
+      usePgxInterpretation({
+        available: true,
+        genes: {
+          CYP2C19: { allele1: "*1", allele2: "*2" },
+          CYP2D6: { allele1: "*4", allele2: "" }
+        }
+      })
     );
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(mockedFetchInterpretation).toHaveBeenCalledWith({
       genes: { CYP2C19: { allele1: "*1", allele2: "*2" } }
     });
+  });
+
+  it("is idle when every diplotype is incomplete", () => {
+    const { result } = renderHook(() =>
+      usePgxInterpretation({ available: true, genes: { CYP2C19: { allele1: "", allele2: "*2" } } })
+    );
+    expect(result.current).toEqual({ status: "idle" });
+    expect(mockedFetchInterpretation).not.toHaveBeenCalled();
   });
 
   it("refetches when an allele changes", async () => {

@@ -101,8 +101,26 @@ describe("isStepComplete", () => {
     expect(isStepComplete(1, complete)).toBe(true);
   });
 
-  it("treats later steps as always complete", () => {
-    expect(isStepComplete(2, createDefaultPatient())).toBe(true);
+  it("skips the genetics requirement when data is unavailable", () => {
+    expect(isStepComplete(2, createDefaultPatient(), ["CYP2C19", "CYP2D6"])).toBe(true);
+  });
+
+  it("requires a complete diplotype for every configured gene", () => {
+    const patient = {
+      ...createDefaultPatient(),
+      genetics: { available: true, genes: { CYP2C19: { allele1: "*1", allele2: "*2" } } }
+    };
+    expect(isStepComplete(2, patient, ["CYP2C19", "CYP2D6"])).toBe(false);
+    expect(isStepComplete(2, patient, ["CYP2C19"])).toBe(true);
+  });
+
+  it("does not treat available genetics with no diplotypes as complete", () => {
+    const patient = { ...createDefaultPatient(), genetics: { available: true, genes: {} } };
+    expect(isStepComplete(2, patient)).toBe(false);
+  });
+
+  it("treats steps after genetics as always complete", () => {
+    expect(isStepComplete(3, createDefaultPatient())).toBe(true);
   });
 });
 

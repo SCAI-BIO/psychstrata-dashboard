@@ -31,6 +31,7 @@ class GeneInterpretation(BaseModel):
 
 
 class DrugRecommendation(BaseModel):
+    drug_id: str
     drug: str
     required_genes: list[str]
     provided_genes: list[str]

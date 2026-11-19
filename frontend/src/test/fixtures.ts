@@ -149,6 +149,7 @@ export const pgxInterpretResponse: PgxInterpretResponse = {
   ],
   drug_recommendations: [
     {
+      drug_id: "sertraline",
       drug: "Sertraline",
       required_genes: ["CYP2C19"],
       provided_genes: ["CYP2C19"],
@@ -161,6 +162,7 @@ export const pgxInterpretResponse: PgxInterpretResponse = {
       pmids: ["34298517"]
     },
     {
+      drug_id: "amitriptyline",
       drug: "Amitriptyline",
       required_genes: ["CYP2C19", "CYP2D6"],
       provided_genes: ["CYP2C19", "CYP2D6"],
@@ -191,6 +193,13 @@ export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
     episodeDurationMonths: 8,
     sleepDisturbance: "Mild",
     substanceUse: "None",
+    genetics: {
+      available: true,
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*1" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
+    },
     ...overrides
   };
 }

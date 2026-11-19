@@ -59,7 +59,7 @@ describe("GeneticsCard", () => {
 
     expect(screen.getByText("Sertraline")).toBeInTheDocument();
     expect(screen.getByText("Start with the recommended standard dose.")).toBeInTheDocument();
-    expect(screen.getByText("CPIC Level A · Final")).toBeInTheDocument();
+    expect(screen.getAllByText("CPIC Level A · Final")).toHaveLength(2);
     expect(screen.getByRole("link", { name: /Guideline/ })).toHaveAttribute(
       "href",
       "https://cpicpgx.org/guidelines/"
@@ -70,8 +70,31 @@ describe("GeneticsCard", () => {
     );
 
     expect(screen.getByText(/No CPIC guidance in this demo for lithium/)).toBeInTheDocument();
-    expect(screen.queryByText("Amitriptyline")).not.toBeInTheDocument();
+    expect(screen.getByText("CPIC Starting-Dose Guidance")).toBeInTheDocument();
+    expect(screen.getByText(/recommended starting doses/)).toBeInTheDocument();
+    expect(screen.getAllByText("Standard")).toHaveLength(2);
+    expect(screen.getByText("Other configured medications with CPIC guidance")).toBeInTheDocument();
+    expect(screen.getByText("Amitriptyline")).toBeInTheDocument();
     expect(screen.getByText(pgxInterpretResponse.disclaimer)).toBeInTheDocument();
+  });
+
+  it("marks avoid recommendations distinctly", () => {
+    pgx.state = {
+      status: "ready",
+      result: {
+        ...pgxInterpretResponse,
+        drug_recommendations: [
+          {
+            ...pgxInterpretResponse.drug_recommendations[0],
+            recommendation: "Avoid use of sertraline."
+          }
+        ]
+      }
+    };
+    const patient = makeCompletePatient();
+    patient.clinical = { ...patient.clinical, sertraline_mg: 100 };
+    render(<GeneticsCard patient={patient} />);
+    expect(screen.getByText("Avoid")).toBeInTheDocument();
   });
 
   it("notes when there are no active medications", () => {

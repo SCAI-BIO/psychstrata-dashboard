@@ -123,11 +123,11 @@ Plain SQLAlchemy 2.0 maps three entities:
 - `Patient` and its one-to-one `PatientClinicalData`
 - `TreatmentPlan`, including medication and adherence values
 
-Configured clinical, medication, and adherence values are stored as JSON objects and validated against the feature configuration. Clinical data is fixed when the patient is created; patient updates only change the patient's name. Age is derived from date of birth when a persisted treatment plan is submitted for prediction. The current version stores only the latest assessment and treatment-plan state.
+Configured clinical, medication, and adherence values are stored as JSON objects and validated against the feature configuration. Clinical data other than genetics is fixed when the patient is created; patient updates only change the patient's name, while `PATCH /api/patients/{id}/genetics` updates the genetics object. Age is derived from date of birth when a persisted treatment plan is submitted for prediction. The current version stores only the latest assessment and treatment-plan state.
 
 The current version supports one clinician. When Basic Auth is enabled, the configured username is stored as `clinician_id`; when auth is disabled for local development, records use `default-clinician`. Patient deletion cascades through clinical data and treatment plans.
 
-At startup, the backend idempotently creates two demo patients for the configured clinician, each with three treatment plans: `Max Mustermann` (CYP2C19 `*1/*2`, CYP2D6 `*1/*1`) and `Erika Mustermann` (CYP2C19 `*2/*2`, CYP2D6 `*1/*4`, which yields a reduced-dose sertraline recommendation). Stable IDs prevent duplicate demo records across restarts.
+At startup, the backend idempotently creates two demo patients for the configured clinician, each with three treatment plans: `Max Mustermann` (CYP2C19 `*1/*2`, CYP2D6 `*1/*1`) and `Erika Mustermann` (CYP2C19 `*2/*2`, a poor metabolizer that yields a reduced-dose sertraline recommendation; CYP2D6 `*1/*4`). Demo genetics are derived from the active genetics configuration, and existing valid demo genetics are preserved across restarts. Stable IDs prevent duplicate demo records.
 
 This development-stage schema does not include migrations. If a local `db.sqlite3` was created by the previous SQLModel implementation, recreate that database before starting this version.
 
@@ -135,7 +135,7 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
 - `LLM_PROVIDER_URL` (optional LLM endpoint URL; defaults to FHGenie at `https://fhgenie.fraunhofer.de/v1`)
-- `LLM_PROVIDER_MODEL` (optional model name; defaults to `deepseek-ai/DeepSeek-V4.1-Flash`)
+- `LLM_PROVIDER_MODEL` (optional model name; defaults to `Qwen/Qwen3-Coder-Next-FP8`)
 - `LLM_PROVIDER_KEY` (optional provider API key; required for hosted providers such as FHGenie)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
@@ -180,7 +180,7 @@ You can also set it in `BACKEND_CONFIG_FILE`.
 }
 ```
 
-Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; configured drugs must have CPIC recommendations. The configuration is validated lazily on the first genetics request, so invalid entries fail startup-independent requests with a clear error.
+Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; configured drugs must have CPIC recommendations. The configuration is validated during application startup, so invalid entries fail fast with a clear error.
 
 ## Tests
 

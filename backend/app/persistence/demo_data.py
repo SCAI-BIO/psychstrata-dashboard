@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 
 from .patient_record import Patient, PatientClinicalData, TreatmentPlan
 from ..io.feature_loader import validate_feature_values
+from ..io.genetics_loader import get_configured_genes
 from ..security.basic_auth import DEFAULT_CLINICIAN_ID
+from ..services import pgx_service
+from ..services.errors import InvalidGeneticsDataError
 from ..settings import get_backend_settings
 from .database import get_session_factory
 
@@ -84,6 +87,32 @@ SECOND_DEMO_TREATMENT_PLANS = (
 )
 
 
+def _demo_genetics(preferred: dict[str, Any] | None = None) -> dict[str, Any]:
+    preferred_genes = (preferred or {}).get("genes", {})
+    genes: dict[str, dict[str, str]] = {}
+    for definition in get_configured_genes():
+        pair = preferred_genes.get(definition.id)
+        if pair is not None and all(
+            pair.get(field) in definition.common_alleles for field in ("allele1", "allele2")
+        ):
+            genes[definition.id] = {
+                "allele1": pair["allele1"],
+                "allele2": pair["allele2"],
+            }
+            continue
+        allele = definition.common_alleles[0]
+        genes[definition.id] = {"allele1": allele, "allele2": allele}
+    return pgx_service.validate_genetics({"available": True, "genes": genes})
+
+
+def _genetics_are_valid(genetics: dict[str, Any]) -> bool:
+    try:
+        pgx_service.validate_genetics(genetics)
+    except InvalidGeneticsDataError:
+        return False
+    return True
+
+
 def _upsert_patient(
     session: Session,
     *,
@@ -113,7 +142,7 @@ def _upsert_patient(
         session.add(patient)
     else:
         patient.clinician_id = clinician_id
-        if patient.clinical_data is not None:
+        if patient.clinical_data is not None and not _genetics_are_valid(patient.clinical_data.genetics):
             patient.clinical_data.genetics = genetics
     return patient
 
@@ -170,7 +199,7 @@ def seed_demo_data() -> None:
             date_of_birth=date(1980, 5, 15),
             diagnosis="F33.1",
             clinical_features=clinical_defaults,
-            genetics=DEMO_GENETICS,
+            genetics=_demo_genetics(DEMO_GENETICS),
         )
         _upsert_treatment_plans(
             session,
@@ -192,7 +221,7 @@ def seed_demo_data() -> None:
                 SECOND_DEMO_CLINICAL_FEATURES,
                 include_defaults=True,
             ),
-            genetics=SECOND_DEMO_GENETICS,
+            genetics=_demo_genetics(SECOND_DEMO_GENETICS),
         )
         _upsert_treatment_plans(
             session,

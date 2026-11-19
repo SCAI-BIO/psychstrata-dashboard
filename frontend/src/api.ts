@@ -101,12 +101,31 @@ export type PatientRead = {
   updated_at: string;
 };
 
+export type PatientGeneticsPayload = {
+  available: boolean;
+  genes: Record<string, PgxDiplotype>;
+};
+
 export function createPatient(payload: PatientCreatePayload): Promise<PatientRead> {
   return requestJson<PatientRead>("/api/patients", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
+}
+
+export function updatePatientGenetics(
+  patientId: string,
+  payload: PatientGeneticsPayload
+): Promise<PatientRead> {
+  return requestJson<PatientRead>(
+    `/api/patients/${encodeURIComponent(patientId)}/genetics`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  );
 }
 
 export type FeaturesResponse = {
@@ -233,6 +252,7 @@ export type PgxGeneInterpretation = {
 };
 
 export type PgxDrugRecommendation = {
+  drug_id: string;
   drug: string;
   required_genes: string[];
   provided_genes: string[];

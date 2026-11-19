@@ -41,25 +41,19 @@ def test_interpret_keeps_request_order_and_deduplicates_drugs() -> None:
     assert drugs == ["Ondansetron", "Codeine"]
 
 
-def test_interpret_returns_only_drugs_with_a_provided_gene() -> None:
+def test_interpret_returns_every_configured_drug_and_flags_missing_genotypes() -> None:
     result = pgx_service.interpret({"CYP2C19": ("*1", "*1")})
 
-    assert {item["drug"] for item in result["drug_recommendations"]} == {
-        "Escitalopram",
-        "Citalopram",
-        "Sertraline",
-        "Amitriptyline",
-        "Clomipramine",
-        "Doxepin",
-        "Imipramine",
-        "Trimipramine",
-    }
-    for item in result["drug_recommendations"]:
-        if item["required_genes"] == ["CYP2C19"]:
-            assert item["status"] == "available"
-        else:
+    drugs = result["drug_recommendations"]
+    assert len(drugs) == len(pgx_service.build_options()["drugs"])
+    assert len({item["drug_id"] for item in drugs}) == len(drugs)
+    for item in drugs:
+        if "CYP2D6" in item["required_genes"]:
             assert item["status"] == "unavailable"
-            assert item["unavailable_reason"] == "Missing CYP2D6 genotype"
+            assert item["unavailable_reason"] == "CYP2D6 genotype not entered"
+        else:
+            assert item["status"] == "available"
+            assert item["unavailable_reason"] is None
 
 
 def test_build_options_is_cached_and_consistent() -> None:

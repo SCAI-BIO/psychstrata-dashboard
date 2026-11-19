@@ -6,7 +6,7 @@ import {
   type PgxInterpretResponse,
   type PgxOptionsResponse
 } from "../api";
-import type { PatientGenetics } from "../domain/patient";
+import { isDiplotypeComplete, type PatientGenetics } from "../domain/patient";
 
 export type PgxOptionsState =
   | { status: "loading" }
@@ -56,7 +56,9 @@ export type PgxInterpretationState =
  * or no diplotype has been entered; refetches only when an allele changes.
  */
 export function usePgxInterpretation(genetics: PatientGenetics): PgxInterpretationState {
-  const entries = Object.entries(genetics.genes).sort(([left], [right]) => left.localeCompare(right));
+  const entries = Object.entries(genetics.genes)
+    .filter(([, diplotype]) => isDiplotypeComplete(diplotype))
+    .sort(([left], [right]) => left.localeCompare(right));
   const hasDiplotype = genetics.available && entries.length > 0;
   const alleleKey = hasDiplotype
     ? entries.map(([gene, diplotype]) => `${gene}:${diplotype.allele1}/${diplotype.allele2}`).join("|")

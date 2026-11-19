@@ -1,11 +1,18 @@
 import type {
   FeatureSchema,
   PatientCreatePayload,
+  PatientGeneticsPayload,
   PatientRecord,
   TreatmentPlanCreatePayload,
   TreatmentPlanRecord
 } from "../api";
-import { createDefaultPatient, type Diplotype, type Patient, type PatientGenetics } from "../domain/patient";
+import {
+  createDefaultPatient,
+  isDiplotypeComplete,
+  type Diplotype,
+  type Patient,
+  type PatientGenetics
+} from "../domain/patient";
 
 /** Ids the backend derives itself (age comes from date_of_birth) and rejects if sent. */
 const DERIVED_FEATURE_IDS = new Set(["age"]);
@@ -21,6 +28,14 @@ export function clinicalFeaturesFor(patient: Patient, features: FeatureSchema[])
   return out;
 }
 
+export function patientToGeneticsPayload(patient: Patient): PatientGeneticsPayload {
+  const genes = Object.fromEntries(
+    Object.entries(patient.genetics.genes).filter(([, diplotype]) => isDiplotypeComplete(diplotype))
+  );
+  const available = patient.genetics.available && Object.keys(genes).length > 0;
+  return { available, genes: available ? genes : {} };
+}
+
 export function patientToCreatePayload(patient: Patient, features: FeatureSchema[]): PatientCreatePayload {
   const d = patient.demographics;
   return {
@@ -30,10 +45,7 @@ export function patientToCreatePayload(patient: Patient, features: FeatureSchema
       date_of_birth: d.dob ?? "",
       diagnosis: (d.diagnosis ?? "").trim(),
       clinical_features: clinicalFeaturesFor(patient, features),
-      genetics: {
-        available: patient.genetics.available,
-        genes: { ...patient.genetics.genes }
-      },
+      genetics: patientToGeneticsPayload(patient),
       proteomics: { ...patient.proteomics }
     }
   };
@@ -79,12 +91,14 @@ const LEGACY_GENE_IDS: Record<string, string> = {
 
 /** Restore saved genetics, keeping only well-formed diplotypes. */
 function geneticsFromRecord(raw: Record<string, unknown>): PatientGenetics {
-  const genetics: PatientGenetics = { available: Boolean(raw.available), genes: {} };
+  const genetics: PatientGenetics = { available: false, genes: {} };
 
   if (typeof raw.genes === "object" && raw.genes !== null && !Array.isArray(raw.genes)) {
-    for (const [gene, value] of Object.entries(raw.genes as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(raw.genes as Record<string, unknown>)) {
+      const name = key.trim();
+      const gene = LEGACY_GENE_IDS[name.toLowerCase()] ?? name;
       const diplotype = readDiplotype(value);
-      if (gene.trim() && diplotype) genetics.genes[gene] = diplotype;
+      if (gene && diplotype) genetics.genes[gene] = diplotype;
     }
   }
 
@@ -93,6 +107,7 @@ function geneticsFromRecord(raw: Record<string, unknown>): PatientGenetics {
     if (diplotype && !genetics.genes[gene]) genetics.genes[gene] = diplotype;
   }
 
+  genetics.available = Boolean(raw.available) && Object.keys(genetics.genes).length > 0;
   return genetics;
 }
 
