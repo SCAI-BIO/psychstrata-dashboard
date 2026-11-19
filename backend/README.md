@@ -180,7 +180,9 @@ You can also set it in `BACKEND_CONFIG_FILE`.
 }
 ```
 
-Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; configured drugs must have CPIC recommendations. The configuration is validated during application startup, so invalid entries fail fast with a clear error.
+Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; the default configured drugs are covered by bundled CPIC recommendations. The configuration is validated during application startup, so invalid entries fail fast with a clear error.
+
+Recommendation text is reproduced verbatim from the bundled CPIC snapshot in `app/defaults/cpic_recommendations.json`. Each recommendation includes its CPIC id and classification, and the API response includes the CPIC source and retrieval date. CPIC guidance describes recommended starting doses at therapy initiation; it is not advice to adjust an existing dose, and the backend does not call CPIC at runtime. To refresh the snapshot, fetch the recommendations for the configured drugs from the CPIC API and update the snapshot's `recommendations` and `retrieved_at` fields. Drugs from a custom configuration that are absent from the snapshot are reported as having no bundled CPIC recommendation.
 
 ## Tests
 

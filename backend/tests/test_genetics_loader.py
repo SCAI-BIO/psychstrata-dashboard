@@ -23,13 +23,11 @@ def _reset_configuration(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("BACKEND_CONFIG_FILE", raising=False)
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
     yield
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
 
 
 def _write_config(
@@ -55,8 +53,7 @@ def _use_config(monkeypatch: pytest.MonkeyPatch, path: Path) -> None:
     monkeypatch.setenv("GENETICS_CONFIG_PATH", str(path))
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
 
 
 def test_builtin_defaults_are_used_without_override() -> None:
@@ -150,3 +147,24 @@ def test_validate_genetics_enforces_configured_genes(tmp_path: Path, monkeypatch
         )
     with pytest.raises(InvalidGeneticsDataError, match="availability must be a boolean"):
         pgx_service.validate_genetics({"available": "yes"})
+
+
+def test_interpret_reports_no_guidance_for_drug_outside_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_config(
+        monkeypatch,
+        _write_config(
+            tmp_path,
+            genes=[{"id": "CYP2D6", "label": "CYP2D6", "common_alleles": ["*1", "*4"]}],
+            drugs=[{"id": "tropisetron", "label": "Tropisetron"}],
+        ),
+    )
+
+    result = pgx_service.interpret({"CYP2D6": ("*1", "*4")})
+
+    recommendation = result["drug_recommendations"][0]
+    assert recommendation["status"] == "unavailable"
+    assert recommendation["recommendation"] is None
+    assert recommendation["recommendation_source"] is None
+    assert recommendation["unavailable_reason"] == "No bundled CPIC recommendation for this drug"

@@ -259,6 +259,9 @@ export type PgxDrugRecommendation = {
   status: "available" | "unavailable";
   recommendation: string | null;
   unavailable_reason: string | null;
+  recommendation_source: string | null;
+  cpic_recommendation_id: number | null;
+  cpic_classification: string | null;
   guideline: string | null;
   cpic_level: string | null;
   cpic_level_status: string | null;
@@ -268,6 +271,8 @@ export type PgxDrugRecommendation = {
 export type PgxInterpretResponse = {
   genes: PgxGeneInterpretation[];
   drug_recommendations: PgxDrugRecommendation[];
+  recommendation_source: string;
+  recommendation_retrieved_at: string;
   disclaimer: string;
 };
 

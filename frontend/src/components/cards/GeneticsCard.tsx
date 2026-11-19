@@ -161,8 +161,9 @@ export function GeneticsCard({ patient }: { patient: Patient }) {
         <div>
           <SectionLabel>CPIC Starting-Dose Guidance</SectionLabel>
           <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-            CPIC guidance describes recommended starting doses for therapy initiation. It is not advice to adjust a
-            patient&apos;s current dose.
+            {state.result.recommendation_source} recommendation text is reproduced verbatim (retrieved{" "}
+            {state.result.recommendation_retrieved_at}). CPIC guidance describes recommended starting doses for therapy
+            initiation; it is not advice to adjust a patient&apos;s current dose.
           </p>
           {matching.length > 0 ? (
             <ul>{matching.map((rec) => <DrugRow key={rec.drug_id ?? rec.drug} recommendation={rec} />)}</ul>

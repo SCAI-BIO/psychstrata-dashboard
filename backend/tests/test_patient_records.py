@@ -202,7 +202,9 @@ def test_demo_patients_receive_different_sertraline_guidance() -> None:
     max_recommendation = sertraline_recommendation(DEMO_GENETICS)
     erika_recommendation = sertraline_recommendation(SECOND_DEMO_GENETICS)
 
-    assert max_recommendation == "Initiate therapy with recommended starting dose."
+    assert max_recommendation is not None
+    assert max_recommendation.startswith("Initiate therapy with recommended starting dose")
+    assert "slower titration" in max_recommendation
     assert erika_recommendation is not None
     assert "50% reduction" in erika_recommendation
 

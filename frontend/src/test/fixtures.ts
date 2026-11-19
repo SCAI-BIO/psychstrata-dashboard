@@ -156,6 +156,9 @@ export const pgxInterpretResponse: PgxInterpretResponse = {
       status: "available",
       recommendation: "Start with the recommended standard dose.",
       unavailable_reason: null,
+      recommendation_source: "CPIC",
+      cpic_recommendation_id: 8608706,
+      cpic_classification: "Moderate",
       guideline: "https://cpicpgx.org/guidelines/",
       cpic_level: "A",
       cpic_level_status: "Final",
@@ -169,12 +172,17 @@ export const pgxInterpretResponse: PgxInterpretResponse = {
       status: "available",
       recommendation: "Use the standard dose.",
       unavailable_reason: null,
+      recommendation_source: "CPIC",
+      cpic_recommendation_id: 8608707,
+      cpic_classification: "Strong",
       guideline: null,
       cpic_level: "A",
       cpic_level_status: "Final",
       pmids: []
     }
   ],
+  recommendation_source: "CPIC",
+  recommendation_retrieved_at: "2026-11-19",
   disclaimer: "Pharmacogenetic interpretation based on CPIC guidance."
 };
 

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import math
+import re
 import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import pypgx
@@ -24,6 +27,42 @@ DISCLAIMER = (
 )
 
 _CPIC_LEVEL_RANK = {"A": 0, "B": 1, "C": 2, "D": 3}
+_CPIC_SNAPSHOT_PATH = Path(__file__).resolve().parents[1] / "defaults" / "cpic_recommendations.json"
+_NUMERIC_LOOKUP = re.compile(r"^(?P<operator>≥|>=)?(?P<value>\d+(?:\.\d+)?)$")
+
+
+@lru_cache(maxsize=1)
+def _cpic_snapshot() -> dict[str, Any]:
+    try:
+        payload = json.loads(_CPIC_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise RuntimeError(f"Could not read bundled CPIC recommendations: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Bundled CPIC recommendations are not valid JSON: {exc}") from exc
+
+    rows = payload.get("recommendations")
+    if not isinstance(rows, list) or not rows:
+        raise RuntimeError("Bundled CPIC recommendations must contain a non-empty recommendations list.")
+
+    by_drug: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("drug"), str):
+            raise RuntimeError("Bundled CPIC recommendation rows must include a drug id.")
+        if not isinstance(row.get("phenotypes"), dict) or not isinstance(row.get("lookupkey"), dict):
+            raise RuntimeError(f"Bundled CPIC row {row.get('id')!r} is missing phenotype lookup data.")
+        if not isinstance(row.get("drugrecommendation"), str) or not isinstance(row.get("population"), str):
+            raise RuntimeError(f"Bundled CPIC row {row.get('id')!r} is incomplete.")
+        by_drug.setdefault(row["drug"], []).append(row)
+
+    retrieved_at = payload.get("retrieved_at")
+    if not isinstance(retrieved_at, str) or not retrieved_at:
+        raise RuntimeError("Bundled CPIC recommendations must include a retrieved_at date.")
+
+    return {
+        "source": str(payload.get("source") or "CPIC"),
+        "retrieved_at": retrieved_at,
+        "by_drug": by_drug,
+    }
 
 
 @lru_cache(maxsize=None)
@@ -45,8 +84,19 @@ def _is_valid_allele(gene: str, allele: str) -> bool:
     return not math.isnan(score)
 
 
+def _cpic_rows(drug: str) -> tuple[dict[str, Any], ...]:
+    return tuple(_cpic_snapshot()["by_drug"].get(drug, ()))
+
+
+def _cpic_gene_ids(drug: str) -> tuple[str, ...]:
+    genes: set[str] = set()
+    for row in _cpic_rows(drug):
+        genes.update(row["phenotypes"])
+    return tuple(sorted(genes))
+
+
 @lru_cache(maxsize=None)
-def _drug_genes(drug: str) -> tuple[str, ...]:
+def _pypgx_drug_genes(drug: str) -> tuple[str, ...]:
     table = pypgx.load_recommendation_table()
     rows = table[table.Drug == drug]
     if rows.empty:
@@ -56,6 +106,19 @@ def _drug_genes(drug: str) -> tuple[str, ...]:
         if gene != "None" and gene not in genes:
             genes.append(gene)
     return tuple(genes)
+
+
+@lru_cache(maxsize=None)
+def _drug_genes(drug: str) -> tuple[str, ...]:
+    cpic_genes = _cpic_gene_ids(drug)
+    if not cpic_genes:
+        return _pypgx_drug_genes(drug)
+
+    configured = set(get_configured_gene_ids())
+    genes = tuple(gene for gene in cpic_genes if gene in configured)
+    if not genes:
+        raise InvalidGeneticsDataError(f"Drug {drug!r} has no configured gene with CPIC guidance.")
+    return genes
 
 
 @lru_cache(maxsize=None)
@@ -122,47 +185,109 @@ def interpret_gene(gene: str, allele1: str, allele2: str) -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=512)
-def _recommend(
-    drug: str,
-    gene1: str,
-    phenotype1: str,
-    gene2: str | None = None,
-    phenotype2: str | None = None,
-) -> str | None:
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            text = pypgx.get_recommendation(drug, gene1, phenotype1, gene2, phenotype2)
-    except (KeyError, IndexError, ValueError) as exc:
-        raise InvalidGeneticsDataError(f"No recommendation for {drug}: {exc}") from exc
-    text = str(text).strip()
-    return None if not text or text == "None" else text
+def _parse_numeric_lookup(value: str) -> tuple[bool, float] | None:
+    match = _NUMERIC_LOOKUP.fullmatch(value.strip())
+    if match is None:
+        return None
+    return match.group("operator") is not None, float(match.group("value"))
+
+
+def _row_match_quality(
+    row: dict[str, Any],
+    phenotypes: dict[str, str],
+    activity_scores: dict[str, float | None],
+) -> tuple[int, float] | None:
+    exact = True
+    threshold = -math.inf
+    for gene, lookup in row["lookupkey"].items():
+        if not isinstance(lookup, str):
+            return None
+        numeric = _parse_numeric_lookup(lookup)
+        if numeric is None:
+            if lookup == "n/a":
+                if phenotypes.get(gene) != "Indeterminate":
+                    return None
+                continue
+            if phenotypes.get(gene, "No Result") != lookup:
+                return None
+            continue
+
+        is_threshold, target = numeric
+        score = activity_scores.get(gene)
+        if score is None:
+            return None
+        if is_threshold:
+            exact = False
+            if score < target:
+                return None
+            threshold = max(threshold, target)
+        elif not math.isclose(score, target, rel_tol=0, abs_tol=1e-9):
+            return None
+    return (0 if exact else 1, -threshold)
+
+
+def _preferred_population(drug: str) -> str | None:
+    populations = {row["population"] for row in _cpic_rows(drug)}
+    if "adults" in populations:
+        return "adults"
+    if "general" in populations:
+        return "general"
+    return sorted(populations)[0] if populations else None
+
+
+def _select_recommendation(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    rows = _cpic_rows(drug)
+    if not rows:
+        return None
+
+    population = _preferred_population(drug)
+    phenotypes = {gene: result["phenotype"] for gene, result in genes.items()}
+    for gene in _cpic_gene_ids(drug):
+        phenotypes.setdefault(gene, "No Result")
+    activity_scores = {gene: result["activity_score"] for gene, result in genes.items()}
+
+    candidates: list[tuple[tuple[int, float], str, dict[str, Any]]] = []
+    for row in rows:
+        if population is not None and row["population"] != population:
+            continue
+        quality = _row_match_quality(row, phenotypes, activity_scores)
+        if quality is not None:
+            candidates.append((quality, str(row.get("id", "")), row))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda candidate: (candidate[0], candidate[1]))
+    return candidates[0][2]
 
 
 def _interpret_drug(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, Any]:
     required = _drug_genes(drug)
     provided = [gene for gene in required if gene in genes]
 
-    recommendation: str | None
+    recommendation: str | None = None
     unavailable_reason: str | None = None
+    recommendation_id: Any = None
+    classification: str | None = None
+
     if len(provided) < len(required):
         missing = [gene for gene in required if gene not in genes]
-        recommendation = None
         unavailable_reason = f"{' and '.join(missing)} genotype not entered"
     else:
-        if len(required) > 1:
-            recommendation = _recommend(
-                drug,
-                required[0],
-                genes[required[0]]["phenotype"],
-                required[1],
-                genes[required[1]]["phenotype"],
+        row = _select_recommendation(drug, genes)
+        if row is None:
+            unavailable_reason = (
+                "No CPIC guidance for this phenotype combination"
+                if _cpic_rows(drug)
+                else "No bundled CPIC recommendation for this drug"
             )
         else:
-            recommendation = _recommend(drug, required[0], genes[required[0]]["phenotype"])
-        if recommendation is None:
-            unavailable_reason = "No CPIC guidance for this phenotype combination"
+            recommendation_id = row.get("id")
+            classification = row.get("classification")
+            text = row["drugrecommendation"].strip()
+            if text and text.lower() != "no recommendation" and classification != "No Recommendation":
+                recommendation = text
+
+    if recommendation is None and unavailable_reason is None:
+        unavailable_reason = "No CPIC guidance for this phenotype combination"
 
     metadata = _cpic_metadata(drug, required)
     return {
@@ -173,6 +298,9 @@ def _interpret_drug(drug: str, genes: dict[str, dict[str, Any]]) -> dict[str, An
         "status": "available" if recommendation else "unavailable",
         "recommendation": recommendation,
         "unavailable_reason": unavailable_reason,
+        "recommendation_source": "CPIC" if recommendation else None,
+        "cpic_recommendation_id": recommendation_id,
+        "cpic_classification": classification,
         "guideline": metadata["guideline"],
         "cpic_level": metadata["cpic_level"],
         "cpic_level_status": metadata["cpic_level_status"],
@@ -215,10 +343,13 @@ def interpret(
                 selected.append(key)
 
     recommendations = [_interpret_drug(drug, genes_by_name) for drug in selected]
+    snapshot = _cpic_snapshot()
 
     return {
         "genes": gene_results,
         "drug_recommendations": recommendations,
+        "recommendation_source": snapshot["source"],
+        "recommendation_retrieved_at": snapshot["retrieved_at"],
         "disclaimer": DISCLAIMER,
     }
 
@@ -304,7 +435,7 @@ def _drug_options(definition: DrugDefinition) -> dict[str, Any]:
         genes = list(_drug_genes(definition.id))
     except InvalidGeneticsDataError as exc:
         raise RuntimeError(
-            f"Genetics config drug {definition.id!r} is not supported by pypgx."
+            f"Genetics config drug {definition.id!r} is not supported by pypgx: {exc}"
         ) from exc
     return {"drug": definition.id, "label": definition.label, "genes": genes}
 
@@ -323,6 +454,7 @@ def clear_caches() -> None:
     interpret_gene.cache_clear()
     _allele_set.cache_clear()
     _drug_genes.cache_clear()
+    _pypgx_drug_genes.cache_clear()
     _cpic_metadata.cache_clear()
-    _recommend.cache_clear()
+    _cpic_snapshot.cache_clear()
     _sorted_alleles.cache_clear()

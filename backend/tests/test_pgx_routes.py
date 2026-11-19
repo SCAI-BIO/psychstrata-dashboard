@@ -18,16 +18,14 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("RATE_LIMIT_STORAGE_URI", "memory://")
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
     limiter.reset()
     with TestClient(app) as test_client:
         yield test_client
     limiter.reset()
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
 
 
 def _auth() -> tuple[str, str]:
@@ -81,8 +79,7 @@ def test_options_reflect_configured_genetics(
     monkeypatch.setenv("GENETICS_CONFIG_PATH", str(config_path))
     _reset_backend_settings_for_tests()
     _reset_genetics_loader_for_tests()
-    pgx_service.build_options.cache_clear()
-    pgx_service.interpret_gene.cache_clear()
+    pgx_service.clear_caches()
 
     options = client.get("/api/pgx/options", auth=_auth())
     assert options.status_code == 200
@@ -123,10 +120,15 @@ def test_interpret_returns_phenotypes_and_recommendations(client: TestClient) ->
 
     drugs = {drug["drug"]: drug for drug in body["drug_recommendations"]}
     assert set(drugs) == {"Amitriptyline", "Sertraline"}
+    assert body["recommendation_source"] == "CPIC"
+    assert body["recommendation_retrieved_at"]
     assert drugs["Amitriptyline"]["status"] == "available"
     assert drugs["Amitriptyline"]["required_genes"] == ["CYP2C19", "CYP2D6"]
     assert "amitriptyline" in drugs["Amitriptyline"]["recommendation"].lower()
     assert drugs["Amitriptyline"]["cpic_level"] == "A"
+    assert drugs["Amitriptyline"]["cpic_classification"]
+    assert isinstance(drugs["Amitriptyline"]["cpic_recommendation_id"], int)
+    assert drugs["Amitriptyline"]["recommendation_source"] == "CPIC"
     assert drugs["Amitriptyline"]["pmids"]
     assert drugs["Sertraline"]["status"] == "available"
     assert "disclaimer" in body

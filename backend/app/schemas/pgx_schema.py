@@ -38,6 +38,9 @@ class DrugRecommendation(BaseModel):
     status: Literal["available", "unavailable"]
     recommendation: str | None
     unavailable_reason: str | None
+    recommendation_source: str | None
+    cpic_recommendation_id: int | None
+    cpic_classification: str | None
     guideline: str | None
     cpic_level: str | None
     cpic_level_status: str | None
@@ -47,6 +50,8 @@ class DrugRecommendation(BaseModel):
 class PgxInterpretResponse(BaseModel):
     genes: list[GeneInterpretation]
     drug_recommendations: list[DrugRecommendation]
+    recommendation_source: str
+    recommendation_retrieved_at: str
     disclaimer: str
 
 
