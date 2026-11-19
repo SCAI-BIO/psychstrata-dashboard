@@ -37,6 +37,7 @@ vi.mock("../components/charts/TimeToEventChart", () => ({
   )
 }));
 vi.mock("../components/cards/InsightsCard", () => ({ InsightsCard: () => <div data-testid="insights-card" /> }));
+vi.mock("../components/cards/GeneticsCard", () => ({ GeneticsCard: () => <div data-testid="genetics-card" /> }));
 
 describe("ClinicianView", () => {
   function renderClinicianView(dashboard = makeDashboard()) {

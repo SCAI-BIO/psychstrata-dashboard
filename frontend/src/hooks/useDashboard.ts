@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, createTreatmentPlan, type PatientRead, type PatientRecord, type PredictionResponse, type TreatmentPlanRecord } from "../api";
+import { fetchExplain, fetchFeatures, fetchPredict, fetchTsne, fetchAuthStatus, buildBasicAuthHeader, verifyBasicAuth, setBasicAuthHeader as setApiAuthHeader, createPatient, createTreatmentPlan, updatePatientGenetics, type PatientRead, type PatientRecord, type PredictionResponse, type TreatmentPlanRecord } from "../api";
 import { ROUTE_TO_PATH } from "../constants";
 import type { PatientApi } from "../context/PatientContext";
 import {
@@ -21,7 +21,12 @@ import {
   getStoredAuthHeader,
   persistAuthHeader,
 } from "../lib/auth";
-import { patientToCreatePayload, recordToPatient, treatmentPlanFromCurrentRegimen } from "../lib/patientPersistence";
+import {
+  patientToCreatePayload,
+  patientToGeneticsPayload,
+  recordToPatient,
+  treatmentPlanFromCurrentRegimen
+} from "../lib/patientPersistence";
 import type { LoadState, ResultRoute, Route, SimValues } from "../types";
 
 /** Project the four simulator fields out of a patient's clinical values. */
@@ -103,14 +108,6 @@ export function useDashboard() {
     const onPopState = () => setRoute(getInitialRoute());
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  const navigate = useCallback((nextRoute: Route) => {
-    const nextPath = ROUTE_TO_PATH[nextRoute];
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, "", nextPath);
-    }
-    setRoute(nextRoute);
   }, []);
 
   // ── Sync clinician sim panel with the latest prediction ────────────────────
@@ -237,8 +234,9 @@ export function useDashboard() {
 
   const resetPatient = useCallback(() => {
     const current = stateRef.current;
-    const seed = current.status === "ready" ? Object.fromEntries(current.features.map((f) => [f.id, 0])) : {};
-    setPatient(createDefaultPatient());
+    const seed =
+      current.status === "ready" ? Object.fromEntries(current.features.map((f) => [f.id, f.default])) : {};
+    setPatient(createDefaultPatient(seed));
     setSimulationBaseline(null);
     lastSavedRef.current = null;
     setCurrentPatientId(null);
@@ -247,6 +245,20 @@ export function useDashboard() {
     // optional: clear the previous patient's results so nothing stale lingers
     setState((prev) => (prev.status === "ready" ? { ...prev, prediction: null, explanation: "" } : prev));
   }, []);
+
+  const navigate = useCallback(
+    (nextRoute: Route) => {
+      const nextPath = ROUTE_TO_PATH[nextRoute];
+      if (window.location.pathname !== nextPath) {
+        window.history.pushState({}, "", nextPath);
+      }
+      if (nextRoute === "intake") {
+        resetPatient();
+      }
+      setRoute(nextRoute);
+    },
+    [resetPatient]
+  );
 
   const patientApi: PatientApi = useMemo(
     () => ({
@@ -283,7 +295,10 @@ export function useDashboard() {
 
     setState((prev) => (prev.status === "ready" ? { ...prev, error: null } : prev));
     try {
-      const record = await createPatient(payload);
+      const record =
+        currentPatientId === null
+          ? await createPatient(payload)
+          : await updatePatientGenetics(currentPatientId, patientToGeneticsPayload(patientRef.current));
       lastSavedRef.current = { fingerprint, record };
       setCurrentPatientId(record.id);
       return record;
@@ -295,7 +310,7 @@ export function useDashboard() {
       );
       return null;
     }
-  }, []);
+  }, [currentPatientId]);
 
     /** Load a saved patient (+ one of their plans) into the dashboard, predict, and open the Medical view. */
   const openPatientResults = useCallback(

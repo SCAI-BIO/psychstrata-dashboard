@@ -4,9 +4,17 @@ from typing import Any
 from ..io.feature_loader import get_features_by_id, get_model_feature_order, validate_feature_values
 from ..persistence.patient_repository import PatientRepository
 from ..persistence.patient_record import Patient, TreatmentPlan
-from ..schemas.patient_schema import PatientCreate, PatientUpdate, TreatmentPlanCreate, TreatmentPlanUpdate
+from ..schemas.patient_schema import (
+    PatientCreate,
+    PatientGeneticsUpdate,
+    PatientUpdate,
+    TreatmentPlanCreate,
+    TreatmentPlanUpdate,
+)
 from ..utils.datetime import age_on_date
+from . import pgx_service
 from .errors import (
+    InvalidGeneticsDataError,
     InvalidPatientDataError,
     MissingModelFeaturesError,
     PatientNotFoundError,
@@ -38,12 +46,17 @@ class PatientService:
             )
         except ValueError as exc:
             raise InvalidPatientDataError(str(exc)) from exc
+        try:
+            genetics = pgx_service.validate_genetics(clinical_data.genetics)
+        except InvalidGeneticsDataError as exc:
+            raise InvalidPatientDataError(str(exc)) from exc
         return self._repository.create_patient(
             clinician_id=clinician_id,
             patient_values=payload.model_dump(exclude={"clinical_data"}),
             clinical_values={
-                **clinical_data.model_dump(exclude={"clinical_features"}),
+                **clinical_data.model_dump(exclude={"clinical_features", "genetics"}),
                 "clinical_features": clinical_features,
+                "genetics": genetics,
             },
         )
 
@@ -59,6 +72,19 @@ class PatientService:
     def update_patient(self, clinician_id: str, patient_id: str, payload: PatientUpdate) -> Patient:
         patient = self.get_patient(clinician_id, patient_id)
         return self._repository.update_patient(patient, payload.model_dump(exclude_unset=True))
+
+    def update_patient_genetics(
+        self,
+        clinician_id: str,
+        patient_id: str,
+        payload: PatientGeneticsUpdate,
+    ) -> Patient:
+        patient = self.get_patient(clinician_id, patient_id)
+        try:
+            genetics = pgx_service.validate_genetics(payload.model_dump())
+        except InvalidGeneticsDataError as exc:
+            raise InvalidPatientDataError(str(exc)) from exc
+        return self._repository.update_patient_genetics(patient, genetics)
 
     def delete_patient(self, clinician_id: str, patient_id: str) -> None:
         self._repository.delete_patient(self.get_patient(clinician_id, patient_id))

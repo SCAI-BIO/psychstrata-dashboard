@@ -101,12 +101,31 @@ export type PatientRead = {
   updated_at: string;
 };
 
+export type PatientGeneticsPayload = {
+  available: boolean;
+  genes: Record<string, PgxDiplotype>;
+};
+
 export function createPatient(payload: PatientCreatePayload): Promise<PatientRead> {
   return requestJson<PatientRead>("/api/patients", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
+}
+
+export function updatePatientGenetics(
+  patientId: string,
+  payload: PatientGeneticsPayload
+): Promise<PatientRead> {
+  return requestJson<PatientRead>(
+    `/api/patients/${encodeURIComponent(patientId)}/genetics`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  );
 }
 
 export type FeaturesResponse = {
@@ -189,6 +208,85 @@ export type TsneResponse = {
     class_label: "Responsive" | "Resistant";
   }>;
 };
+
+export type PgxDiplotype = {
+  allele1: string;
+  allele2: string;
+};
+
+export type PgxGeneOptions = {
+  gene: string;
+  label: string;
+  alleles: string[];
+  common_alleles: string[];
+  phenotypes: string[];
+};
+
+export type PgxDrugOption = {
+  drug: string;
+  label: string;
+  genes: string[];
+};
+
+export type PgxOptionsResponse = {
+  genes: PgxGeneOptions[];
+  drugs: PgxDrugOption[];
+};
+
+export type PgxInterpretRequest = {
+  genes?: Record<string, PgxDiplotype>;
+  drugs?: string[];
+};
+
+export type PgxGeneInterpretation = {
+  gene: string;
+  allele1: string;
+  allele2: string;
+  diplotype: string;
+  phenotype: string;
+  activity_score: number | null;
+  function1: string | null;
+  function2: string | null;
+  priority: string | null;
+  is_indeterminate: boolean;
+};
+
+export type PgxDrugRecommendation = {
+  drug_id: string;
+  drug: string;
+  required_genes: string[];
+  provided_genes: string[];
+  status: "available" | "unavailable";
+  recommendation: string | null;
+  unavailable_reason: string | null;
+  recommendation_source: string | null;
+  cpic_recommendation_id: number | null;
+  cpic_classification: string | null;
+  guideline: string | null;
+  cpic_level: string | null;
+  cpic_level_status: string | null;
+  pmids: string[];
+};
+
+export type PgxInterpretResponse = {
+  genes: PgxGeneInterpretation[];
+  drug_recommendations: PgxDrugRecommendation[];
+  recommendation_source: string;
+  recommendation_retrieved_at: string;
+  disclaimer: string;
+};
+
+export function fetchPgxOptions(): Promise<PgxOptionsResponse> {
+  return requestJson<PgxOptionsResponse>("/api/pgx/options");
+}
+
+export function fetchPgxInterpretation(payload: PgxInterpretRequest): Promise<PgxInterpretResponse> {
+  return requestJson<PgxInterpretResponse>("/api/pgx/interpret", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
 
 export type AuthStatusResponse = {
   auth_enabled: boolean;

@@ -8,6 +8,7 @@ test.describe("patients", () => {
 
     const demoRow = page.getByRole("row", { name: /Max Mustermann/ });
     await expect(demoRow).toBeVisible();
+    await expect(page.getByRole("row", { name: /Erika Mustermann/ })).toBeVisible();
     await expect(page.getByText(/in the database\./)).toBeVisible();
 
     await demoRow.getByRole("button", { name: "View Results" }).click();

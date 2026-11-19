@@ -2,6 +2,8 @@ import { vi } from "vitest";
 
 import type {
   FeaturesResponse,
+  PgxInterpretResponse,
+  PgxOptionsResponse,
   PredictionResponse,
   TreatmentPlanRecord,
   TsneResponse
@@ -95,6 +97,95 @@ export const explainResponse = {
   explanation: "Model explanation text."
 };
 
+export const pgxOptionsResponse: PgxOptionsResponse = {
+  genes: [
+    {
+      gene: "CYP2C19",
+      label: "CYP2C19",
+      alleles: ["*1", "*2", "*3", "*17"],
+      common_alleles: ["*1", "*2", "*3", "*17"],
+      phenotypes: ["Normal Metabolizer", "Intermediate Metabolizer", "Poor Metabolizer", "Rapid Metabolizer", "Ultrarapid Metabolizer"]
+    },
+    {
+      gene: "CYP2D6",
+      label: "CYP2D6",
+      alleles: ["*1", "*2", "*4", "*5", "*10"],
+      common_alleles: ["*1", "*2", "*4", "*5", "*10"],
+      phenotypes: ["Normal Metabolizer", "Intermediate Metabolizer", "Poor Metabolizer", "Ultrarapid Metabolizer"]
+    }
+  ],
+  drugs: [
+    { drug: "sertraline", label: "Sertraline", genes: ["CYP2C19"] },
+    { drug: "amitriptyline", label: "Amitriptyline", genes: ["CYP2C19", "CYP2D6"] }
+  ]
+};
+
+export const pgxInterpretResponse: PgxInterpretResponse = {
+  genes: [
+    {
+      gene: "CYP2C19",
+      allele1: "*1",
+      allele2: "*2",
+      diplotype: "*1/*2",
+      phenotype: "Intermediate Metabolizer",
+      activity_score: 1,
+      function1: "Normal function",
+      function2: "No function",
+      priority: "Normal/Routine/Low Risk",
+      is_indeterminate: false
+    },
+    {
+      gene: "CYP2D6",
+      allele1: "*1",
+      allele2: "*1",
+      diplotype: "*1/*1",
+      phenotype: "Normal Metabolizer",
+      activity_score: 2,
+      function1: "Normal function",
+      function2: "Normal function",
+      priority: "Normal/Routine/Low Risk",
+      is_indeterminate: false
+    }
+  ],
+  drug_recommendations: [
+    {
+      drug_id: "sertraline",
+      drug: "Sertraline",
+      required_genes: ["CYP2C19"],
+      provided_genes: ["CYP2C19"],
+      status: "available",
+      recommendation: "Start with the recommended standard dose.",
+      unavailable_reason: null,
+      recommendation_source: "CPIC",
+      cpic_recommendation_id: 8608706,
+      cpic_classification: "Moderate",
+      guideline: "https://cpicpgx.org/guidelines/",
+      cpic_level: "A",
+      cpic_level_status: "Final",
+      pmids: ["34298517"]
+    },
+    {
+      drug_id: "amitriptyline",
+      drug: "Amitriptyline",
+      required_genes: ["CYP2C19", "CYP2D6"],
+      provided_genes: ["CYP2C19", "CYP2D6"],
+      status: "available",
+      recommendation: "Use the standard dose.",
+      unavailable_reason: null,
+      recommendation_source: "CPIC",
+      cpic_recommendation_id: 8608707,
+      cpic_classification: "Strong",
+      guideline: null,
+      cpic_level: "A",
+      cpic_level_status: "Final",
+      pmids: []
+    }
+  ],
+  recommendation_source: "CPIC",
+  recommendation_retrieved_at: "2026-11-19",
+  disclaimer: "Pharmacogenetic interpretation based on CPIC guidance."
+};
+
 /** A patient whose demographics + clinical fields satisfy the intake wizard. */
 export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
   const base = createDefaultPatient(featuresPayload.defaults);
@@ -110,6 +201,13 @@ export function makeCompletePatient(overrides: Partial<Patient> = {}): Patient {
     episodeDurationMonths: 8,
     sleepDisturbance: "Mild",
     substanceUse: "None",
+    genetics: {
+      available: true,
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*1" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
+    },
     ...overrides
   };
 }

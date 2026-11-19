@@ -21,6 +21,7 @@ class BackendSettings(BaseModel):
     backend_database_url: str = "sqlite:///./db.sqlite3"
     model_artifact_path: str | None = None
     features_config_path: str | None = None
+    genetics_config_path: str | None = None
     llm_client_url: str = "https://fhgenie.fraunhofer.de/v1"
     llm_client_model: str = "deepseek-ai/DeepSeek-V4.1-Flash"
     llm_client_secret: str | None = None
@@ -33,6 +34,7 @@ class BackendSettings(BaseModel):
         "backend_database_url",
         "model_artifact_path",
         "features_config_path",
+        "genetics_config_path",
         "llm_client_url",
         "llm_client_model",
         "llm_client_secret",
@@ -101,6 +103,7 @@ def _load_backend_settings() -> BackendSettings:
         "backend_database_url": os.getenv("BACKEND_DATABASE_URL"),
         "model_artifact_path": os.getenv("MODEL_ARTIFACT_PATH"),
         "features_config_path": os.getenv("FEATURES_CONFIG_PATH"),
+        "genetics_config_path": os.getenv("GENETICS_CONFIG_PATH"),
         # TODO: drop the LLM_CLIENT_* and OPENAI_* fallbacks once deployments migrate to LLM_PROVIDER_*.
         "llm_client_url": (
             os.getenv("LLM_PROVIDER_URL")

@@ -15,11 +15,15 @@ export interface PatientDemographics {
   diagnosis: string | null;
 }
 
+export interface Diplotype {
+  allele1: string;
+  allele2: string;
+}
+
 export interface PatientGenetics {
   available: boolean;
-  cyp2d6?: string;
-  slc6a4?: string;
-  bdnf?: string;
+  /** Diplotypes keyed by configured gene id (e.g. CYP2C19). */
+  genes: Record<string, Diplotype>;
 }
 
 export interface PatientProteomics {
@@ -62,7 +66,7 @@ export function createDefaultPatient(clinicalDefaults: Record<string, number> = 
     episodeDurationMonths: null,
     sleepDisturbance: null,
     substanceUse: null,
-    genetics: { available: true },
+    genetics: { available: false, genes: {} },
     proteomics: { available: true }
   };
 }
@@ -139,7 +143,15 @@ function featureValue(patient: Patient, id: string): number | undefined {
   return patient.clinical[id] ?? patient.extras[id];
 }
 
-export function isStepComplete(step: number, patient: Patient): boolean {
+export function isDiplotypeComplete(diplotype: Diplotype | undefined): boolean {
+  return Boolean(diplotype?.allele1.trim() && diplotype?.allele2.trim());
+}
+
+export function isStepComplete(
+  step: number,
+  patient: Patient,
+  configuredGenes: string[] = []
+): boolean {
   switch (step) {
     case 0: {
       const d = patient.demographics;
@@ -147,6 +159,11 @@ export function isStepComplete(step: number, patient: Patient): boolean {
     }
     case 1:
       return ["phq9", "sertraline_mg", "adherence_pct"].every((id) => Number.isFinite(featureValue(patient, id)));
+    case 2: {
+      if (!patient.genetics.available) return true;
+      const genes = configuredGenes.length > 0 ? configuredGenes : Object.keys(patient.genetics.genes);
+      return genes.length > 0 && genes.every((gene) => isDiplotypeComplete(patient.genetics.genes[gene]));
+    }
     default:
       return true;
   }
@@ -158,7 +175,12 @@ export function clonePatient(patient: Patient): Patient {
     demographics: { ...patient.demographics },
     clinical: { ...patient.clinical },
     extras: { ...patient.extras },
-    genetics: { ...patient.genetics },
+    genetics: {
+      ...patient.genetics,
+      genes: Object.fromEntries(
+        Object.entries(patient.genetics.genes).map(([gene, diplotype]) => [gene, { ...diplotype }])
+      )
+    },
     proteomics: { ...patient.proteomics }
   };
 }

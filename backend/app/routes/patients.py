@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..persistence.database import get_session
 from ..schemas.patient_schema import (
     PatientCreate,
+    PatientGeneticsUpdate,
     PatientRead,
     PatientUpdate,
     TreatmentPlanCreate,
@@ -61,6 +62,16 @@ def update_patient(
     service: Annotated[PatientService, Depends(get_patient_service)],
 ) -> PatientRead:
     return service.update_patient(clinician_id, patient_id, payload)
+
+
+@router.patch("/api/patients/{patient_id}/genetics", response_model=PatientRead)
+def update_patient_genetics(
+    patient_id: str,
+    payload: PatientGeneticsUpdate,
+    clinician_id: Annotated[str, Depends(get_current_clinician_id)],
+    service: Annotated[PatientService, Depends(get_patient_service)],
+) -> PatientRead:
+    return service.update_patient_genetics(clinician_id, patient_id, payload)
 
 
 @router.delete("/api/patients/{patient_id}", status_code=204)

@@ -4,8 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import { PatientProvider } from "../context/PatientContext";
 import { createDefaultPatient } from "../domain/patient";
 import type { PatientRead } from "../api";
-import { featuresPayload, makeCompletePatient, makeDashboard, makeReadyState } from "../test/fixtures";
+import { featuresPayload, makeCompletePatient, makeDashboard, makeReadyState, pgxOptionsResponse } from "../test/fixtures";
+import { usePgxOptions } from "../hooks/usePgx";
 import { IntakeView } from "./IntakeView";
+
+vi.mock("../hooks/usePgx", () => ({ usePgxOptions: vi.fn() }));
+
+vi.mocked(usePgxOptions).mockReturnValue({
+  state: { status: "ready", options: pgxOptionsResponse },
+  reload: vi.fn()
+});
 
 function renderIntake(dashboard = makeDashboard()) {
   return render(
@@ -90,10 +98,59 @@ describe("IntakeView", () => {
     expect(dashboard.patientApi.writeFeature).toHaveBeenCalledWith("lithium_mg", 0);
   });
 
+  it("leaves configured genes blank until the clinician records them", () => {
+    const dashboard = makeDashboard({
+      state: makeReadyState(),
+      patient: makeCompletePatient({ genetics: { available: true, genes: {} } })
+    });
+    renderIntake(dashboard);
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+
+    expect(dashboard.patientApi.updateGenetics).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("CYP2C19 Allele 1")).toHaveValue("");
+    expect(screen.getByLabelText("CYP2D6 Allele 2")).toHaveValue("");
+  });
+
+  it("routes CYP allele selection through updateGenetics", () => {
+    const patient = makeCompletePatient({
+      genetics: {
+        available: true,
+        genes: {
+          CYP2C19: { allele1: "*1", allele2: "*1" },
+          CYP2D6: { allele1: "*1", allele2: "*1" }
+        }
+      }
+    });
+    const dashboard = makeDashboard({ state: makeReadyState(), patient });
+    renderIntake(dashboard);
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));
+
+    fireEvent.change(screen.getByLabelText("CYP2C19 Allele 2"), { target: { value: "*2" } });
+    expect(dashboard.patientApi.updateGenetics).toHaveBeenCalledWith({
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*2" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
+    });
+
+    fireEvent.change(screen.getByLabelText("CYP2D6 Allele 1"), { target: { value: "*4" } });
+    expect(dashboard.patientApi.updateGenetics).toHaveBeenCalledWith({
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*1" },
+        CYP2D6: { allele1: "*4", allele2: "*1" }
+      }
+    });
+  });
+
   it("toggles genomics and proteomics availability on the last step", () => {
     const dashboard = makeDashboard({
       state: makeReadyState(),
-      patient: makeCompletePatient({ genetics: { available: false }, proteomics: { available: false } })
+      patient: makeCompletePatient({
+        genetics: { available: false, genes: {} },
+        proteomics: { available: false }
+      })
     });
     renderIntake(dashboard);
     fireEvent.click(screen.getByRole("button", { name: /Next Step/ }));

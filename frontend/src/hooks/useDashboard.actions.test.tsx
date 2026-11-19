@@ -35,13 +35,14 @@ const patientRecord: PatientRecord = {
 
 /** A permissive fetch mock covering every endpoint the dashboard touches. */
 function makeFetchMock() {
-  return vi.fn(async (url: string) => {
+  return vi.fn(async (url: string, _init?: RequestInit) => {
     if (url.endsWith("/api/auth/status")) return json({ auth_enabled: false });
     if (url.endsWith("/api/features")) return json(featuresPayload);
     if (url.endsWith("/api/tsne")) return json(tsneResponse);
     if (url.endsWith("/api/predict")) return json(predictionResponse);
     if (url.endsWith("/api/explain")) return json(explainResponse);
     if (url.endsWith("/api/patients") ) return json(patientRecord, 201);
+    if (url.endsWith("/genetics")) return json(patientRecord);
     if (url.endsWith("/treatment-plans")) return json(treatmentPlanRecord, 201);
     throw new Error(`Unexpected fetch URL: ${url}`);
   });
@@ -101,6 +102,23 @@ describe("useDashboard actions", () => {
     expect(result.current.route).toBe("intake");
   });
 
+  it("starts a blank intake instead of editing the open patient", async () => {
+    const fetchMock = makeFetchMock();
+    const { result } = await readyDashboard(fetchMock);
+
+    await act(async () => {
+      await result.current.openPatientResults(patientRecord, treatmentPlanRecord);
+    });
+
+    act(() => result.current.navigate("intake"));
+
+    expect(result.current.route).toBe("intake");
+    expect(result.current.currentPatientId).toBeNull();
+    expect(result.current.patient.demographics.firstName).toBeNull();
+    expect(result.current.patient.clinical.phq9).toBe(12);
+    expect(result.current.patient.genetics).toEqual({ available: false, genes: {} });
+  });
+
   it("persists an intake, dedupes repeat saves, and surfaces failures", async () => {
     const fetchMock = makeFetchMock();
     const { result } = await readyDashboard(fetchMock);
@@ -120,6 +138,24 @@ describe("useDashboard actions", () => {
     });
     expect((saved as PatientRecord | null)?.id).toBe("patient-42");
     expect(fetchMock.mock.calls.filter((c) => (c[0] as string).endsWith("/api/patients"))).toHaveLength(1);
+  });
+
+  it("patches genetics when saving an already-open patient", async () => {
+    const fetchMock = makeFetchMock();
+    const { result } = await readyDashboard(fetchMock);
+
+    await act(async () => {
+      await result.current.openPatientResults(patientRecord, treatmentPlanRecord);
+    });
+    await act(async () => {
+      await result.current.persistIntake();
+    });
+
+    const patchCalls = fetchMock.mock.calls.filter((c) => (c[0] as string).endsWith("/genetics"));
+    expect(patchCalls).toHaveLength(1);
+    expect(patchCalls[0][0]).toContain("/api/patients/patient-42/genetics");
+    expect(patchCalls[0][1]?.method).toBe("PATCH");
+    expect(fetchMock.mock.calls.filter((c) => (c[0] as string).endsWith("/api/patients"))).toHaveLength(0);
   });
 
   it("records an intake error on the ready state", async () => {

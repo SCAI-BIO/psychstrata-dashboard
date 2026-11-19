@@ -66,11 +66,35 @@ describe("patientToCreatePayload", () => {
 
   it("copies genetics and proteomics", () => {
     const patient = basePatient();
-    patient.genetics = { available: true, cyp2d6: "poor" };
+    patient.genetics = { available: true, genes: { CYP2D6: { allele1: "*4", allele2: "*4" } } };
     patient.proteomics = { available: true, crp: 3.2 };
     const payload = patientToCreatePayload(patient, FEATURES);
-    expect(payload.clinical_data.genetics).toEqual({ available: true, cyp2d6: "poor" });
+    expect(payload.clinical_data.genetics).toEqual({
+      available: true,
+      genes: { CYP2D6: { allele1: "*4", allele2: "*4" } }
+    });
     expect(payload.clinical_data.proteomics).toEqual({ available: true, crp: 3.2 });
+  });
+
+  it("drops incomplete diplotypes and marks genetics unavailable when none remain", () => {
+    const patient = basePatient();
+    patient.genetics = {
+      available: true,
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "" },
+        CYP2D6: { allele1: "*4", allele2: "*4" }
+      }
+    };
+    expect(patientToCreatePayload(patient, FEATURES).clinical_data.genetics).toEqual({
+      available: true,
+      genes: { CYP2D6: { allele1: "*4", allele2: "*4" } }
+    });
+
+    patient.genetics = { available: true, genes: {} };
+    expect(patientToCreatePayload(patient, FEATURES).clinical_data.genetics).toEqual({
+      available: false,
+      genes: {}
+    });
   });
 });
 
@@ -109,8 +133,54 @@ describe("recordToPatient", () => {
     expect(patient.demographics.dob).toBe("1980-01-01");
     expect(patient.demographics.gender).toBe("Female");
     expect(patient.demographics.diagnosis).toBe("F33.1");
-    expect(patient.genetics).toEqual({ available: true });
+    expect(patient.genetics).toEqual({ available: false, genes: {} });
     expect(patient.proteomics).toEqual({ available: false });
+  });
+
+  it("restores well-formed diplotypes and drops malformed ones", () => {
+    const withGenetics = {
+      ...record,
+      clinical_data: {
+        ...record.clinical_data,
+        genetics: {
+          available: true,
+          genes: {
+            CYP2C19: { allele1: "*1", allele2: "*2" },
+            CYP2D6: { allele1: "*4", allele2: null },
+            SLC6A4: "short"
+          }
+        }
+      }
+    } as unknown as typeof record;
+
+    const patient = recordToPatient(withGenetics, null, FEATURES);
+    expect(patient.genetics).toEqual({
+      available: true,
+      genes: { CYP2C19: { allele1: "*1", allele2: "*2" } }
+    });
+  });
+
+  it("maps legacy top-level diplotypes into the genes map", () => {
+    const legacy = {
+      ...record,
+      clinical_data: {
+        ...record.clinical_data,
+        genetics: {
+          available: true,
+          cyp2c19: { allele1: "*1", allele2: "*2" },
+          cyp2d6: { allele1: "*1", allele2: "*1" }
+        }
+      }
+    } as unknown as typeof record;
+
+    const patient = recordToPatient(legacy, null, FEATURES);
+    expect(patient.genetics).toEqual({
+      available: true,
+      genes: {
+        CYP2C19: { allele1: "*1", allele2: "*2" },
+        CYP2D6: { allele1: "*1", allele2: "*1" }
+      }
+    });
   });
 
   it("merges defaults, saved features and plan medications/adherence", () => {

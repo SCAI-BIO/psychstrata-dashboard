@@ -15,3 +15,7 @@ class InvalidPatientDataError(ValueError):
 
 class MissingModelFeaturesError(ValueError):
     """Raised when persisted data lacks required model features."""
+
+
+class InvalidGeneticsDataError(ValueError):
+    """Raised when a gene, allele, or drug cannot be interpreted."""

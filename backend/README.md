@@ -123,11 +123,11 @@ Plain SQLAlchemy 2.0 maps three entities:
 - `Patient` and its one-to-one `PatientClinicalData`
 - `TreatmentPlan`, including medication and adherence values
 
-Configured clinical, medication, and adherence values are stored as JSON objects and validated against the feature configuration. Clinical data is fixed when the patient is created; patient updates only change the patient's name. Age is derived from date of birth when a persisted treatment plan is submitted for prediction. The current version stores only the latest assessment and treatment-plan state.
+Configured clinical, medication, and adherence values are stored as JSON objects and validated against the feature configuration. Clinical data other than genetics is fixed when the patient is created; patient updates only change the patient's name, while `PATCH /api/patients/{id}/genetics` updates the genetics object. Age is derived from date of birth when a persisted treatment plan is submitted for prediction. The current version stores only the latest assessment and treatment-plan state.
 
 The current version supports one clinician. When Basic Auth is enabled, the configured username is stored as `clinician_id`; when auth is disabled for local development, records use `default-clinician`. Patient deletion cascades through clinical data and treatment plans.
 
-At startup, the backend idempotently creates the demo patient `Max Mustermann` with three treatment plans for the configured clinician. Stable IDs prevent duplicate demo records across restarts.
+At startup, the backend idempotently creates two demo patients for the configured clinician, each with three treatment plans: `Max Mustermann` (CYP2C19 `*1/*2`, CYP2D6 `*1/*1`) and `Erika Mustermann` (CYP2C19 `*2/*2`, a poor metabolizer that yields a reduced-dose sertraline recommendation; CYP2D6 `*1/*4`). Demo genetics are derived from the active genetics configuration, and existing valid demo genetics are preserved across restarts. Stable IDs prevent duplicate demo records.
 
 This development-stage schema does not include migrations. If a local `db.sqlite3` was created by the previous SQLModel implementation, recreate that database before starting this version.
 
@@ -135,7 +135,7 @@ This development-stage schema does not include migrations. If a local `db.sqlite
 
 - `MODEL_ARTIFACT_PATH` (optional path to a pickled model artifact on disk)
 - `LLM_PROVIDER_URL` (optional LLM endpoint URL; defaults to FHGenie at `https://fhgenie.fraunhofer.de/v1`)
-- `LLM_PROVIDER_MODEL` (optional model name; defaults to `deepseek-ai/DeepSeek-V4.1-Flash`)
+- `LLM_PROVIDER_MODEL` (optional model name; defaults to `Qwen/Qwen3-Coder-Next-FP8`)
 - `LLM_PROVIDER_KEY` (optional provider API key; required for hosted providers such as FHGenie)
 
 If `MODEL_ARTIFACT_PATH` is not set, the backend uses the existing synthetic model.
@@ -161,6 +161,28 @@ If `FEATURES_CONFIG_PATH` is not set, the backend uses the built-in feature defi
 You can also set it in `BACKEND_CONFIG_FILE`.
 
 The configuration contains `clinical`, `medications`, `adherence`, and an explicit `model_feature_order`. Each feature uses `dtype` to distinguish numeric and categorical values. The merged feature API remains available to the frontend, while `feature_groups` exposes the domain grouping. The default `sex_at_birth` feature supports Male, Female, and Other; synthetic data uses a 49%/49%/2% distribution.
+
+## Genetics Configuration
+
+- `GENETICS_CONFIG_PATH` (optional path to a genetics JSON file)
+
+If `GENETICS_CONFIG_PATH` is not set, the backend uses the built-in gene and drug definitions from `app/defaults/genetics_definitions.json`.
+You can also set it in `BACKEND_CONFIG_FILE`.
+
+```json
+{
+  "genes": [
+    { "id": "CYP2C19", "label": "CYP2C19", "common_alleles": ["*1", "*2", "*3"] }
+  ],
+  "drugs": [
+    { "id": "sertraline", "label": "Sertraline" }
+  ]
+}
+```
+
+Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; the default configured drugs are covered by bundled CPIC recommendations. The configuration is validated during application startup, so invalid entries fail fast with a clear error.
+
+Recommendation text is reproduced verbatim from the bundled CPIC snapshot in `app/defaults/cpic_recommendations.json`. Each recommendation includes its CPIC id and classification, and the API response includes the CPIC source and retrieval date. CPIC guidance describes recommended starting doses at therapy initiation; it is not advice to adjust an existing dose, and the backend does not call CPIC at runtime. To refresh the snapshot, fetch the recommendations for the configured drugs from the CPIC API and update the snapshot's `recommendations` and `retrieved_at` fields. Drugs from a custom configuration that are absent from the snapshot are reported as having no bundled CPIC recommendation.
 
 ## Tests
 

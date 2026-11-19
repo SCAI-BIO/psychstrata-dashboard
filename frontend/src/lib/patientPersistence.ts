@@ -1,11 +1,18 @@
 import type {
   FeatureSchema,
   PatientCreatePayload,
+  PatientGeneticsPayload,
   PatientRecord,
   TreatmentPlanCreatePayload,
   TreatmentPlanRecord
 } from "../api";
-import { createDefaultPatient, type Patient } from "../domain/patient";
+import {
+  createDefaultPatient,
+  isDiplotypeComplete,
+  type Diplotype,
+  type Patient,
+  type PatientGenetics
+} from "../domain/patient";
 
 /** Ids the backend derives itself (age comes from date_of_birth) and rejects if sent. */
 const DERIVED_FEATURE_IDS = new Set(["age"]);
@@ -21,6 +28,14 @@ export function clinicalFeaturesFor(patient: Patient, features: FeatureSchema[])
   return out;
 }
 
+export function patientToGeneticsPayload(patient: Patient): PatientGeneticsPayload {
+  const genes = Object.fromEntries(
+    Object.entries(patient.genetics.genes).filter(([, diplotype]) => isDiplotypeComplete(diplotype))
+  );
+  const available = patient.genetics.available && Object.keys(genes).length > 0;
+  return { available, genes: available ? genes : {} };
+}
+
 export function patientToCreatePayload(patient: Patient, features: FeatureSchema[]): PatientCreatePayload {
   const d = patient.demographics;
   return {
@@ -30,7 +45,7 @@ export function patientToCreatePayload(patient: Patient, features: FeatureSchema
       date_of_birth: d.dob ?? "",
       diagnosis: (d.diagnosis ?? "").trim(),
       clinical_features: clinicalFeaturesFor(patient, features),
-      genetics: { ...patient.genetics },
+      genetics: patientToGeneticsPayload(patient),
       proteomics: { ...patient.proteomics }
     }
   };
@@ -58,6 +73,43 @@ export function treatmentPlanFromCurrentRegimen(
 }
 
 const GENDER_BY_SEX_AT_BIRTH: Record<number, string> = { 0: "Male", 1: "Female", 2: "Other" };
+
+function readDiplotype(value: unknown): Diplotype | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const { allele1, allele2 } = value as Record<string, unknown>;
+  if (typeof allele1 !== "string" || !allele1 || typeof allele2 !== "string" || !allele2) {
+    return undefined;
+  }
+  return { allele1, allele2 };
+}
+
+/** Gene ids used by records saved before genetics became configurable. */
+const LEGACY_GENE_IDS: Record<string, string> = {
+  cyp2c19: "CYP2C19",
+  cyp2d6: "CYP2D6"
+};
+
+/** Restore saved genetics, keeping only well-formed diplotypes. */
+function geneticsFromRecord(raw: Record<string, unknown>): PatientGenetics {
+  const genetics: PatientGenetics = { available: false, genes: {} };
+
+  if (typeof raw.genes === "object" && raw.genes !== null && !Array.isArray(raw.genes)) {
+    for (const [key, value] of Object.entries(raw.genes as Record<string, unknown>)) {
+      const name = key.trim();
+      const gene = LEGACY_GENE_IDS[name.toLowerCase()] ?? name;
+      const diplotype = readDiplotype(value);
+      if (gene && diplotype) genetics.genes[gene] = diplotype;
+    }
+  }
+
+  for (const [legacyKey, gene] of Object.entries(LEGACY_GENE_IDS)) {
+    const diplotype = readDiplotype(raw[legacyKey]);
+    if (diplotype && !genetics.genes[gene]) genetics.genes[gene] = diplotype;
+  }
+
+  genetics.available = Boolean(raw.available) && Object.keys(genetics.genes).length > 0;
+  return genetics;
+}
 
 /** Inverse of patientToCreatePayload: rebuild the dashboard Patient from saved records. */
 export function recordToPatient(
@@ -89,7 +141,7 @@ export function recordToPatient(
     clinical,
     onMedication,
     episodeDurationMonths: clinical.duration_months ?? null,
-    genetics: { available: Boolean(data.genetics.available) },
+    genetics: geneticsFromRecord(data.genetics),
     proteomics: { available: Boolean(data.proteomics.available) }
   };
 }

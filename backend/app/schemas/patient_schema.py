@@ -35,6 +35,13 @@ class PatientUpdate(BaseModel):
     last_name: str | None = Field(default=None, min_length=1)
 
 
+class PatientGeneticsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    available: bool
+    genes: dict[str, Any] = Field(default_factory=dict)
+
+
 class PatientRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
