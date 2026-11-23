@@ -182,6 +182,7 @@ export const pgxInterpretResponse: PgxInterpretResponse = {
     }
   ],
   recommendation_source: "CPIC",
+  recommendation_source_url: "https://api.cpicpgx.org/v1/recommendation",
   recommendation_retrieved_at: "2026-11-19",
   disclaimer: "Pharmacogenetic interpretation based on CPIC guidance."
 };

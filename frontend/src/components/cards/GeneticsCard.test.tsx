@@ -71,6 +71,10 @@ describe("GeneticsCard", () => {
 
     expect(screen.getByText(/No CPIC guidance in this demo for lithium/)).toBeInTheDocument();
     expect(screen.getByText("CPIC Starting-Dose Guidance")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: pgxInterpretResponse.recommendation_source_url })).toHaveAttribute(
+      "href",
+      pgxInterpretResponse.recommendation_source_url
+    );
     expect(screen.getByText(/recommended starting doses/)).toBeInTheDocument();
     expect(screen.getAllByText("Standard")).toHaveLength(2);
     expect(screen.getByText("Other configured medications with CPIC guidance")).toBeInTheDocument();

@@ -121,6 +121,7 @@ def test_interpret_returns_phenotypes_and_recommendations(client: TestClient) ->
     drugs = {drug["drug"]: drug for drug in body["drug_recommendations"]}
     assert set(drugs) == {"Amitriptyline", "Sertraline"}
     assert body["recommendation_source"] == "CPIC"
+    assert body["recommendation_source_url"] == "https://api.cpicpgx.org/v1/recommendation"
     assert body["recommendation_retrieved_at"]
     assert drugs["Amitriptyline"]["status"] == "available"
     assert drugs["Amitriptyline"]["required_genes"] == ["CYP2C19", "CYP2D6"]

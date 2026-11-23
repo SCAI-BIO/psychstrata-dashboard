@@ -272,6 +272,7 @@ export type PgxInterpretResponse = {
   genes: PgxGeneInterpretation[];
   drug_recommendations: PgxDrugRecommendation[];
   recommendation_source: string;
+  recommendation_source_url: string;
   recommendation_retrieved_at: string;
   disclaimer: string;
 };

@@ -70,6 +70,7 @@ def test_interpret_returns_verbatim_cpic_text_and_metadata() -> None:
     result = pgx_service.interpret({"CYP2C19": ("*1", "*1")}, ["escitalopram"])
 
     assert result["recommendation_source"] == "CPIC"
+    assert result["recommendation_source_url"] == "https://api.cpicpgx.org/v1/recommendation"
     assert result["recommendation_retrieved_at"]
     recommendation = result["drug_recommendations"][0]
     assert recommendation["status"] == "available"
