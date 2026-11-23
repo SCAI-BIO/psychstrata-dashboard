@@ -23,9 +23,9 @@ setup instructions.
 ## License of contributions
 
 By submitting a contribution, you agree that it is licensed under the
-[Apache License 2.0](LICENSE), the same license as this project
-(inbound = outbound). You confirm that you have the right to submit the
-contribution under that license.
+[GNU General Public License, version 3 or later](LICENSE), the same license as
+this project (inbound = outbound). You confirm that you have the right to
+submit the contribution under that license.
 
 Please note that the project may change its license in future versions;
 contributions may be relicensed accordingly as part of the project.

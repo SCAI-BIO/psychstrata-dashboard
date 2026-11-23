@@ -1,9 +1,19 @@
 # Third-Party Notices
 
-PsychStrata CDSS is licensed under the Apache License 2.0 (see [LICENSE](LICENSE)).
-This file lists third-party components and data sources that are redistributed with,
-or required at runtime by, this software. It currently covers the components used by
-the pharmacogenomics (PGx) feature; entries are added as dependencies are introduced.
+PsychStrata CDSS is licensed under the GNU General Public License, version 3 or
+later (see [LICENSE](LICENSE)). This file lists third-party components and data
+sources that are redistributed with, or required at runtime by, this software.
+It currently covers the components used by the pharmacogenomics (PGx) feature;
+entries are added as dependencies are introduced.
+
+## License compatibility
+
+Every bundled dependency is GPLv3-compatible: the backend uses MIT, BSD-2/3-Clause,
+Apache-2.0, PSF-2.0 and MPL-2.0 packages, and the frontend tree is MIT, ISC, BSD,
+Apache-2.0, MPL-2.0, BlueOak-1.0.0, Unlicense, Zlib and 0BSD. Apache-2.0 is
+compatible with GPLv3 but **not** with GPLv2, so do not downgrade the project
+license to `GPL-2.0-only`. MPL-2.0 files are combined under GPLv3 via the
+secondary-license clause, so keep their file-level notices intact.
 
 ---
 
@@ -48,11 +58,13 @@ version be reported and the following article cited:
 ### Beagle is not distributed
 
 The PyPGx wheel also contains `pypgx/api/beagle.22Jul22.46e.jar`, which is
-licensed under GPL-3.0-or-later. This project does not use PyPGx phasing or
-imputation pipelines, and `backend/Dockerfile` removes the JAR (and the `uv`
-cache) from the image, so no GPL-licensed binary is redistributed. Do not
-reintroduce the JAR into a distributed artifact without complying with the
-GPL, including making the corresponding source available.
+licensed under GPL-3.0-or-later. That license is compatible with this project's
+license, so shipping it would not be a licensing conflict — but the distributor
+would then have to supply Beagle's complete corresponding source and keep its
+notices. This project does not use PyPGx phasing or imputation pipelines, so
+`backend/Dockerfile` removes the JAR (and the `uv` cache that contains it) from
+the image. Do not reintroduce the JAR without shipping Beagle's corresponding
+source as well.
 
 ---
 
@@ -142,7 +154,10 @@ PharmGKB content is licensed under Creative Commons
 Attribution-ShareAlike 4.0 International
 (<https://creativecommons.org/licenses/by-sa/4.0/>). Redistribution therefore
 requires attribution to PharmGKB, a link to the license, and an indication of
-any changes; the tables are redistributed unmodified.
+any changes; the tables are redistributed unmodified. They are separate data
+files, not part of the GPL-licensed program: they remain under CC BY-SA 4.0
+when redistributed, so do not copy them into program source files or relicense
+them under the GPL.
 
 ---
 
@@ -162,7 +177,9 @@ Attribution-ShareAlike 4.0 International
 restricts use of its data to research purposes and prohibits offering the data
 for sale as a commercial item. This project is a research/demonstration
 dashboard and does not sell the data; deployments with commercial intent must
-review the PharmVar terms independently.
+review the PharmVar terms independently. As with the PharmGKB tables, the
+PharmVar-derived files are separate data files and stay under CC BY-SA 4.0 when
+redistributed; they are not relicensed under the GPL.
 
 ---
 

@@ -2,7 +2,7 @@
 <a href="https://doi.org/10.5281/zenodo.22922039"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22922039-blue.svg" alt="DOI"></a>
 [![CI](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/SCAI-BIO/psychstrata-dashboard/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard/branch/main/graph/badge.svg)](https://codecov.io/gh/SCAI-BIO/psychstrata-dashboard)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 
 
@@ -131,10 +131,16 @@ and database behavior.
 
 ## License & Citation
 
-This project is licensed under the [Apache License 2.0](LICENSE). Redistributions must preserve the
-attribution in [NOTICE](NOTICE), as required by the license. Third-party components and data sources,
+This project is licensed under the [GNU General Public License, version 3 or later](LICENSE)
+(`GPL-3.0-or-later`). You may redistribute and/or modify it under those terms; if you distribute
+binaries, container images, or a modified version, the GPL requires you to provide the corresponding
+source under the same license. Please keep the attribution in [NOTICE](NOTICE); it is provided for
+credit and is not an additional condition on top of the GPL. Third-party components and data sources,
 including those used by the pharmacogenomics feature, are listed with their license texts in
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+Releases up to and including v0.8.0 were published under the Apache License 2.0 and remain available
+under those terms.
 
 If you use this software in research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
 All versions are archived on Zenodo under the concept DOI
