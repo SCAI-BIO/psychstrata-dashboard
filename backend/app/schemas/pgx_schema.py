@@ -51,6 +51,7 @@ class PgxInterpretResponse(BaseModel):
     genes: list[GeneInterpretation]
     drug_recommendations: list[DrugRecommendation]
     recommendation_source: str
+    recommendation_source_url: str
     recommendation_retrieved_at: str
     disclaimer: str
 

@@ -7,6 +7,16 @@ Algorithms and Scientific Computing (SCAI), Sankt Augustin, Germany
 
 Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+This product includes third-party software and data:
+
+- PyPGx 0.27.0, Copyright (c) 2020 Seung-been "Steven" Lee — MIT License.
+- fuc 0.38.0, Copyright (c) 2021 Seung-been "Steven" Lee — MIT License.
+- CPIC® pharmacogenomic guidance — CC0 1.0 Universal (attribution requested).
+- PharmGKB and PharmVar derived tables shipped with PyPGx — CC BY-SA 4.0,
+  redistributed unmodified.
+
+Full license texts and attribution details are in THIRD_PARTY_LICENSES.md.
+
 If you use this software in research, please cite it as described in
 CITATION.cff (DOI: 10.5281/zenodo.22922039).
 

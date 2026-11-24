@@ -22,8 +22,9 @@ from ..io.genetics_loader import (
 from .errors import InvalidGeneticsDataError
 
 DISCLAIMER = (
-    "Pharmacogenetic interpretation based on CPIC guidance. Synthetic demo data only; "
-    "not a medical device and not a substitute for clinical judgement."
+    "Pharmacogenetic interpretation based on CPIC guidance. CPIC guidelines reflect expert consensus at "
+    "the time of publication and may be superseded by newer evidence; consult the cited guideline before "
+    "use. Synthetic demo data only; not a medical device and not a substitute for clinical judgement."
 )
 
 _CPIC_LEVEL_RANK = {"A": 0, "B": 1, "C": 2, "D": 3}
@@ -58,8 +59,13 @@ def _cpic_snapshot() -> dict[str, Any]:
     if not isinstance(retrieved_at, str) or not retrieved_at:
         raise RuntimeError("Bundled CPIC recommendations must include a retrieved_at date.")
 
+    source_url = payload.get("source_url")
+    if not isinstance(source_url, str) or not source_url:
+        raise RuntimeError("Bundled CPIC recommendations must include a source_url.")
+
     return {
         "source": str(payload.get("source") or "CPIC"),
+        "source_url": source_url,
         "retrieved_at": retrieved_at,
         "by_drug": by_drug,
     }
@@ -349,6 +355,7 @@ def interpret(
         "genes": gene_results,
         "drug_recommendations": recommendations,
         "recommendation_source": snapshot["source"],
+        "recommendation_source_url": snapshot["source_url"],
         "recommendation_retrieved_at": snapshot["retrieved_at"],
         "disclaimer": DISCLAIMER,
     }

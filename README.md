@@ -132,7 +132,9 @@ and database behavior.
 ## License & Citation
 
 This project is licensed under the [Apache License 2.0](LICENSE). Redistributions must preserve the
-attribution in [NOTICE](NOTICE), as required by the license.
+attribution in [NOTICE](NOTICE), as required by the license. Third-party components and data sources,
+including those used by the pharmacogenomics feature, are listed with their license texts in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 If you use this software in research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
 All versions are archived on Zenodo under the concept DOI

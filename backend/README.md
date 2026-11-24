@@ -182,7 +182,18 @@ You can also set it in `BACKEND_CONFIG_FILE`.
 
 Configured genes drive the intake form, patient genetics validation, and interpretation. Gene ids and common alleles must be supported by pypgx; the default configured drugs are covered by bundled CPIC recommendations. The configuration is validated during application startup, so invalid entries fail fast with a clear error.
 
-Recommendation text is reproduced verbatim from the bundled CPIC snapshot in `app/defaults/cpic_recommendations.json`. Each recommendation includes its CPIC id and classification, and the API response includes the CPIC source and retrieval date. CPIC guidance describes recommended starting doses at therapy initiation; it is not advice to adjust an existing dose, and the backend does not call CPIC at runtime. To refresh the snapshot, fetch the recommendations for the configured drugs from the CPIC API and update the snapshot's `recommendations` and `retrieved_at` fields. Drugs from a custom configuration that are absent from the snapshot are reported as having no bundled CPIC recommendation.
+Recommendation text is reproduced verbatim from the bundled CPIC snapshot in `app/defaults/cpic_recommendations.json`. Each recommendation includes its CPIC id and classification, and the API response includes the CPIC source URL and retrieval date. CPIC guidance describes recommended starting doses at therapy initiation; it is not advice to adjust an existing dose, and the backend does not call CPIC at runtime. To refresh the snapshot, fetch the recommendations for the configured drugs from the CPIC API and update the snapshot's `recommendations` and `retrieved_at` fields. Drugs from a custom configuration that are absent from the snapshot are reported as having no bundled CPIC recommendation.
+
+### Licensing and attribution
+
+The PGx feature combines two data paths, both documented in [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md):
+
+- CPIC content (CC0 1.0) — the verbatim recommendations in the snapshot, plus CPIC gene/drug levels, guideline links, and PMIDs from `pypgx.load_cpic_table()`. CPIC asks to be cited as `CPIC®. URL [date accessed]`; the API exposes `recommendation_source_url` and `recommendation_retrieved_at` for that purpose. The CPIC API does not publish a dataset version, so the retrieval date identifies the snapshot. CPIC levels and PMIDs come from the CPIC table bundled with the pinned PyPGx version (current as of 2023-08-19); upgrade PyPGx to refresh them. Do not reproduce the CPIC logo, and do not use the acronym in promotional material without permission from NIH.
+- PyPGx (MIT) — star-allele validation, activity scores, and metaboliser phenotypes. Keep its copyright notice when redistributing (see `THIRD_PARTY_LICENSES.md`) and cite Lee et al., 2022 when publishing analyses. PyPGx also ships PharmGKB- and PharmVar-derived tables (CC BY-SA 4.0) that are redistributed unmodified; their values are not displayed by this application.
+
+PyPGx's vendored `beagle.22Jul22.46e.jar` is GPL-3.0-or-later and is not used here. `Dockerfile` deletes it, together with the `uv` cache that contains it, from the built image — keep both removals in place to avoid redistributing a GPL binary.
+
+The feature contains no DPWG recommendations and no safety-code.org / PREPARE safety-card code or assets.
 
 ## Tests
 
