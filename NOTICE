@@ -5,7 +5,23 @@ This product includes software developed at the Fraunhofer Institute for
 Algorithms and Scientific Computing (SCAI), Sankt Augustin, Germany
 (https://www.scai.fraunhofer.de/).
 
-Licensed under the Apache License, Version 2.0 (see LICENSE).
+SPDX-License-Identifier: GPL-3.0-or-later
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
+
+Please keep this notice, the copyright notice, and the third-party notices
+below with any redistributed copy or modified version. They are provided for
+attribution; they are not additional conditions on top of the GPL.
 
 This product includes third-party software and data:
 
@@ -15,7 +31,8 @@ This product includes third-party software and data:
 - PharmGKB and PharmVar derived tables shipped with PyPGx — CC BY-SA 4.0,
   redistributed unmodified.
 
-Full license texts and attribution details are in THIRD_PARTY_LICENSES.md.
+Third-party components and their license texts are listed in
+THIRD_PARTY_LICENSES.md.
 
 If you use this software in research, please cite it as described in
 CITATION.cff (DOI: 10.5281/zenodo.22922039).

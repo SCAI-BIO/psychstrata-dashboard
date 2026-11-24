@@ -35,6 +35,6 @@ EXPOSE 80
 LABEL org.opencontainers.image.title="Psych-STRATA Dashboard frontend" \
       org.opencontainers.image.description="React frontend for the Psych-STRATA Dashboard (demo, synthetic data only)" \
       org.opencontainers.image.source="https://github.com/SCAI-BIO/psychstrata-dashboard" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.licenses="GPL-3.0-or-later"
 
 CMD ["nginx", "-g", "daemon off;"]
