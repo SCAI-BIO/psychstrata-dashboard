@@ -31,7 +31,8 @@ This product includes third-party software and data:
 - PharmGKB and PharmVar derived tables shipped with PyPGx — CC BY-SA 4.0,
   redistributed unmodified.
 
-Full license texts and attribution details are in THIRD_PARTY_LICENSES.md.
+Third-party components and their license texts are listed in
+THIRD_PARTY_LICENSES.md.
 
 If you use this software in research, please cite it as described in
 CITATION.cff (DOI: 10.5281/zenodo.22922039).
